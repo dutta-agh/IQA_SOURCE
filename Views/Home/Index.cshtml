@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    var msg = ViewBag.ConnectionMessage as string;
+}
+
+<h1>Home</h1>
+
+<form asp-action="TestConnection" method="post">
+    <button type="submit">Test DB Connection</button>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(msg))
+{
+    <div>@msg</div>
+}
