@@ -1,38 +1,38 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\",
+  "WorkspaceRootPath": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\data\\dbhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\dbhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|d:\\others\\iqa_source\\iqa_source\\data\\dboptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\dboptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\home\\speedtest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\home\\speedtest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\contentmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\contentmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\data\\adminrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\adminrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\appsettings.production.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:appsettings.production.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,109 +42,110 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "appsettings.Development.json",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\appsettings.Development.json",
-              "RelativeDocumentMoniker": "appsettings.Development.json",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\appsettings.Development.json",
-              "RelativeToolTip": "appsettings.Development.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-13T12:31:33.468Z",
+              "DocumentIndex": 2,
+              "Title": "SpeedTest.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Home\\SpeedTest.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\SpeedTest.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Home\\SpeedTest.cshtml",
+              "RelativeToolTip": "Views\\Home\\SpeedTest.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKwBAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-15T09:33:57.505Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAKwAAAAAAAAAAAAAALgAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-15T09:32:22.551Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "HomeController.cs",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Controllers\\HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Controllers\\HomeController.cs",
               "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Controllers\\HomeController.cs",
               "RelativeToolTip": "Controllers\\HomeController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAQwCkAAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAiwBgAAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-13T12:30:23.613Z",
+              "WhenOpened": "2026-02-15T09:06:11.456Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "_Layout.cshtml",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Views\\Shared\\_Layout.cshtml",
-              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Views\\Shared\\_Layout.cshtml",
-              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA3AAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "ContentMaster.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ContentMaster.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\ContentMaster.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ContentMaster.cshtml",
+              "RelativeToolTip": "Views\\Admin\\ContentMaster.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAABgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-12T13:02:24.364Z",
+              "WhenOpened": "2026-02-15T09:12:35.609Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Views\\Home\\Index.cshtml",
-              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Views\\Home\\Index.cshtml",
-              "RelativeToolTip": "Views\\Home\\Index.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-12T12:59:42.775Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "DbOptions.cs",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Data\\DbOptions.cs",
-              "RelativeDocumentMoniker": "Data\\DbOptions.cs",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Data\\DbOptions.cs",
-              "RelativeToolTip": "Data\\DbOptions.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-12T12:55:34.555Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\appsettings.json",
-              "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\appsettings.json",
-              "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAfAAAAAAAAAA==",
+              "Title": "appsettings.Production.json",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.Production.json",
+              "RelativeDocumentMoniker": "appsettings.Production.json",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.Production.json",
+              "RelativeToolTip": "appsettings.Production.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-12T12:54:55.069Z",
+              "WhenOpened": "2026-02-15T09:06:00.157Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "DbHelper.cs",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Data\\DbHelper.cs",
-              "RelativeDocumentMoniker": "Data\\DbHelper.cs",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Data\\DbHelper.cs",
-              "RelativeToolTip": "Data\\DbHelper.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-12T12:51:58.847Z",
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "appsettings.Development.json",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.Development.json",
+              "RelativeToolTip": "appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-15T09:05:57.784Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "D:\\Others\\IQA_SOURCE\\IQA_SOURCE\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAAADAAAAAaAAAAAAAAAA==",
+              "DocumentIndex": 7,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-15T09:01:36.387Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AdminRepository.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\AdminRepository.cs",
+              "RelativeDocumentMoniker": "Data\\AdminRepository.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\AdminRepository.cs",
+              "RelativeToolTip": "Data\\AdminRepository.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-12T12:46:23.851Z",
+              "WhenOpened": "2026-02-15T09:01:32.587Z",
               "EditorCaption": ""
             }
           ]

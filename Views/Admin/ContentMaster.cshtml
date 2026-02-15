@@ -1,0 +1,916 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Master - IQA Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+            .sidebar.collapsed {
+                width: 70px;
+            }
+
+        .sidebar-header {
+            padding: 20px;
+            color: white;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+            .sidebar-header h4 {
+                margin: 0;
+                font-size: 1.2rem;
+                transition: all 0.3s;
+            }
+
+        .sidebar.collapsed .sidebar-header h4,
+        .sidebar.collapsed .menu-text {
+            display: none;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .menu-item {
+            margin: 5px 0;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+            .menu-link:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+            }
+
+            .menu-link.active {
+                background: rgba(255,255,255,0.2);
+                border-left: 4px solid white;
+            }
+
+        .menu-icon {
+            min-width: 30px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .menu-text {
+            margin-left: 15px;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+
+            .main-content.expanded {
+                margin-left: 70px;
+            }
+
+        .top-navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #667eea;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .logout-btn:hover {
+                background: #c82333;
+            }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .html-content-preview {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f8f9fa;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .html-content-rendered {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            background: white;
+            min-height: 150px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .metadata-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .metadata-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+            .metadata-row:last-child {
+                border-bottom: none;
+            }
+
+        .metadata-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .metadata-value {
+            color: #6c757d;
+        }
+
+        .nav-tabs .nav-link {
+            color: #667eea;
+        }
+
+            .nav-tabs .nav-link.active {
+                color: #495057;
+                background-color: #fff;
+                border-color: #dee2e6 #dee2e6 #fff;
+            }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+            .loader-overlay.show {
+                display: flex;
+            }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader-text {
+            color: white;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+
+        .alert-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9998;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader Overlay -->
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="text-center">
+            <div class="spinner"></div>
+            <div class="loader-text">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div class="alert-container" id="alertContainer"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-cogs"></i> <span>IQA Admin</span></h4>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="/IQA/Admin/Dashboard" class="menu-link">
+                    <i class="fas fa-home menu-icon"></i>
+                    <span class="menu-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="/IQA/Admin/ContentMaster" class="menu-link active">
+                    <i class="fas fa-file-alt menu-icon"></i>
+                    <span class="menu-text">Content Master</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="fas fa-users menu-icon"></i>
+                    <span class="menu-text">User Management</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="fas fa-chart-bar menu-icon"></i>
+                    <span class="menu-text">Reports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="fas fa-cog menu-icon"></i>
+                    <span class="menu-text">Settings</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="toggle-btn" id="toggleBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="user-info">
+                <span><i class="fas fa-user-circle"></i> <span id="userName">Admin User</span></span>
+                <button class="logout-btn" onclick="showLogoutConfirmation()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-alt"></i> Content Master</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> Add New Content
+                </button>
+            </div>
+
+            <div class="content-card">
+                <table id="contentTable" class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Content Preview</th>
+                            <th>Created By</th>
+                            <th>Created Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal fade" id="contentModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="contentForm">
+                        <div class="mb-3">
+                            <label class="form-label">Content Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cmCode" required>
+                            <small class="text-muted">Unique identifier for the content</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">HTML Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="cmContent" rows="8" required></textarea>
+                            <small class="text-muted">Enter HTML content here</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Content Preview</label>
+                            <div class="html-content-preview" id="contentPreview">
+                                <em class="text-muted">Type HTML above and click "Preview" button to see rendered output...</em>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-info mt-2" onclick="previewContent()">
+                                <i class="fas fa-eye"></i> Preview HTML
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="cmActive">
+                                <option value="Y">Active</option>
+                                <option value="N">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-danger d-none" id="formError"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="showSaveConfirmation()">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Content Modal -->
+    <div class="modal fade" id="viewContentModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye"></i> View Content Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Content Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <strong><i class="fas fa-code"></i> Content Code:</strong>
+                                <span class="ms-2" id="viewCmCode"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <strong><i class="fas fa-info-circle"></i> Status:</strong>
+                                <span class="ms-2" id="viewCmActive"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Tabs for Rendered and Raw HTML -->
+                    <ul class="nav nav-tabs" id="contentViewTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="rendered-tab" data-bs-toggle="tab" data-bs-target="#rendered" type="button" role="tab">
+                                <i class="fas fa-desktop"></i> Rendered HTML
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="source-tab" data-bs-toggle="tab" data-bs-target="#source" type="button" role="tab">
+                                <i class="fas fa-code"></i> HTML Source
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3" id="contentViewTabsContent">
+                        <div class="tab-pane fade show active" id="rendered" role="tabpanel">
+                            <div class="html-content-rendered" id="viewCmContent"></div>
+                        </div>
+                        <div class="tab-pane fade" id="source" role="tabpanel">
+                            <pre id="viewCmContentRaw"></pre>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Metadata Section -->
+                    <div class="metadata-section">
+                        <h6 class="mb-3"><i class="fas fa-info-circle"></i> Metadata Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="metadata-row">
+                                    <span class="metadata-label"><i class="fas fa-user"></i> Created By:</span>
+                                    <span class="metadata-value" id="viewCmCreatedUser"></span>
+                                </div>
+                                <div class="metadata-row">
+                                    <span class="metadata-label"><i class="fas fa-calendar"></i> Created Date:</span>
+                                    <span class="metadata-value" id="viewCmCreatedDate"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="metadata-row">
+                                    <span class="metadata-label"><i class="fas fa-user-edit"></i> Modified By:</span>
+                                    <span class="metadata-value" id="viewCmModifiedUser"></span>
+                                </div>
+                                <div class="metadata-row">
+                                    <span class="metadata-label"><i class="fas fa-calendar-alt"></i> Modified Date:</span>
+                                    <span class="metadata-value" id="viewCmModifiedDate"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="editContentFromView()">
+                        <i class="fas fa-edit"></i> Edit Content
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalTitle">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="confirmationModalBody">
+                    Are you sure you want to proceed?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        let contentTable;
+        let isEditMode = false;
+        let currentViewCode = '';
+
+        // Loader functions
+        function showLoader() {
+            document.getElementById('loaderOverlay').classList.add('show');
+        }
+
+        function hideLoader() {
+            document.getElementById('loaderOverlay').classList.remove('show');
+        }
+
+        // Alert functions
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alertElement = document.getElementById(alertId);
+                if (alertElement) {
+                    const bsAlert = new bootstrap.Alert(alertElement);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        // Confirmation Modal
+        function showConfirmationModal(title, message, onConfirm, confirmBtnText = 'Confirm', confirmBtnClass = 'btn-primary') {
+            const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            document.getElementById('confirmationModalTitle').textContent = title;
+            document.getElementById('confirmationModalBody').textContent = message;
+
+            const confirmBtn = document.getElementById('confirmationModalConfirm');
+            confirmBtn.textContent = confirmBtnText;
+            confirmBtn.className = 'btn ' + confirmBtnClass;
+
+            // Remove previous event listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+            newConfirmBtn.addEventListener('click', function() {
+                modal.hide();
+                onConfirm();
+            });
+
+            modal.show();
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        $(document).ready(function() {
+            // Initialize DataTable
+            contentTable = $('#contentTable').DataTable({
+                columns: [
+                    { data: 'cmCode' },
+                    {
+                        data: 'cmContent',
+                        render: function(data) {
+                            const text = data ? $('<div>').html(data).text() : '';
+                            return text.length > 80 ? text.substring(0, 80) + '...' : text;
+                        }
+                    },
+                    { data: 'cmCreatedUser' },
+                    {
+                        data: 'cmCreatedDate',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleDateString() : '';
+                        }
+                    },
+                    {
+                        data: 'cmActive',
+                        render: function(data) {
+                            return data === 'Y'
+                                ? '<span class="badge bg-success">Active</span>'
+                                : '<span class="badge bg-danger">Inactive</span>';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            const code = escapeHtml(row.cmCode);
+                            return `
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="viewContent('${code}')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editContent('${code}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${code}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
+            });
+
+            loadContents();
+        });
+
+        // Sidebar Toggle
+        $('#toggleBtn').on('click', function() {
+            $('#sidebar').toggleClass('collapsed');
+            $('#mainContent').toggleClass('expanded');
+        });
+
+        // Load all contents
+        function loadContents() {
+            showLoader();
+            $.ajax({
+                url: '/IQA/Admin/GetAllContents',
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        contentTable.clear();
+                        contentTable.rows.add(response.data || []);
+                        contentTable.draw();
+                    } else {
+                        showAlert('Error: ' + response.message, 'danger');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoader();
+                    console.error('Error loading contents:', error);
+                    showAlert('Error loading contents. Please try again.', 'danger');
+                }
+            });
+        }
+
+        // Open Add Modal
+        function openAddModal() {
+            isEditMode = false;
+            $('#modalTitle').text('Add New Content');
+            $('#contentForm')[0].reset();
+            $('#cmCode').prop('readonly', false);
+            $('#cmActive').val('Y');
+            $('#contentPreview').html('<em class="text-muted">Type HTML above and click "Preview" button to see rendered output...</em>');
+            $('#formError').addClass('d-none');
+
+            var modal = new bootstrap.Modal(document.getElementById('contentModal'));
+            modal.show();
+        }
+
+        // Preview HTML Content in Edit Modal
+        function previewContent() {
+            const htmlContent = $('#cmContent').val().trim();
+            const previewDiv = $('#contentPreview');
+
+            if (htmlContent) {
+                previewDiv.html(htmlContent);
+            } else {
+                previewDiv.html('<em class="text-muted">No content to preview...</em>');
+            }
+        }
+
+        // View Content in Detail Modal
+        function viewContent(code) {
+            showLoader();
+            $.ajax({
+                url: '/IQA/Admin/GetContentByCode',
+                type: 'GET',
+                data: { code: code },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        const content = response.data;
+                        currentViewCode = content.cmCode;
+
+                        $('#viewCmCode').text(content.cmCode || '');
+                        $('#viewCmActive').html(
+                            content.cmActive === 'Y'
+                                ? '<span class="badge bg-success">Active</span>'
+                                : '<span class="badge bg-danger">Inactive</span>'
+                        );
+
+                        $('#viewCmContent').html(content.cmContent || '<em class="text-muted">No content available</em>');
+                        $('#viewCmContentRaw').text(content.cmContent || '');
+
+                        $('#viewCmCreatedUser').text(content.cmCreatedUser || 'N/A');
+                        $('#viewCmCreatedDate').text(
+                            content.cmCreatedDate
+                                ? new Date(content.cmCreatedDate).toLocaleString()
+                                : 'N/A'
+                        );
+                        $('#viewCmModifiedUser').text(content.cmModifiedUser || 'N/A');
+                        $('#viewCmModifiedDate').text(
+                            content.cmModifiedDate
+                                ? new Date(content.cmModifiedDate).toLocaleString()
+                                : 'N/A'
+                        );
+
+                        new bootstrap.Modal(document.getElementById('viewContentModal')).show();
+                    } else {
+                        showAlert('Error: ' + (response.message || 'Content not found'), 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading content details', 'danger');
+                }
+            });
+        }
+
+        // Edit Content from View Modal
+        function editContentFromView() {
+            bootstrap.Modal.getInstance(document.getElementById('viewContentModal')).hide();
+            editContent(currentViewCode);
+        }
+
+        // Edit Content
+        function editContent(code) {
+            showLoader();
+            $.ajax({
+                url: '/IQA/Admin/GetContentByCode',
+                type: 'GET',
+                data: { code: code },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        isEditMode = true;
+                        $('#modalTitle').text('Edit Content');
+                        $('#cmCode').val(response.data.cmCode).prop('readonly', true);
+                        $('#cmContent').val(response.data.cmContent);
+                        $('#cmActive').val(response.data.cmActive || 'Y');
+                        $('#formError').addClass('d-none');
+                        new bootstrap.Modal(document.getElementById('contentModal')).show();
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading content for editing', 'danger');
+                }
+            });
+        }
+
+        // Show Save Confirmation
+        function showSaveConfirmation() {
+            const data = {
+                cmCode: $('#cmCode').val().trim(),
+                cmContent: $('#cmContent').val().trim(),
+                cmActive: $('#cmActive').val()
+            };
+
+            if (!data.cmCode || !data.cmContent) {
+                $('#formError').removeClass('d-none').text('Please fill all required fields');
+                return;
+            }
+
+            const action = isEditMode ? 'update' : 'create';
+            const message = isEditMode
+                ? `Are you sure you want to update the content "${data.cmCode}"?`
+                : `Are you sure you want to create new content "${data.cmCode}"?`;
+
+            showConfirmationModal(
+                'Confirm Save',
+                message,
+                () => saveContent(),
+                'Save',
+                'btn-primary'
+            );
+        }
+
+        // Save Content
+        function saveContent() {
+            const data = {
+                cmCode: $('#cmCode').val().trim(),
+                cmContent: $('#cmContent').val().trim(),
+                cmActive: $('#cmActive').val()
+            };
+
+            showLoader();
+            $.ajax({
+                url: '/IQA/Admin/SaveContent',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('contentModal')).hide();
+                        loadContents();
+                        showAlert(response.message || 'Content saved successfully', 'success');
+                    } else {
+                        $('#formError').removeClass('d-none').text(response.message);
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    $('#formError').removeClass('d-none').text('An error occurred while saving');
+                }
+            });
+        }
+
+        // Show Delete Confirmation
+        function showDeleteConfirmation(code) {
+            showConfirmationModal(
+                'Confirm Delete',
+                `Are you sure you want to delete content "${code}"? This action cannot be undone.`,
+                () => deleteContent(code),
+                'Delete',
+                'btn-danger'
+            );
+        }
+
+        // Delete Content
+        function deleteContent(code) {
+            showLoader();
+            $.ajax({
+                url: '/IQA/Admin/DeleteContent',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(code),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        loadContents();
+                        showAlert(response.message || 'Content deleted successfully', 'success');
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('An error occurred while deleting', 'danger');
+                }
+            });
+        }
+
+        // Show Logout Confirmation
+        function showLogoutConfirmation() {
+            showConfirmationModal(
+                'Confirm Logout',
+                'Are you sure you want to logout?',
+                logout,
+                'Logout',
+                'btn-danger'
+            );
+        }
+
+        // Logout
+        function logout() {
+            showLoader();
+            $.post('/IQA/Admin/Logout', function() {
+                window.location.href = '/IQA/Admin/Login';
+            }).fail(function() {
+                hideLoader();
+                showAlert('Error during logout', 'danger');
+            });
+        }
+    </script>
+</body>
+</html>
