@@ -74,6 +74,46 @@ namespace YourApp.Data
             }, ct);
         }
 
+        public DataTable ExecuteQuery(string query, MySqlParameter[]? parameters = null, int? commandTimeoutSeconds = null)
+        {
+            using var conn = CreateConnection();
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = query;
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandTimeout = commandTimeoutSeconds ?? _defaultCommandTimeoutSeconds;
+
+            if (parameters != null)
+            {
+                cmd.Parameters.AddRange(parameters);
+            }
+
+            var dt = new DataTable();
+            using var adapter = new MySqlDataAdapter(cmd);
+            adapter.Fill(dt);
+
+            return dt;
+        }
+
+        public int ExecuteNonQuery(string query, MySqlParameter[]? parameters = null, int? commandTimeoutSeconds = null)
+        {
+            using var conn = CreateConnection();
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = query;
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandTimeout = commandTimeoutSeconds ?? _defaultCommandTimeoutSeconds;
+
+            if (parameters != null)
+            {
+                cmd.Parameters.AddRange(parameters);
+            }
+
+            return cmd.ExecuteNonQuery();
+        }
+
         private static List<MySqlParameter?> CollectOutputParameters(MySqlParameterCollection? parameters)
         {
             return parameters?.AsEnumerable()?.Where(p => p.Direction is ParameterDirection.Output or ParameterDirection.InputOutput or ParameterDirection.ReturnValue)?.Select(p => p ?? null)?.ToList();
