@@ -1,6 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Welcome to IQA";
     Layout = null;
+    var assessmentType = ViewBag.AssessmentType as string ?? "";
 }
 
 <!DOCTYPE html>
@@ -11,6 +12,12 @@
     <title>@ViewData["Title"]</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Global App Configuration - MUST be loaded FIRST -->
+    @await Html.PartialAsync("_AppConfigScript")
+    
+    <!-- detect-incognito Library -->
+    <script src="https://cdn.jsdelivr.net/npm/detect-incognito@1.3.0/dist/es5/detect-incognito.min.js"></script>
+    
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -42,6 +49,16 @@
             font-weight: bold;
             color: #667eea;
             margin: 0;
+        }
+
+        .assessment-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 10px;
         }
 
         .main-container {
@@ -154,9 +171,124 @@
             padding: 20px;
             margin-top: auto;
         }
+
+        .private-mode-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .private-mode-warning.show {
+            display: flex;
+        }
+
+        .warning-content {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .warning-icon {
+            font-size: 5rem;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .warning-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .warning-content p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .instruction-list {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 500px;
+        }
+
+        .instruction-list li {
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .browser-instructions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .browser-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .browser-card strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
+    <!-- Private Mode Warning -->
+    <div class="private-mode-warning" id="privateModeWarning">
+        <div class="warning-content">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Private/Incognito Mode Required</h2>
+            <p>This assessment must be accessed using your browser's private/incognito mode to ensure data privacy and test integrity.</p>
+            
+            <div class="browser-instructions">
+                <div class="browser-card">
+                    <strong><i class="fab fa-chrome"></i> Chrome</strong>
+                    <small>Ctrl + Shift + N</small>
+                </div>
+                <div class="browser-card">
+                    <strong><i class="fab fa-firefox"></i> Firefox</strong>
+                    <small>Ctrl + Shift + P</small>
+                </div>
+                <div class="browser-card">
+                    <strong><i class="fab fa-edge"></i> Edge</strong>
+                    <small>Ctrl + Shift + N</small>
+                </div>
+                <div class="browser-card">
+                    <strong><i class="fab fa-safari"></i> Safari</strong>
+                    <small>Cmd + Shift + N</small>
+                </div>
+            </div>
+
+            <div class="instruction-list">
+                <p style="margin-top: 30px;"><strong>Steps to access this page:</strong></p>
+                <ol>
+                    <li>Close this browser window</li>
+                    <li>Open a new private/incognito window using the shortcut above</li>
+                    <li>Navigate back to this URL</li>
+                    <li>The assessment will load automatically</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
     <!-- Loader Overlay -->
     <div class="loader-overlay" id="loaderOverlay">
         <div class="text-center">
@@ -175,6 +307,10 @@
                 <img src="~/images/logo.png" alt="Company Logo" class="logo" onerror="this.style.display='none'">
                 <h1 class="company-name">
                     <i class="fas fa-graduation-cap"></i> IQA Assessment Platform
+                    @if (!string.IsNullOrEmpty(assessmentType))
+                    {
+                        <span class="assessment-badge">@assessmentType</span>
+                    }
                 </h1>
             </div>
         </div>
@@ -182,7 +318,7 @@
 
     <!-- Main Content -->
     <div class="main-container">
-        <div class="content-card" style="max-width:95%;""">
+        <div class="content-card" style="max-width:95%;">
             <div class="intro-content" id="introContent">
                 <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
@@ -210,6 +346,42 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const assessmentType = '@assessmentType';
+
+        // Initialize on page load using detect-incognito library
+        (async function() {
+            console.log('=== Private Mode Detection Started (using detect-incognito) ===');
+            console.log('Assessment type:', assessmentType);
+            
+            try {
+                // Use the detect-incognito library
+                const result = await detectIncognito();
+                console.log('=== Detection Result ===', result);
+                console.log('Is Private/Incognito:', result.isPrivate);
+                console.log('Browser Name:', result.browserName);
+                
+                if (!result.isPrivate) {
+                    console.warn('⚠️ BLOCKING ACCESS - Not in private/incognito mode');
+                    document.getElementById('privateModeWarning').classList.add('show');
+                    // Hide main content
+                    document.querySelector('.header').style.display = 'none';
+                    document.querySelector('.main-container').style.display = 'none';
+                    document.querySelector('.footer').style.display = 'none';
+                } else {
+                    console.log('✓ ALLOWING ACCESS - Private mode confirmed');
+                    // Store incognito status for speed test
+                    sessionStorage.setItem('incognitoVerified', 'true');
+                    // Load content normally
+                    loadIntroContent();
+                }
+            } catch (error) {
+                console.error('Private mode detection error:', error);
+                // On error, allow access (fail-open approach)
+                console.log('Allowing access due to detection error');
+                loadIntroContent();
+            }
+        })();
+
         // Loader functions
         function showLoader() {
             document.getElementById('loaderOverlay').classList.add('show');
@@ -247,14 +419,28 @@
         // Load intro content
         function loadIntroContent() {
             showLoader();
+            
+            const url = buildApiUrl('/Assessment/GetIntroContent');
+            
+            console.log('Loading intro content from:', url);
+            
             $.ajax({
-                url: '/Home/GetIntroContent',
+                url: url,
                 type: 'GET',
+                data: { assessmentType: assessmentType },
+                dataType: 'json',
                 success: function(response) {
+                    console.log('Response received:', response);
                     hideLoader();
+                    
                     if (response.success && response.data) {
                         $('#introContent').html(response.data.cmContent);
+                        
+                        if (response.data.sessionId) {
+                            sessionStorage.setItem('assessmentSessionId', response.data.sessionId);
+                        }
                     } else {
+                        console.warn('Response unsuccessful or no data:', response);
                         $('#introContent').html(`
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle"></i>
@@ -264,14 +450,31 @@
                         `);
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', {
+                        status: status,
+                        error: error,
+                        xhr: xhr,
+                        responseText: xhr.responseText
+                    });
                     hideLoader();
+                    
+                    let errorMessage = 'Error loading content. Please refresh the page.';
+                    if (xhr.status === 404) {
+                        errorMessage = 'Content endpoint not found. Please check your routing configuration.';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Network error. Please check your connection.';
+                    }
+                    
                     $('#introContent').html(`
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle"></i>
-                            Error loading content. Please refresh the page.
+                            <strong>${errorMessage}</strong>
+                            <p class="mt-2"><small>Status: ${xhr.status} - ${error}</small></p>
                         </div>
                     `);
+                    
+                    showAlert(errorMessage, 'danger');
                 }
             });
         }
@@ -279,13 +482,10 @@
         // Start assessment - redirect to speed test
         function startAssessment() {
             showLoader();
-            window.location.href = '/Home/SpeedTest';
+            const url = assessmentType ? `/Assessment/${assessmentType}/SpeedTest` : '/Assessment/SpeedTest';
+            console.log('Redirecting to:', url);
+            window.location.href = url;
         }
-
-        // Load content on page load
-        $(document).ready(function() {
-            loadIntroContent();
-        });
     </script>
 </body>
 </html>

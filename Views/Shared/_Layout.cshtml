@@ -6,6 +6,8 @@
     <title>@ViewData["Title"] - IQA</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <!-- Global App Configuration - MUST be loaded FIRST -->
+    @await Html.PartialAsync("_AppConfigScript")
 </head>
 <body>
     <header>

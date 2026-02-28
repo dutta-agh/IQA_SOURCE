@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     
+    <!-- Global App Configuration - MUST be loaded FIRST -->
+    @await Html.PartialAsync("_AppConfigScript")
     <style>
         * {
             margin: 0;
@@ -274,21 +276,23 @@
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-users menu-icon"></i>
-                    <span class="menu-text">User Management</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionMaster" class="menu-link @(currentPage == "QuestionMaster" ? "active" : "")">
+                    <i class="fas fa-question-circle menu-icon"></i>
+                    <span class="menu-text">Question Master</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-chart-bar menu-icon"></i>
-                    <span class="menu-text">Reports</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ImagesMaster" 
+                   class="menu-link @(currentPage == "ImagesMaster" ? "active" : "")">
+                    <i class="fas fa-images menu-icon"></i>
+                    <span class="menu-text">Images Upload</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-cog menu-icon"></i>
-                    <span class="menu-text">Settings</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentImages" 
+                   class="menu-link @(currentPage == "AssessmentImages" ? "active" : "")">
+                    <i class="fas fa-folder-open menu-icon"></i>
+                    <span class="menu-text">Assessment Images</span>
                 </a>
             </li>
         </ul>
@@ -341,45 +345,7 @@
     
     <!-- Global App Configuration - MUST be loaded before other scripts -->
     <script>
-        // Global application configuration
-        const APP_CONFIG = {
-            SUB_APPLICATION_PATH: '@IQA_SOURCE.Constants.SubApplicationPathJS',
-            ASSESSMENT_BASE_URL: '@IQA_SOURCE.Constants.AssessmentBaseUrl',
-            
-            // Helper function to build API URLs
-            buildUrl: function(path) {
-                // Remove leading slash if present to avoid double slashes
-                const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-                return this.SUB_APPLICATION_PATH + '/' + cleanPath;
-            },
-            
-            // Helper for AJAX calls with automatic path prefixing
-            ajax: function(options) {
-                // Clone options to avoid modifying original
-                const ajaxOptions = { ...options };
-                
-                // Prefix the URL if it doesn't already include the sub-application path
-                if (ajaxOptions.url && !ajaxOptions.url.startsWith('http') && !ajaxOptions.url.startsWith(this.SUB_APPLICATION_PATH)) {
-                    ajaxOptions.url = this.buildUrl(ajaxOptions.url);
-                }
-                
-                return $.ajax(ajaxOptions);
-            }
-        };
-
-        // Backward compatibility - keep as global constants
-        const SUB_APPLICATION_PATH = APP_CONFIG.SUB_APPLICATION_PATH;
-        const ASSESSMENT_BASE_URL = APP_CONFIG.ASSESSMENT_BASE_URL;
-
-        // Helper function for quick URL building (global)
-        function buildApiUrl(path) {
-            return APP_CONFIG.buildUrl(path);
-        }
-
-        // Helper function to build full assessment URLs for display only
-        function buildAssessmentUrl(slug) {
-            return ASSESSMENT_BASE_URL + SUB_APPLICATION_PATH + '/Assessment/' + slug;
-        }
+       
 
         // Loader functions
         function showLoader() {

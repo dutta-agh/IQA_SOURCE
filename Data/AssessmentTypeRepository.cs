@@ -25,8 +25,10 @@ namespace IQA_SOURCE.Data
                         atm_url_slug,
                         atm_description,
                         atm_duration_minutes,
+                        atm_start_date,
+                        atm_end_date,
                         atm_created_user,
-                        atm_created_date,
+                        atm_created_date,   
                         atm_modified_user,
                         atm_modified_date,
                         atm_active
@@ -70,13 +72,15 @@ namespace IQA_SOURCE.Data
                         atm_url_slug,
                         atm_description,
                         atm_duration_minutes,
+                        atm_start_date,
+                        atm_end_date,
                         atm_created_user,
                         atm_created_date,
                         atm_modified_user,
                         atm_modified_date,
                         atm_active
                     FROM assessment_type_mstr
-                    WHERE atm_code = @atmCode
+                    WHERE atm_code = @atmCode OR atm_url_slug = @atmCode
                     LIMIT 1";
 
                 var parameters = new[]
@@ -121,6 +125,8 @@ namespace IQA_SOURCE.Data
                         atm_url_slug,
                         atm_description,
                         atm_duration_minutes,
+                        atm_start_date,
+                        atm_end_date,
                         atm_created_user,
                         atm_created_date,
                         atm_modified_user,
@@ -129,6 +135,8 @@ namespace IQA_SOURCE.Data
                     FROM assessment_type_mstr
                     WHERE atm_url_slug = @urlSlug
                     AND atm_active = 'Y'
+                    AND (atm_start_date IS NULL OR atm_start_date <= NOW())
+                    AND (atm_end_date IS NULL OR atm_end_date >= NOW())
                     LIMIT 1";
 
                 var parameters = new[]
@@ -147,7 +155,7 @@ namespace IQA_SOURCE.Data
                 return new AssessmentTypeMasterResponse
                 {
                     OutputCode = 1,
-                    OutputMsg = result.Rows.Count > 0 ? "Assessment type retrieved successfully" : "Assessment type not found",
+                    OutputMsg = result.Rows.Count > 0 ? "Assessment type retrieved successfully" : "Assessment type not found or not available",
                     Data = assessmentTypes
                 };
             }
@@ -166,6 +174,12 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // IMPORTANT: Ensure slug matches code for URL routing
+                if (string.IsNullOrEmpty(assessmentType.AtmUrlSlug))
+                {
+                    assessmentType.AtmUrlSlug = assessmentType.AtmCode;
+                }
+
                 // Check if code already exists
                 var checkQuery = "SELECT COUNT(*) as cnt FROM assessment_type_mstr WHERE atm_code = @atmCode";
                 var checkParams = new[] { new MySqlParameter("@atmCode", assessmentType.AtmCode) };
@@ -194,6 +208,19 @@ namespace IQA_SOURCE.Data
                     };
                 }
 
+                // Validate date range
+                if (assessmentType.AtmStartDate.HasValue && assessmentType.AtmEndDate.HasValue)
+                {
+                    if (assessmentType.AtmEndDate.Value < assessmentType.AtmStartDate.Value)
+                    {
+                        return new AssessmentTypeMasterResponse
+                        {
+                            OutputCode = 0,
+                            OutputMsg = "End date must be greater than or equal to start date"
+                        };
+                    }
+                }
+
                 var query = @"
                     INSERT INTO assessment_type_mstr (
                         atm_code,
@@ -201,6 +228,8 @@ namespace IQA_SOURCE.Data
                         atm_url_slug,
                         atm_description,
                         atm_duration_minutes,
+                        atm_start_date,
+                        atm_end_date,
                         atm_created_user,
                         atm_created_date,
                         atm_active
@@ -211,6 +240,8 @@ namespace IQA_SOURCE.Data
                         @atmUrlSlug,
                         @atmDescription,
                         @atmDurationMinutes,
+                        @atmStartDate,
+                        @atmEndDate,
                         @userId,
                         NOW(),
                         @atmActive
@@ -223,6 +254,8 @@ namespace IQA_SOURCE.Data
                     new MySqlParameter("@atmUrlSlug", assessmentType.AtmUrlSlug),
                     new MySqlParameter("@atmDescription", (object)assessmentType.AtmDescription ?? DBNull.Value),
                     new MySqlParameter("@atmDurationMinutes", assessmentType.AtmDurationMinutes),
+                    new MySqlParameter("@atmStartDate", (object)assessmentType.AtmStartDate ?? DBNull.Value),
+                    new MySqlParameter("@atmEndDate", (object)assessmentType.AtmEndDate ?? DBNull.Value),
                     new MySqlParameter("@userId", userId),
                     new MySqlParameter("@atmActive", assessmentType.AtmActive ?? "Y")
                 };
@@ -249,6 +282,12 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // IMPORTANT: Ensure slug matches code for URL routing
+                if (string.IsNullOrEmpty(assessmentType.AtmUrlSlug))
+                {
+                    assessmentType.AtmUrlSlug = assessmentType.AtmCode;
+                }
+
                 // Check if assessment type exists
                 var checkQuery = "SELECT COUNT(*) as cnt FROM assessment_type_mstr WHERE atm_code = @atmCode";
                 var checkParams = new[] { new MySqlParameter("@atmCode", assessmentType.AtmCode) };
@@ -281,6 +320,19 @@ namespace IQA_SOURCE.Data
                     };
                 }
 
+                // Validate date range
+                if (assessmentType.AtmStartDate.HasValue && assessmentType.AtmEndDate.HasValue)
+                {
+                    if (assessmentType.AtmEndDate.Value < assessmentType.AtmStartDate.Value)
+                    {
+                        return new AssessmentTypeMasterResponse
+                        {
+                            OutputCode = 0,
+                            OutputMsg = "End date must be greater than or equal to start date"
+                        };
+                    }
+                }
+
                 var query = @"
                     UPDATE assessment_type_mstr
                     SET 
@@ -288,6 +340,8 @@ namespace IQA_SOURCE.Data
                         atm_url_slug = @atmUrlSlug,
                         atm_description = @atmDescription,
                         atm_duration_minutes = @atmDurationMinutes,
+                        atm_start_date = @atmStartDate,
+                        atm_end_date = @atmEndDate,
                         atm_modified_user = @userId,
                         atm_modified_date = NOW(),
                         atm_active = @atmActive
@@ -300,6 +354,8 @@ namespace IQA_SOURCE.Data
                     new MySqlParameter("@atmUrlSlug", assessmentType.AtmUrlSlug),
                     new MySqlParameter("@atmDescription", (object)assessmentType.AtmDescription ?? DBNull.Value),
                     new MySqlParameter("@atmDurationMinutes", assessmentType.AtmDurationMinutes),
+                    new MySqlParameter("@atmStartDate", (object)assessmentType.AtmStartDate ?? DBNull.Value),
+                    new MySqlParameter("@atmEndDate", (object)assessmentType.AtmEndDate ?? DBNull.Value),
                     new MySqlParameter("@userId", userId),
                     new MySqlParameter("@atmActive", assessmentType.AtmActive ?? "Y")
                 };
@@ -382,6 +438,8 @@ namespace IQA_SOURCE.Data
                 AtmUrlSlug = row["atm_url_slug"]?.ToString(),
                 AtmDescription = row["atm_description"]?.ToString(),
                 AtmDurationMinutes = row["atm_duration_minutes"] != DBNull.Value ? Convert.ToInt32(row["atm_duration_minutes"]) : 0,
+                AtmStartDate = row["atm_start_date"] != DBNull.Value ? (DateTime?)row["atm_start_date"] : null,
+                AtmEndDate = row["atm_end_date"] != DBNull.Value ? (DateTime?)row["atm_end_date"] : null,
                 AtmCreatedUser = row["atm_created_user"]?.ToString(),
                 AtmCreatedDate = row["atm_created_date"] != DBNull.Value ? (DateTime?)row["atm_created_date"] : null,
                 AtmModifiedUser = row["atm_modified_user"]?.ToString(),

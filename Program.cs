@@ -1,7 +1,9 @@
+using IQA_SOURCE.Data;
+using IQA_SOURCE.Services;
+using IQA_SOURCE.Models.Admin;
 using YourApp.Data;
 using Microsoft.AspNetCore.HttpOverrides;
 using IQA_SOURCE.Middleware;
-using IQA_SOURCE.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,8 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".IQA.Session";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 builder.Services.AddCors(policyBuilder =>
@@ -30,14 +34,29 @@ builder.Services.AddCors(policyBuilder =>
 );
 builder.Services.AddMemoryCache();
 
+// Register DbOptions as a singleton so it can be injected
 var dbOptions = new DbOptions();
-
 builder.Configuration.GetSection("Db").Bind(dbOptions);
-builder.Services.AddSingleton<IDbHelper>(new DbHelper(dbOptions));
+builder.Services.AddSingleton(dbOptions);
 
-// Register Admin Repository
+// Register DbHelper as scoped (not both singleton and scoped)
+builder.Services.AddScoped<IDbHelper, DbHelper>();
+
+// Configure Image Storage Settings
+builder.Services.Configure<ImageStorageSettings>(
+    builder.Configuration.GetSection("ImageStorage"));
+
+// Register repositories
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAssessmentTypeRepository, AssessmentTypeRepository>();
+builder.Services.AddScoped<IQuestionMasterRepository, QuestionMasterRepository>();
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
+
+// Register services
+builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 var app = builder.Build();
 
@@ -47,27 +66,31 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-//app.UsePathBase("/IQA");
-
 // Add global exception handling middleware
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
-    // Keep this as a fallback, but the middleware handles most cases
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-// Don't use HTTPS redirection when behind a reverse proxy
-// app.UseHttpsRedirection();
-
-app.UseStaticFiles();
+app.UseStaticFiles(); // Default wwwroot
+    
+// Serve images from Linux server path
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        builder.Configuration.GetValue<string>("ImageStorage:BasePath")),
+    RequestPath = builder.Configuration.GetValue<string>("ImageStorage:WebBasePath")
+});
 
 app.UseRouting();
 
 // Add Session Middleware
 app.UseSession();
+
+app.UseMiddleware<ActionLoggingMiddleware>();
 
 app.UseAuthorization();
 
@@ -80,6 +103,42 @@ app.MapGet("/isalive", () =>
     };
 });
 
+// Assessment-specific routes FIRST
+app.MapControllerRoute(
+    name: "assessmentGetIntroContent",
+    pattern: "Assessment/GetIntroContent",
+    defaults: new { controller = "Assessment", action = "GetIntroContent" });
+
+app.MapControllerRoute(
+    name: "assessmentSpeedTest",
+    pattern: "Assessment/{assessmentType}/SpeedTest",
+    defaults: new { controller = "Assessment", action = "SpeedTest" });
+
+app.MapControllerRoute(
+    name: "assessmentIndex",
+    pattern: "Assessment/{assessmentType}",
+    defaults: new { controller = "Assessment", action = "Index" });
+
+// Short URL format
+app.MapControllerRoute(
+    name: "assessmentShortSpeedTest",
+    pattern: "{assessmentType}/SpeedTest",
+    defaults: new { controller = "Assessment", action = "SpeedTest" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+app.MapControllerRoute(
+    name: "assessmentShortIndex",
+    pattern: "{assessmentType}",
+    defaults: new { controller = "Assessment", action = "Index" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+// Admin routes
+app.MapControllerRoute(
+    name: "admin",
+    pattern: "Admin/{action=Login}/{id?}",
+    defaults: new { controller = "Admin" });
+
+// Default route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Admin}/{action=Login}/{id?}");

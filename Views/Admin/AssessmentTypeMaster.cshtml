@@ -73,8 +73,10 @@
                 <th>Code</th>
                 <th>Name</th>
                 <th>URL Slug</th>
-                <th>Full URL</th>
                 <th>Duration</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Availability</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -123,6 +125,16 @@
                         <label class="form-label">Duration (Minutes) <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="atmDurationMinutes" required min="0">
                         <small class="text-muted">Assessment time limit in minutes (0 for untimed assessments)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="datetime-local" class="form-control" id="atmStartDate">
+                        <small class="text-muted">Optional - When the assessment becomes available (leave empty for immediate availability)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="datetime-local" class="form-control" id="atmEndDate">
+                        <small class="text-muted">Optional - When the assessment expires (leave empty for no expiration)</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Description</label>
@@ -253,6 +265,8 @@
         let currentViewCode = '';
 
         $(document).ready(function() {
+            console.log(ASSESSMENT_BASE_URL);
+            console.log(APP_CONFIG.ASSESSMENT_BASE_URL);
             // Initialize DataTable
             assessmentTypeTable = $('#assessmentTypeTable').DataTable({
                 columns: [
@@ -265,21 +279,46 @@
                         }
                     },
                     {
-                        data: 'atmUrlSlug',
-                        render: function(data) {
-                            // Build full URL for display - NOT for API calls
-                            const fullUrl = buildAssessmentUrl(escapeHtml(data));
-                            return '<a href="' + fullUrl + '" target="_blank" class="full-url-link" title="Click to open in new tab">' +
-                                   '<i class="fas fa-external-link-alt"></i> Open URL</a>';
-                        }
-                    },
-                    {
                         data: 'atmDurationMinutes',
                         render: function(data) {
                             if (data === 0) {
                                 return '<span class="duration-badge">Untimed</span>';
                             }
                             return '<span class="duration-badge">' + data + ' min</span>';
+                        }
+                    },
+                    {
+                        data: 'atmStartDate',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString() : 'Immediate';
+                        }
+                    },
+                    {
+                        data: 'atmEndDate',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString() : 'No Expiry';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            const now = new Date();
+                            const startDate = row.atmStartDate ? new Date(row.atmStartDate) : null;
+                            const endDate = row.atmEndDate ? new Date(row.atmEndDate) : null;
+                            
+                            if (row.atmActive !== 'Y') {
+                                return '<span class="badge bg-secondary">Inactive</span>';
+                            }
+                            
+                            if (startDate && now < startDate) {
+                                return '<span class="badge bg-warning">Not Started</span>';
+                            }
+                            
+                            if (endDate && now > endDate) {
+                                return '<span class="badge bg-danger">Expired</span>';
+                            }
+                            
+                            return '<span class="badge bg-success">Available</span>';
                         }
                     },
                     {
@@ -454,6 +493,8 @@
                         $('#atmName').val(response.data.atmName);
                         $('#atmUrlSlug').val(response.data.atmUrlSlug).trigger('input');
                         $('#atmDurationMinutes').val(response.data.atmDurationMinutes);
+                        $('#atmStartDate').val(response.data.atmStartDate ? new Date(response.data.atmStartDate).toISOString().slice(0, 16) : '');
+                        $('#atmEndDate').val(response.data.atmEndDate ? new Date(response.data.atmEndDate).toISOString().slice(0, 16) : '');
                         $('#atmDescription').val(response.data.atmDescription);
                         $('#atmActive').val(response.data.atmActive || 'Y');
                         $('#formError').addClass('d-none');
@@ -473,6 +514,8 @@
                 atmName: $('#atmName').val().trim(),
                 atmUrlSlug: $('#atmUrlSlug').val().trim(),
                 atmDurationMinutes: parseInt($('#atmDurationMinutes').val()),
+                atmStartDate: $('#atmStartDate').val() || null,
+                atmEndDate: $('#atmEndDate').val() || null,
                 atmDescription: $('#atmDescription').val().trim(),
                 atmActive: $('#atmActive').val()
             };
@@ -480,6 +523,14 @@
             if (!data.atmCode || !data.atmName || !data.atmUrlSlug || isNaN(data.atmDurationMinutes) || data.atmDurationMinutes < 0) {
                 $('#formError').removeClass('d-none').text('Please fill all required fields with valid values');
                 return;
+            }
+
+            // Validate date range
+            if (data.atmStartDate && data.atmEndDate) {
+                if (new Date(data.atmEndDate) < new Date(data.atmStartDate)) {
+                    $('#formError').removeClass('d-none').text('End date must be greater than or equal to start date');
+                    return;
+                }
             }
 
             const message = isEditMode
@@ -499,8 +550,10 @@
             const data = {
                 atmCode: $('#atmCode').val().trim(),
                 atmName: $('#atmName').val().trim(),
-                atmUrlSlug: $('#atmUrlSlug').val().trim(),
+                atmUrlSlug: $('#atmUrlSlug').val().trim() || $('#atmCode').val().trim(), // Default to code if empty
                 atmDurationMinutes: parseInt($('#atmDurationMinutes').val()),
+                atmStartDate: $('#atmStartDate').val() || null,
+                atmEndDate: $('#atmEndDate').val() || null,
                 atmDescription: $('#atmDescription').val().trim(),
                 atmActive: $('#atmActive').val()
             };

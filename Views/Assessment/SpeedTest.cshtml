@@ -1,0 +1,516 @@
+﻿@{
+    ViewData["Title"] = "System Check - Speed Test";
+    Layout = null;
+    var assessmentType = ViewBag.AssessmentType as string ?? "";
+}
+
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @await Html.PartialAsync("_AppConfigScript")
+    
+    <!-- detect-incognito Library -->
+    <script src="https://cdn.jsdelivr.net/npm/detect-incognito@1.3.0/dist/es5/detect-incognito.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .check-item {
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .check-item.pending {
+            border-color: #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .check-item.checking {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .check-item.passed {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .check-item.failed {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .check-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .check-icon.pending { color: #adb5bd; }
+        .check-icon.checking { color: #667eea; }
+        .check-icon.passed { color: #28a745; }
+        .check-icon.failed { color: #dc3545; }
+
+        .progress-container {
+            margin: 30px 0;
+        }
+
+        .progress {
+            height: 30px;
+            border-radius: 15px;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .start-check-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-check-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .start-check-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .continue-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .continue-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+
+        .continue-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fff5f5;
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .resolution-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .status-text {
+            font-weight: 500;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        .intro-text {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="text-center mb-0">
+                <i class="fas fa-tachometer-alt"></i> System Requirements Check
+            </h1>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="content-card">
+            <div class="intro-text">
+                <h5><i class="fas fa-info-circle"></i> Before You Begin</h5>
+                <p class="mb-0">
+                    We need to verify that your system meets the requirements for taking this assessment.
+                    Click the button below to start the verification process.
+                </p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%" 
+                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBar">
+                        0%
+                    </div>
+                </div>
+                <p class="text-center mt-2 status-text" id="statusText">Preparing checks...</p>
+            </div>
+            
+            <!-- Check 1: Private Mode -->
+            <div class="check-item pending" id="checkPrivateMode">
+                <div class="d-flex align-items-center">
+                    <div class="check-icon pending">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">1. Private/Incognito Mode</h5>
+                        <p class="mb-0 text-muted">Verifying browser privacy mode...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Check 2: Screen Resolution -->
+            <div class="check-item pending" id="checkResolution">
+                <div class="d-flex align-items-center">
+                    <div class="check-icon pending">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">2. Screen Resolution</h5>
+                        <p class="mb-0 text-muted">Checking display requirements...</p>
+                        <div class="resolution-info" id="resolutionInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Check 3: Device Type -->
+            <div class="check-item pending" id="checkDevice">
+                <div class="d-flex align-items-center">
+                    <div class="check-icon pending">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">3. Device Type</h5>
+                        <p class="mb-0 text-muted">Verifying device compatibility...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorContainer"></div>
+
+            <div class="text-center mt-4">
+                <button class="btn start-check-btn" id="startCheckBtn" onclick="startChecks()">
+                    <i class="fas fa-play"></i> Start System Check
+                </button>
+                <button class="btn continue-btn" id="continueBtn" style="display: none;" onclick="continueToAssessment()">
+                    <i class="fas fa-arrow-right"></i> Continue to Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const assessmentType = '@assessmentType';
+        let currentCheck = 0;
+        let checksPassed = 0;
+        const totalChecks = 3;
+
+        // Configuration from server
+        let minWidth = 1024;
+        let minHeight = 768;
+
+        // Fetch configuration from server
+        async function loadConfiguration() {
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/GetAssessmentSettings'));
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        minWidth = data.data.minScreenWidth || 1024;
+                        minHeight = data.data.minScreenHeight || 768;
+                        console.log('Configuration loaded:', data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+            }
+        }
+
+        // Update progress bar
+        function updateProgress(percentage, message) {
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+            progressBar.textContent = Math.round(percentage) + '%';
+            
+            if (message) {
+                statusText.textContent = message;
+            }
+        }
+
+        // Start all checks
+        async function startChecks() {
+            const startBtn = document.getElementById('startCheckBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            startBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            
+            await loadConfiguration();
+            
+            // Run checks sequentially
+            await checkPrivateMode();
+            await delay(1000);
+            
+            await checkScreenResolution();
+            await delay(1000);
+            
+            await checkDeviceType();
+            
+            // Final progress update
+            updateProgress(100, 'System check completed!');
+            
+            // Show appropriate button
+            await delay(500);
+            showResults();
+        }
+
+        // Delay helper
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Check 1: Private Mode
+        async function checkPrivateMode() {
+            currentCheck = 1;
+            updateProgress(10, 'Step 1/3: Checking private/incognito mode...');
+            
+            const checkEl = document.getElementById('checkPrivateMode');
+            const iconEl = checkEl.querySelector('.check-icon');
+            const iconI = iconEl.querySelector('i');
+            const textEl = checkEl.querySelector('.text-muted');
+            
+            // Update to checking state
+            checkEl.classList.remove('pending');
+            checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');
+            iconEl.classList.add('checking');
+            iconI.className = 'fas fa-spinner fa-spin';
+            textEl.textContent = 'Checking...';
+            
+            await delay(800);
+            
+            try {
+                const result = await detectIncognito();
+                console.log('Private mode check:', result);
+                
+                updateProgress(30, 'Private mode check completed');
+                
+                if (result.isPrivate) {
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                        `✓ Private mode confirmed (${result.browserName})`);
+                    checksPassed++;
+                } else {
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
+                        `✗ You must use private/incognito mode`);
+                    showError('Private Mode Required', 
+                        'Please open this assessment in a private/incognito browser window.');
+                }
+            } catch (error) {
+                console.error('Private mode check error:', error);
+                updateProgress(30, 'Private mode check completed (with warning)');
+                // Fail-open: allow on error
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                    '✓ Privacy check completed');
+                checksPassed++;
+            }
+        }
+
+        // Check 2: Screen Resolution
+        async function checkScreenResolution() {
+            currentCheck = 2;
+            updateProgress(40, 'Step 2/3: Checking screen resolution...');
+            
+            const checkEl = document.getElementById('checkResolution');
+            const iconEl = checkEl.querySelector('.check-icon');
+            const iconI = iconEl.querySelector('i');
+            const textEl = checkEl.querySelector('.text-muted');
+            const infoEl = document.getElementById('resolutionInfo');
+            
+            // Update to checking state
+            checkEl.classList.remove('pending');
+            checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');
+            iconEl.classList.add('checking');
+            iconI.className = 'fas fa-spinner fa-spin';
+            textEl.textContent = 'Checking...';
+            
+            await delay(1000);
+            
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            
+            infoEl.textContent = `Current: ${screenWidth} × ${screenHeight} | Required: ${minWidth} × ${minHeight}`;
+            
+            updateProgress(65, 'Screen resolution check completed');
+            
+            if (screenWidth >= minWidth && screenHeight >= minHeight) {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                    `✓ Screen resolution meets requirements`);
+                checksPassed++;
+            } else {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
+                    `✗ Screen resolution too low`);
+                showError('Insufficient Screen Resolution', 
+                    `Your screen resolution (${screenWidth}×${screenHeight}) does not meet the minimum requirements (${minWidth}×${minHeight}). Please use a device with a larger display.`);
+            }
+        }
+
+        // Check 3: Device Type
+        async function checkDeviceType() {
+            currentCheck = 3;
+            updateProgress(70, 'Step 3/3: Checking device type...');
+            
+            const checkEl = document.getElementById('checkDevice');
+            const iconEl = checkEl.querySelector('.check-icon');
+            const iconI = iconEl.querySelector('i');
+            const textEl = checkEl.querySelector('.text-muted');
+            
+            // Update to checking state
+            checkEl.classList.remove('pending');
+            checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');
+            iconEl.classList.add('checking');
+            iconI.className = 'fas fa-spinner fa-spin';
+            textEl.textContent = 'Checking...';
+            
+            await delay(800);
+            
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /mobile|android|iphone|ipad|tablet/.test(userAgent);
+            const isDesktop = !isMobile;
+            
+            updateProgress(95, 'Device type check completed');
+            
+            if (isDesktop) {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                    '✓ Desktop/Laptop device detected');
+                checksPassed++;
+            } else {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
+                    '✗ Mobile/Tablet device detected');
+                showError('Desktop Required', 
+                    'This assessment must be taken on a desktop or laptop computer. Mobile devices and tablets are not supported.');
+            }
+        }
+
+        // Update check status UI
+        function updateCheckStatus(checkEl, iconEl, iconI, textEl, passed, message) {
+            checkEl.classList.remove('checking', 'pending');
+            checkEl.classList.add(passed ? 'passed' : 'failed');
+            
+            iconEl.classList.remove('checking', 'pending');
+            iconEl.classList.add(passed ? 'passed' : 'failed');
+            
+            iconI.className = `fas ${passed ? 'fa-check-circle' : 'fa-times-circle'}`;
+            textEl.textContent = message;
+        }
+
+        // Show error message
+        function showError(title, message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorHtml = `
+                <div class="error-message">
+                    <h5><i class="fas fa-exclamation-circle"></i> ${title}</h5>
+                    <p class="mb-0">${message}</p>
+                </div>
+            `;
+            errorContainer.innerHTML = errorHtml;
+        }
+
+        // Show results and appropriate buttons
+        function showResults() {
+            const startBtn = document.getElementById('startCheckBtn');
+            const continueBtn = document.getElementById('continueBtn');
+            
+            startBtn.style.display = 'none';
+            
+            if (checksPassed === totalChecks) {
+                continueBtn.style.display = 'inline-block';
+                continueBtn.disabled = false;
+                continueBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Assessment';
+            } else {
+                continueBtn.style.display = 'inline-block';
+                continueBtn.disabled = true;
+                continueBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                continueBtn.innerHTML = '<i class="fas fa-times"></i> Requirements Not Met';
+            }
+        }
+
+        // Continue to assessment
+        function continueToAssessment() {
+            const url = assessmentType ? `/Assessment/${assessmentType}/Start` : '/Assessment/Start';
+            window.location.href = url;
+        }
+
+        // Load configuration on page load (but don't start checks)
+        (async function() {
+            await loadConfiguration();
+            console.log('System check ready. Configuration loaded.');
+        })();
+    </script>
+</body>
+</html>

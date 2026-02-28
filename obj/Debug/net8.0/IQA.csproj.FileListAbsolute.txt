@@ -175,3 +175,4 @@ C:\Users\student\Downloads\DD\7\IQA_SOURCE\obj\Debug\net8.0\refint\IQA.dll
 C:\Users\student\Downloads\DD\7\IQA_SOURCE\obj\Debug\net8.0\IQA.pdb
 C:\Users\student\Downloads\DD\7\IQA_SOURCE\obj\Debug\net8.0\IQA.genruntimeconfig.cache
 C:\Users\student\Downloads\DD\7\IQA_SOURCE\obj\Debug\net8.0\ref\IQA.dll
+C:\Users\student\Downloads\DD\7\IQA_SOURCE\bin\Debug\net8.0\SixLabors.ImageSharp.dll
