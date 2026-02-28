@@ -309,7 +309,7 @@
         function loadContents() {
             showLoader();
             $.ajax({
-                url: '/IQA/Admin/GetAllContents',
+                url: buildApiUrl('/Admin/GetAllContents'),
                 type: 'GET',
                 success: function(response) {
                     hideLoader();
@@ -356,7 +356,7 @@
         function viewContent(code) {
             showLoader();
             $.ajax({
-                url: '/IQA/Admin/GetContentByCode',
+                url: buildApiUrl('/Admin/GetContentByCode'),
                 type: 'GET',
                 data: { code: code },
                 success: function(response) {
@@ -408,7 +408,7 @@
         function editContent(code) {
             showLoader();
             $.ajax({
-                url: '/IQA/Admin/GetContentByCode',
+                url: buildApiUrl('/Admin/GetContentByCode'),
                 type: 'GET',
                 data: { code: code },
                 success: function(response) {
@@ -464,7 +464,7 @@
 
             showLoader();
             $.ajax({
-                url: '/IQA/Admin/SaveContent',
+                url: buildApiUrl('/Admin/SaveContent'),
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(data),
@@ -498,7 +498,7 @@
         function deleteContent(code) {
             showLoader();
             $.ajax({
-                url: '/IQA/Admin/DeleteContent',
+                url: buildApiUrl('/Admin/DeleteContent'),
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(code),

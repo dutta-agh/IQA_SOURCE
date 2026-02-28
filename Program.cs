@@ -5,6 +5,9 @@ using IQA_SOURCE.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Initialize Constants from appsettings
+IQA_SOURCE.Constants.Initialize(builder.Configuration);
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddHttpContextAccessor();
@@ -34,6 +37,7 @@ builder.Services.AddSingleton<IDbHelper>(new DbHelper(dbOptions));
 
 // Register Admin Repository
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IAssessmentTypeRepository, AssessmentTypeRepository>();
 
 var app = builder.Build();
 
@@ -43,7 +47,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-app.UsePathBase("/IQA");
+//app.UsePathBase("/IQA");
 
 // Add global exception handling middleware
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
@@ -78,6 +82,6 @@ app.MapGet("/isalive", () =>
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Admin}/{action=Login}/{id?}");
 
 app.Run();
