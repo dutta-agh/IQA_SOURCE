@@ -1,21 +1,31 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using IQA_SOURCE.Data;
 using IQA_SOURCE.Models.Admin;
 using System.Text.Json;
 using IQA_SOURCE.Services;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using System.IO;
+using MySqlConnector; // Change from MySql.Data.MySqlClient
+using System.Data;
+using YourApp.Data;
 
 namespace IQA_SOURCE.Controllers
 {
     public class AdminController : Controller
     {
         private readonly IAdminRepository _adminRepository;
-        private readonly IAssessmentTypeRepository _assessmentTypeRepository;
+        private readonly IAssessmentTypeRepository _assessmentTypeRepository;   
         private readonly IQuestionMasterRepository _questionMasterRepository;
         private readonly IImageMetadataService _metadataService;
         private readonly IImageRepository _imageRepository;
         private readonly ImageStorageSettings _imageSettings;
         private readonly IDashboardRepository _dashboardRepository;
+        private readonly ISpeedTestRepository _speedTestRepository;
+        private readonly ILogger<AdminController> _logger;
+        private readonly IQuestionAnswerRepository _questionAnswerRepository;
+        private readonly IDbHelper _dbHelper; // Add this instead of IDbConnection
 
         public AdminController(
             IAdminRepository adminRepository, 
@@ -24,7 +34,11 @@ namespace IQA_SOURCE.Controllers
             IImageMetadataService metadataService,
             IImageRepository imageRepository,
             IOptions<ImageStorageSettings> imageSettings,
-            IDashboardRepository dashboardRepository)
+            IDashboardRepository dashboardRepository,
+            ISpeedTestRepository speedTestRepository,
+            IQuestionAnswerRepository questionAnswerRepository,
+            ILogger<AdminController> logger,
+            IDbHelper dbHelper) // Change from IDbConnection to IDbHelper
         {
             _adminRepository = adminRepository;
             _assessmentTypeRepository = assessmentTypeRepository;
@@ -33,6 +47,10 @@ namespace IQA_SOURCE.Controllers
             _imageRepository = imageRepository;
             _imageSettings = imageSettings.Value;
             _dashboardRepository = dashboardRepository;
+            _speedTestRepository = speedTestRepository;
+            _questionAnswerRepository = questionAnswerRepository;
+            _logger = logger;
+            _dbHelper = dbHelper; // Change from _dbConnection
         }
 
         // Login Page
@@ -336,7 +354,7 @@ namespace IQA_SOURCE.Controllers
                 // Parse the JSON and convert qsActive from string to int
                 var question = new QuestionMaster
                 {
-                    QId = model.TryGetProperty("qId", out var qId) ? qId.GetInt32() : 0,
+                    QId = model.TryGetProperty("qsId", out var qId) ? qId.GetInt32() : 0,
                     QsCode = model.TryGetProperty("qsCode", out var qsCode) ? qsCode.GetString() : null,
                     QsText = model.TryGetProperty("qsText", out var qsText) ? qsText.GetString() : null,
                     QsType = model.TryGetProperty("qsType", out var qsType) ? qsType.GetString() : null,
@@ -529,7 +547,7 @@ namespace IQA_SOURCE.Controllers
                                         {
                                             // Save to Linux server path
                                             var linkedFilePath = Path.Combine(uploadPath, linkedFileName);
-                                            
+                                           
                                             using (var stream = new FileStream(linkedFilePath, FileMode.Create))
                                             {
                                                 await linkedFile.CopyToAsync(stream);
@@ -992,9 +1010,386 @@ namespace IQA_SOURCE.Controllers
                 data = result.Data
             });
         }
+
+        // Speed Test Logs
+        [HttpGet]
+        public IActionResult SpeedTestLogs()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllSpeedTestLogs()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "Unauthorized" });
+            }
+
+            var result = await _speedTestRepository.GetAllSpeedTestLogs(userId);
+            return Json(new
+            {
+                success = result.OutputCode == 1,
+                message = result.OutputMsg,
+                data = result.Data
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSpeedTestLogsByAssessment(string assessmentCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "Unauthorized" });
+            }
+
+            var result = await _speedTestRepository.GetSpeedTestLogsByAssessment(assessmentCode, userId);
+            return Json(new
+            {
+                success = result.OutputCode == 1,
+                message = result.OutputMsg,
+                data = result.Data
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadSpeedTestLogsExcel(string? assessmentCode, DateTime? startDate, DateTime? endDate)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                SpeedTestLogResponse result;
+                
+                if (!string.IsNullOrEmpty(assessmentCode))
+                {
+                    result = await _speedTestRepository.GetSpeedTestLogsByAssessment(assessmentCode, userId);
+                }
+                else if (startDate.HasValue && endDate.HasValue)
+                {
+                    result = await _speedTestRepository.GetSpeedTestLogsByDateRange(startDate.Value, endDate.Value, userId);
+                }
+                else
+                {
+                    result = await _speedTestRepository.GetAllSpeedTestLogs(userId);
+                }
+
+                if (result.OutputCode != 1 || result.Data == null || !result.Data.Any())
+                {
+                    TempData["ErrorMessage"] = "No data found to export";
+                    return RedirectToAction("SpeedTestLogs");
+                }
+
+                // Create Excel file using NPOI
+                var workbook = new XSSFWorkbook();
+                var sheet = workbook.CreateSheet("Speed Test Logs");
+
+                // Create header row
+                var headerRow = sheet.CreateRow(0);
+                var headerStyle = workbook.CreateCellStyle();
+                var headerFont = workbook.CreateFont();
+                headerFont.IsBold = true;
+                headerStyle.SetFont(headerFont);
+
+                string[] headers = {
+                    "ID", "Session ID", "Assessment Code", "Test Date/Time", 
+                    "IP Address", "Private Mode", "Browser", "Device Type",
+                    "Screen Width", "Screen Height", "Resolution Passed",
+                    "Download Speed (Mbps)", "Upload Speed (Mbps)", "Latency (ms)",
+                    "Speed Passed", "Overall Passed", "User Agent", "Referrer URL"
+                };
+
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = headerRow.CreateCell(i);
+                    cell.SetCellValue(headers[i]);
+                    cell.CellStyle = headerStyle;
+                }
+
+                // Fill data rows
+                int rowIndex = 1;
+                foreach (var log in result.Data)
+                {
+                    var row = sheet.CreateRow(rowIndex++);
+                    row.CreateCell(0).SetCellValue(log.Id);
+                    row.CreateCell(1).SetCellValue(log.SessionId ?? "");
+                    row.CreateCell(2).SetCellValue(log.AssessmentCode ?? "");
+                    row.CreateCell(3).SetCellValue(log.TestDateTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "");
+                    row.CreateCell(4).SetCellValue(log.IpAddress ?? "");
+                    row.CreateCell(5).SetCellValue(log.PrivateModeDetected ? "Yes" : "No");
+                    row.CreateCell(6).SetCellValue(log.PrivateModeBrowser ?? "");
+                    row.CreateCell(7).SetCellValue(log.DeviceType ?? "");
+                    row.CreateCell(8).SetCellValue(log.ScreenWidth?.ToString() ?? "");
+                    row.CreateCell(9).SetCellValue(log.ScreenHeight?.ToString() ?? "");
+                    row.CreateCell(10).SetCellValue(log.ResolutionPassed > 0 ? "Yes" : "No");
+                    row.CreateCell(11).SetCellValue(log.DownloadSpeedMbps?.ToString("F2") ?? "");
+                    row.CreateCell(12).SetCellValue(log.UploadSpeedMbps?.ToString("F2") ?? "");
+                    row.CreateCell(13).SetCellValue(log.Latency?.ToString() ?? "");
+                    row.CreateCell(14).SetCellValue(log.SpeedPassed ? "Yes" : "No");
+                    row.CreateCell(15).SetCellValue(log.OverallPassed ? "Yes" : "No");
+                    row.CreateCell(16).SetCellValue(log.UserAgent ?? "");
+                    row.CreateCell(17).SetCellValue(log.ReferrerUrl ?? "");
+                }
+
+                // Auto-size columns
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.AutoSizeColumn(i);
+                }
+
+                // Write to memory stream
+                using var memoryStream = new MemoryStream();
+                workbook.Write(memoryStream);
+                var fileName = $"SpeedTestLogs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                
+                return File(memoryStream.ToArray(), 
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                    fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Excel file");
+                TempData["ErrorMessage"] = "Error generating Excel file";
+                return RedirectToAction("SpeedTestLogs");
+            }
+        }
+
+        // Question Answers View
+        [HttpGet]
+        public IActionResult QuestionAnswers()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllQuestionAnswers()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "Unauthorized" });
+            }
+
+            var result = await _questionAnswerRepository.GetAllQuestionAnswers(userId);
+            return Json(new
+            {
+                success = result.OutputCode == 1,
+                message = result.OutputMsg,
+                data = result.Data
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetQuestionAnswersByCode(string assessmentCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "Unauthorized" });
+            }
+
+            var result = await _questionAnswerRepository.GetQuestionAnswersByCode(assessmentCode, userId);
+            return Json(new
+            {
+                success = result.OutputCode == 1,
+                message = result.OutputMsg,
+                data = result.Data
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadQuestionAnswersExcel(string assessmentCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                // Get all questions for this assessment to create column headers
+                var questionsQuery = await _questionMasterRepository.GetAllQuestions(userId);
+                var questions = questionsQuery.Data.Where(q => q.QsActive == 1).OrderBy(q => q.QsOrderNo).ToList();
+
+                // Get all responses data
+                var responseData = await _questionAnswerRepository.GetQuestionAnswersForExcel(assessmentCode, userId);
+
+                if (!responseData.Any())
+                {
+                    TempData["ErrorMessage"] = "No data found to export";
+                    return RedirectToAction("QuestionAnswers");
+                }
+
+                // Create Excel workbook
+                var workbook = new XSSFWorkbook();
+                var sheet = workbook.CreateSheet($"QuestionAnswers_{assessmentCode}");
+
+                // Create header style
+                var headerStyle = workbook.CreateCellStyle();
+                var headerFont = workbook.CreateFont();
+                headerFont.IsBold = true;
+                headerFont.Color = IndexedColors.White.Index;
+                headerStyle.SetFont(headerFont);
+                headerStyle.FillForegroundColor = IndexedColors.DarkBlue.Index;
+                headerStyle.FillPattern = FillPattern.SolidForeground;
+                headerStyle.Alignment = HorizontalAlignment.Center;
+                headerStyle.VerticalAlignment = VerticalAlignment.Center;
+
+                // Get all unique option names for all questions
+                var allOptionNames = new HashSet<string>();
+                foreach (var question in questions)
+                {
+                    var optionsResult = await _questionMasterRepository.GetQuestionWithOptions(question.QId, userId);
+                    if (optionsResult.Data != null)
+                    {
+                        var questionWithOptions = optionsResult.Data;
+                        if (questionWithOptions != null)
+                        {
+                            foreach (var option in questionWithOptions.Options.Where(o => o.QoActive == 1))
+                            {
+                                allOptionNames.Add(option.QoText);
+                            }
+                        }
+                    }
+                }
+
+                var optionNamesList = allOptionNames.OrderBy(o => o).ToList();
+
+                // Create header row
+                var headerRow = sheet.CreateRow(0);
+                var columnHeaders = new List<string> 
+                { 
+                    "Session ID", 
+                    "IP Address", 
+                    "Submit Time", 
+                    "Question Code", 
+                    "Question Text", 
+                    "Question Type"
+                };
+                columnHeaders.AddRange(optionNamesList);
+
+                for (int i = 0; i < columnHeaders.Count; i++)
+                {
+                    var cell = headerRow.CreateCell(i);
+                    cell.SetCellValue(columnHeaders[i]);
+                    cell.CellStyle = headerStyle;
+                }
+
+                // Fill data rows
+                int rowIndex = 1;
+                
+                // Group by session to process each response
+                var groupedBySession = responseData.GroupBy(r => new { r.SessionId, r.SubmitTime });
+
+                foreach (var sessionGroup in groupedBySession)
+                {
+                    foreach (var dataRow in sessionGroup)
+                    {
+                        var row = sheet.CreateRow(rowIndex++);
+                        
+                        int colIndex = 0;
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.SessionId ?? "");
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.IpAddress ?? "");
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.SubmitTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "");
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.QuestionCode ?? "");
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.QuestionText ?? "");
+                        row.CreateCell(colIndex++).SetCellValue(dataRow.QuestionType ?? "");
+
+                        // Get selected options for this question/response
+                        var questionId = questions.FirstOrDefault(q => q.QsCode == dataRow.QuestionCode)?.QId ?? 0;
+                        if (questionId > 0)
+                        {
+                            var optionsResult = await _questionMasterRepository.GetQuestionWithOptions(questionId, userId);
+                            if (optionsResult.Data != null)
+                            {
+                                var questionWithOptions = optionsResult.Data;
+                                if (questionWithOptions != null)
+                                {
+                                    // FIXED: Correct column names for all tables
+                                    var selectedOptionsQuery = @"
+                                        SELECT GROUP_CONCAT(qo.QoText ORDER BY qo.QoOrderNo SEPARATOR ', ') as SelectedOptions
+                                        FROM tbl_question_answer_details urd
+                                        INNER JOIN tbl_question_answers ur ON urd.UrdUrid = ur.Urid
+                                        LEFT JOIN tbl_question_options qo ON urd.UrdQoId = qo.QoId
+                                        WHERE ur.UrSessionid = @sessionId 
+                                        AND urd.UrdQoid = @questionId
+                                        AND ur.UrAssessmentCode = @assessmentCode";
+
+                                    var selectedParams = new[]
+                                    {
+                                        new MySqlParameter("@sessionId", dataRow.SessionId),
+                                        new MySqlParameter("@questionId", questionId),
+                                        new MySqlParameter("@assessmentCode", assessmentCode)
+                                    };
+
+                                    var result = await Task.Run(() => _dbHelper.ExecuteQuery(selectedOptionsQuery, selectedParams));
+                                    
+                                    string selectedOptionsText = "";
+                                    if (result.Rows.Count > 0)
+                                    {
+                                        selectedOptionsText = result.Rows[0]["SelectedOptions"]?.ToString() ?? "";
+                                    }
+
+                                    var selectedOptionsList = selectedOptionsText.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+                                    // Mark selected options in their respective columns
+                                    foreach (var optionName in optionNamesList)
+                                    {
+                                        var cellValue = selectedOptionsList.Contains(optionName) ? "✓" : "";
+                                        row.CreateCell(colIndex++).SetCellValue(cellValue);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Auto-size columns
+                for (int i = 0; i < columnHeaders.Count; i++)
+                {
+                    sheet.AutoSizeColumn(i);
+                    // Set maximum width to prevent extremely wide columns
+                    if (sheet.GetColumnWidth(i) > 15000)
+                    {
+                        sheet.SetColumnWidth(i, 15000);
+                    }
+                }
+
+                // Write to memory stream
+                using var memoryStream = new MemoryStream();
+                workbook.Write(memoryStream);
+                var fileName = $"QuestionAnswers_{assessmentCode}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                
+                return File(memoryStream.ToArray(), 
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                    fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating question answers Excel file");
+                TempData["ErrorMessage"] = $"Error generating Excel file: {ex.Message}";
+                return RedirectToAction("QuestionAnswers");
+            }
+        }
     }
 
-    // Add this model class at the bottom of the file or in a separate Models file
     public class FolderProcessRequest
     {
         public string FolderPath { get; set; }

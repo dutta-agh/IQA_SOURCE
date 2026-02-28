@@ -1,0 +1,737 @@
+﻿@model IQA_SOURCE.Models.ImageAssessmentViewModel
+@{
+    ViewData["Title"] = $"{Model.AssessmentName} - Image Quality Assessment";
+    Layout = "_AssessmentLayout";
+}
+
+@section Styles {
+    <style>
+        .image-assessment-container {
+            width: 95%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .progress-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .progress-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .progress-info {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .progress-bar-custom {
+            background: rgba(255, 255, 255, 0.3);
+            height: 8px;
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: #48bb78;
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .raw-image-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .raw-image-container h3 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .raw-image-wrapper {
+            margin: 20px 0;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .raw-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .linked-images-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        .linked-images-container h3 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .selection-hint {
+            text-align: center;
+            padding: 15px;
+            background: #fff5f5;
+            border-left: 4px solid #fc8181;
+            border-radius: 5px;
+            color: #742a2a;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+        }
+
+        .linked-images-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .linked-image-card {
+            border: 3px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+            position: relative;
+            flex: 1 1 calc(50% - 12.5px);
+            min-width: 300px;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @@media (max-width: 768px) {
+            .linked-image-card {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+
+        .linked-image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #cbd5e0;
+        }
+
+        .linked-image-card.selected {
+            border-color: #667eea;
+            background: #edf2f7;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .linked-image-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .linked-image-card img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 800px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: block; 
+            object-fit: contain;
+        }
+
+        .linked-image-label {
+            text-align: center;
+            font-weight: 600;
+            color: #4a5568;
+            margin-top: 10px;
+            font-size: 1.05rem;
+            width: 100%;
+        }
+
+        .quality-rating-section {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 25px;
+            display: none;
+            border: 2px solid #e2e8f0;
+        }
+
+        .quality-rating-section.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quality-rating-section h4 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .rating-slider-container {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .rating-slider {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to right, 
+                #fc8181 0%, 
+                #f6ad55 25%, 
+                #ecc94b 50%, 
+                #68d391 75%, 
+                #48bb78 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .rating-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border: 3px solid white;
+        }
+
+        .rating-slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border: 3px solid white;
+        }
+
+        .rating-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .rating-label {
+            text-align: center;
+            flex: 1;
+        }
+
+        .rating-value-display {
+            text-align: center;
+            margin: 25px 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .rating-description {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #718096;
+            margin-top: 10px;
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 18px 60px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            margin: 30px auto 0;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .submit-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Thank You Modal */
+        .thankyou-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .thankyou-modal.show {
+            display: flex;
+        }
+
+        .thankyou-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 80px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.5);
+            animation: slideInUp 0.5s ease-out;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @@keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .thankyou-icon {
+            font-size: 5rem;
+            color: #48bb78;
+            margin-bottom: 20px;
+            animation: checkmark 0.6s ease-in-out;
+        }
+
+        @@keyframes checkmark {
+            0%, 50% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .thankyou-content h2 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .thankyou-content p {
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .redirect-message {
+            color: #c7d2fe;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .redirect-timer {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-left: 5px;
+        }
+
+        @@media (min-width: 769px) and (max-width: 1200px) {
+            .linked-image-card {
+                flex: 1 1 calc(50% - 12.5px);
+                min-width: 250px;
+            }
+        }
+
+        @@media (min-width: 1201px) {
+            .linked-image-card {
+                flex: 1 1 calc(50% - 12.5px);
+                max-width: calc(50% - 12.5px);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .thankyou-content {
+                padding: 40px 30px;
+            }
+
+            .thankyou-content h2 {
+                font-size: 2rem;
+            }
+
+            .thankyou-content p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+}
+
+<div class="image-assessment-container">
+    <div class="progress-header">
+        <h2><i class="fas fa-images"></i> @Model.AssessmentName</h2>
+        <div class="progress-info">
+            Image Set <span id="currentSetNumber">@Model.CurrentSetNumber</span> of <span id="totalSets">@Model.TotalSets</span>
+        </div>
+        <div class="progress-bar-custom">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: @(((double)Model.CurrentSetNumber / Model.TotalSets) * 100)%"></div>
+        </div>
+    </div>
+
+    <!-- Raw Image Display -->
+    <div class="raw-image-container">
+        <h3><i class="fas fa-image"></i> Reference Image</h3>
+        <div class="raw-image-wrapper">
+            <img src="@Model.RawImage.RisRawImagePath" 
+                 alt="@Model.RawImage.RisName" 
+                 class="raw-image"
+                 id="rawImage"
+                 loading="eager">
+        </div>
+        <p class="text-muted mt-3">@Model.RawImage.RisName</p>
+    </div>
+
+    <!-- Linked Images Selection -->
+    <div class="linked-images-container">
+        <h3><i class="fas fa-th"></i> Select an Image to Rate</h3>
+        
+        <div class="selection-hint">
+            <i class="fas fa-info-circle"></i> 
+            <strong>Please select ONE image below and rate its quality. You can change your selection before submitting.</strong>
+        </div>
+
+        <div class="linked-images-grid" id="linkedImagesGrid">
+            @foreach (var linkedImage in Model.LinkedImages)
+            {
+                <div class="linked-image-card" 
+                     data-image-id="@linkedImage.LiId"
+                     onclick="selectLinkedImage(@linkedImage.LiId)">
+                    <img src="@linkedImage.LiImagePath" 
+                         alt="@linkedImage.LiImageLabel"
+                         loading="lazy">
+                    <div class="linked-image-label">@linkedImage.LiImageLabel</div>
+                </div>
+            }
+        </div>
+
+        <!-- Quality Rating Section -->
+        <div class="quality-rating-section" id="qualityRatingSection">
+            <h4><i class="fas fa-star"></i> Rate the Quality of Selected Image</h4>
+            
+            <div class="rating-slider-container">
+                <input type="range" 
+                       min="1" 
+                       max="5" 
+                       value="3" 
+                       class="rating-slider" 
+                       id="qualitySlider"
+                       oninput="updateRatingDisplay(this.value)">
+                
+                <div class="rating-labels">
+                    <div class="rating-label">1<br><small>Bad</small></div>
+                    <div class="rating-label">2<br><small>Poor</small></div>
+                    <div class="rating-label">3<br><small>Fair</small></div>
+                    <div class="rating-label">4<br><small>Good</small></div>
+                    <div class="rating-label">5<br><small>Excellent</small></div>
+                </div>
+            </div>
+
+            <div class="rating-value-display">
+                Quality Rating: <span id="ratingValue">3</span> / 5
+            </div>
+            <div class="rating-description" id="ratingDescription">Fair</div>
+
+            <button type="button" 
+                    class="submit-button" 
+                    id="submitButton"
+                    onclick="submitRating()">
+                <i class="fas fa-paper-plane"></i> Submit Rating
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Thank You Modal -->
+<div class="thankyou-modal" id="thankyouModal">
+    <div class="thankyou-content">
+        <div class="thankyou-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2>Thank You!</h2>
+        <p>Your feedback has been successfully recorded. We greatly appreciate your time and valuable input in helping us improve image quality.</p>
+        <div class="redirect-message">
+            Redirecting to home page in <span class="redirect-timer" id="redirectTimer">3</span> seconds...
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const sessionId = '@Model.SessionId';
+        const assessmentCode = '@Model.AssessmentCode';
+        const rawImageSetId = @Model.RawImage.RisId;
+        let selectedLinkedImageId = null;
+        let currentRating = 3;
+
+        const ratingDescriptions = {
+            1: 'Bad',
+            2: 'Poor',
+            3: 'Fair',
+            4: 'Good',
+            5: 'Excellent'
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentSetNum = parseInt('@Model.CurrentSetNumber');
+
+            console.log('Image Assessment initialized');
+            console.log('Session ID:', sessionId);
+            console.log('Assessment Code:', assessmentCode);
+            console.log('Raw Image Set ID:', rawImageSetId);
+            console.log('Current Set:', currentSetNum);
+
+            // Dynamically adjust grid based on actual image sizes
+            adjustImageGrid();
+        });
+
+        // Adjust grid layout based on loaded image sizes
+        function adjustImageGrid() {
+            const grid = document.getElementById('linkedImagesGrid');
+            const cards = grid.querySelectorAll('.linked-image-card');
+            
+            if (cards.length === 0) return;
+
+            const images = Array.from(cards).map(card => card.querySelector('img'));
+            let loadedCount = 0;
+
+            images.forEach(img => {
+                if (img.complete) {
+                    checkAndAdjust();
+                } else {
+                    img.addEventListener('load', function() {
+                        loadedCount++;
+                        if (loadedCount === images.length) {
+                            checkAndAdjust();
+                        }
+                    });
+                }
+            });
+
+            function checkAndAdjust() {
+                const containerWidth = grid.offsetWidth;
+                const cardWidths = Array.from(cards).map(card => {
+                    const img = card.querySelector('img');
+                    return img ? img.naturalWidth + 30 : 0;
+                });
+
+                const maxCardWidth = Math.max(...cardWidths);
+                const totalTwoColumnsWidth = maxCardWidth * 2 + 25;
+
+                if (totalTwoColumnsWidth > containerWidth) {
+                    cards.forEach(card => {
+                        card.style.flex = '1 1 100%';
+                        card.style.maxWidth = '100%';
+                    });
+                    console.log('Images too large for 2 columns - switching to single column layout');
+                } else {
+                    console.log('Images fit in 2 column layout');
+                }
+            }
+        }
+
+        function selectLinkedImage(imageId) {
+            // IMPORTANT: Remove ALL previous selections (only ONE image can be selected)
+            document.querySelectorAll('.linked-image-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection to clicked card
+            const selectedCard = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedLinkedImageId = imageId;
+
+                // Reset rating to default (3) when selecting a new image
+                currentRating = 3;
+                document.getElementById('qualitySlider').value = 3;
+                document.getElementById('ratingValue').textContent = 3;
+                document.getElementById('ratingDescription').textContent = 'Fair';
+
+                // Show rating section with animation
+                const ratingSection = document.getElementById('qualityRatingSection');
+                ratingSection.classList.add('show');
+                
+                // Scroll to rating section
+                setTimeout(() => {
+                    ratingSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+
+                console.log('Selected image:', imageId, '- Rating reset to 3');
+            }
+        }
+
+        function updateRatingDisplay(value) {
+            currentRating = parseInt(value);
+            document.getElementById('ratingValue').textContent = currentRating;
+            document.getElementById('ratingDescription').textContent = ratingDescriptions[currentRating];
+        }
+
+        function submitRating() {
+            if (!selectedLinkedImageId) {
+                alert('⚠️ Please select an image first');
+                return;
+            }
+
+            if (currentRating < 1 || currentRating > 5) {
+                alert('⚠️ Please select a valid rating (1-5)');
+                return;
+            }
+
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+            const payload = {
+                SessionId: sessionId,
+                AssessmentCode: assessmentCode,
+                RawImageSetId: rawImageSetId,
+                SelectedLinkedImageId: selectedLinkedImageId,
+                QualityRating: currentRating
+            };
+
+            console.log('Submitting final rating:', payload);
+
+            fetch(buildApiUrl('/Assessment/SubmitImageQualityRating'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    if (data.data.isCompleted) {
+                        // All sets completed - Show thank you modal
+                        showThankYouModal();
+                    } else {
+                        // Load next image set
+                        window.location.href = buildApiUrl('/Assessment/ImageAssessment?assessmentCode=' + assessmentCode);
+                    }
+                } else {
+                    alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Rating';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Network Error\n\nAn error occurred while submitting. Please check your connection and try again.');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Rating';
+            });
+        }
+
+        function showThankYouModal() {
+            const modal = document.getElementById('thankyouModal');
+            const timerElement = document.getElementById('redirectTimer');
+            
+            modal.classList.add('show');
+            
+            let countdown = 3;
+            timerElement.textContent = countdown;
+
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                timerElement.textContent = countdown;
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    // Redirect to home page
+                    window.location.href = buildApiUrl('/');
+                }
+            }, 1000);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', adjustImageGrid);
+    </script>
+}

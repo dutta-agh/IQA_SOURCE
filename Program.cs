@@ -10,7 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Initialize Constants from appsettings
 IQA_SOURCE.Constants.Initialize(builder.Configuration);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Preserve property names
+    });
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -53,6 +58,10 @@ builder.Services.AddScoped<IQuestionMasterRepository, QuestionMasterRepository>(
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
+builder.Services.AddScoped<ISpeedTestRepository, SpeedTestRepository>();
+builder.Services.AddScoped<IUserResponseRepository, UserResponseRepository>();
+builder.Services.AddScoped<IQuestionAnswerRepository, QuestionAnswerRepository>();
+builder.Services.AddScoped<IImageQualityRepository, ImageQualityRepository>();
 
 // Register services
 builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();
@@ -103,11 +112,69 @@ app.MapGet("/isalive", () =>
     };
 });
 
-// Assessment-specific routes FIRST
+// Assessment-specific routes FIRST (most specific routes first)
 app.MapControllerRoute(
     name: "assessmentGetIntroContent",
     pattern: "Assessment/GetIntroContent",
     defaults: new { controller = "Assessment", action = "GetIntroContent" });
+
+app.MapControllerRoute(
+    name: "assessmentGetImageAssessmentIntro",
+    pattern: "Assessment/GetImageAssessmentIntro",
+    defaults: new { controller = "Assessment", action = "GetImageAssessmentIntro" });
+
+app.MapControllerRoute(
+    name: "assessmentSaveSpeedTestLog",
+    pattern: "Assessment/SaveSpeedTestLog",
+    defaults: new { controller = "Assessment", action = "SaveSpeedTestLog" });
+
+app.MapControllerRoute(
+    name: "assessmentSubmitResponses",
+    pattern: "Assessment/SubmitResponses",
+    defaults: new { controller = "Assessment", action = "SubmitResponses" });
+
+app.MapControllerRoute(
+    name: "assessmentGetSessionInfo",
+    pattern: "Assessment/GetSessionInfo",
+    defaults: new { controller = "Assessment", action = "GetSessionInfo" });
+
+app.MapControllerRoute(
+    name: "assessmentGetAssessmentSettings",
+    pattern: "Assessment/GetAssessmentSettings",
+    defaults: new { controller = "Assessment", action = "GetAssessmentSettings" });
+
+// Image Assessment routes - specific patterns before generic ones
+app.MapControllerRoute(
+    name: "assessmentImageAssessmentWithCode",
+    pattern: "Assessment/{assessmentCode}/ImageAssessment",
+    defaults: new { controller = "Assessment", action = "ImageAssessment" });
+
+app.MapControllerRoute(
+    name: "assessmentImageAssessment",
+    pattern: "Assessment/ImageAssessment/{assessmentCode?}",
+    defaults: new { controller = "Assessment", action = "ImageAssessment" });
+
+app.MapControllerRoute(
+    name: "assessmentSubmitImageQualityRating",
+    pattern: "Assessment/SubmitImageQualityRating",
+    defaults: new { controller = "Assessment", action = "SubmitImageQualityRating" });
+
+app.MapControllerRoute(
+    name: "assessmentGetImageAssessmentProgress",
+    pattern: "Assessment/GetImageAssessmentProgress",
+    defaults: new { controller = "Assessment", action = "GetImageAssessmentProgress" });
+
+// Questions route - supports /Assessment/{assessmentCode}/Questions pattern
+app.MapControllerRoute(
+    name: "assessmentQuestionsWithCode",
+    pattern: "Assessment/{assessmentCode}/Questions",
+    defaults: new { controller = "Assessment", action = "Questions" });
+
+// Alternative Questions route - supports /Assessment/Questions/{assessmentCode} pattern
+app.MapControllerRoute(
+    name: "assessmentQuestions",
+    pattern: "Assessment/Questions/{assessmentCode}",
+    defaults: new { controller = "Assessment", action = "Questions" });
 
 app.MapControllerRoute(
     name: "assessmentSpeedTest",
@@ -119,11 +186,24 @@ app.MapControllerRoute(
     pattern: "Assessment/{assessmentType}",
     defaults: new { controller = "Assessment", action = "Index" });
 
+// Short URL format - Image Assessment
+app.MapControllerRoute(
+    name: "assessmentShortImageAssessment",
+    pattern: "{assessmentType}/ImageAssessment",
+    defaults: new { controller = "Assessment", action = "ImageAssessment", assessmentCode = "" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
 // Short URL format
 app.MapControllerRoute(
     name: "assessmentShortSpeedTest",
     pattern: "{assessmentType}/SpeedTest",
     defaults: new { controller = "Assessment", action = "SpeedTest" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+app.MapControllerRoute(
+    name: "assessmentShortQuestions",
+    pattern: "{assessmentType}/Questions",
+    defaults: new { controller = "Assessment", action = "Questions", assessmentCode = "" },
     constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
 
 app.MapControllerRoute(

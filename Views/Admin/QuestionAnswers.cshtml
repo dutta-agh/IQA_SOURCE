@@ -1,0 +1,447 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Question Answers";
+}
+
+@section Styles {
+    <style>
+        .results-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .response-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .answer-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .question-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .answer-text {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stats-box h3 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .stats-box p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-clipboard-check"></i> Question Answers</h2>
+    <button class="btn btn-success" onclick="showExportOptions()">
+        <i class="fas fa-file-excel"></i> Export to Excel
+    </button>
+</div>
+
+<!-- Statistics -->
+<div class="row" id="statsSection">
+    <div class="col-md-4">
+        <div class="stats-box">
+            <h3 id="totalResponses">0</h3>
+            <p>Total Submissions</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-box">
+            <h3 id="completedResponses">0</h3>
+            <p>Completed</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-box">
+            <h3 id="inProgressResponses">0</h3>
+            <p>In Progress</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-4">
+            <label class="form-label">Filter by Assessment</label>
+            <select class="form-select" id="assessmentFilter" onchange="filterByAssessment()">
+                <option value="">All Assessments</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Filter by Status</label>
+            <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="IN_PROGRESS">In Progress</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-primary w-100" onclick="loadResults()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Table -->
+<div class="results-card">
+    <table id="resultsTable" class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>Assessment</th>
+                <th>IP Address</th>
+                <th>Start Time</th>
+                <th>Submit Time</th>
+                <th>Status</th>
+                <th>Questions</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-list-alt"></i> Question Answer Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Session ID:</strong> <span id="detailSessionId"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>IP Address:</strong> <span id="detailIpAddress"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Submit Time:</strong> <span id="detailSubmitTime"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong> <span id="detailStatus"></span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6><i class="fas fa-question-circle"></i> User Answers</h6>
+                <div id="answersContainer"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Assessment</label>
+                    <select class="form-select" id="exportAssessmentCode">
+                        <option value="">-- Select Assessment --</option>
+                    </select>
+                    <small class="text-muted">Choose the assessment to export question answers</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="downloadExcel()">
+                    <i class="fas fa-download"></i> Download Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let resultsTable;
+        let allResults = [];
+
+        $(document).ready(function() {
+            resultsTable = $('#resultsTable').DataTable({
+                columns: [
+                    { 
+                        data: 'sessionId',
+                        render: function(data) {
+                            return data ? data.substring(0, 20) + '...' : 'N/A';
+                        }
+                    },
+                    { data: 'assessmentName' },
+                    { data: 'ipAddress' },
+                    {
+                        data: 'startTime',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString() : 'N/A';
+                        }
+                    },
+                    {
+                        data: 'submitTime',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString() : 'N/A';
+                        }
+                    },
+                    {
+                        data: 'status',
+                        render: function(data) {
+                            return data === 'COMPLETED'
+                                ? '<span class="badge bg-success">Completed</span>'
+                                : '<span class="badge bg-warning">In Progress</span>';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            return `${data.answeredQuestions}`;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data) {
+                            return `
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="viewDetails('${escapeHtml(data.assessmentCode)}', '${escapeHtml(data.sessionId)}')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                order: [[4, 'desc']]
+            });
+
+            loadResults();
+            loadAssessmentList();
+        });
+
+        async function loadResults() {
+            showLoader();
+            try {
+                const response = await fetch(buildApiUrl('/Admin/GetAllQuestionAnswers'));
+                const result = await response.json();
+                
+                hideLoader();
+                
+                if (result.success) {
+                    allResults = result.data || [];
+                    updateStats(allResults);
+                    resultsTable.clear();
+                    resultsTable.rows.add(allResults);
+                    resultsTable.draw();
+                } else {
+                    showAlert('Error: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                hideLoader();
+                console.error('Error loading results:', error);
+                showAlert('Error loading results. Please try again.', 'danger');
+            }
+        }
+
+        async function loadAssessmentList() {
+            try {
+                const response = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const assessmentFilter = document.getElementById('assessmentFilter');
+                    const exportAssessmentCode = document.getElementById('exportAssessmentCode');
+                    
+                    result.data.forEach(assessment => {
+                        const option1 = new Option(assessment.atmName, assessment.atmCode);
+                        const option2 = new Option(assessment.atmName, assessment.atmCode);
+                        assessmentFilter.add(option1);
+                        exportAssessmentCode.add(option2);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading assessments:', error);
+            }
+        }
+
+        function updateStats(data) {
+            const total = data.length;
+            const completed = data.filter(r => r.status === 'COMPLETED').length;
+            const inProgress = data.filter(r => r.status === 'IN_PROGRESS').length;
+            
+            document.getElementById('totalResponses').textContent = total;
+            document.getElementById('completedResponses').textContent = completed;
+            document.getElementById('inProgressResponses').textContent = inProgress;
+        }
+
+        async function filterByAssessment() {
+            const assessmentCode = document.getElementById('assessmentFilter').value;
+            
+            if (!assessmentCode) {
+                loadResults();
+                return;
+            }
+            
+            showLoader();
+            try {
+                const response = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${assessmentCode}`));
+                const result = await response.json();
+                
+                hideLoader();
+                
+                if (result.success) {
+                    allResults = result.data || [];
+                    updateStats(allResults);
+                    resultsTable.clear();
+                    resultsTable.rows.add(allResults);
+                    resultsTable.draw();
+                } else {
+                    showAlert('Error: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                hideLoader();
+                console.error('Error filtering results:', error);
+                showAlert('Error filtering results. Please try again.', 'danger');
+            }
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filtered = [...allResults];
+            
+            if (statusFilter) {
+                filtered = filtered.filter(r => r.status === statusFilter);
+            }
+            
+            resultsTable.clear();
+            resultsTable.rows.add(filtered);
+            resultsTable.draw();
+            updateStats(filtered);
+        }
+
+        async function viewDetails(assessmentCode, sessionId) {
+            showLoader();
+            try {
+                const response = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${assessmentCode}`));
+                const result = await response.json();
+                
+                hideLoader();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    // Find the specific session data
+                    const data = result.data.find(r => r.sessionId === sessionId) || result.data[0];
+                    
+                    document.getElementById('detailSessionId').textContent = data.sessionId || 'N/A';
+                    document.getElementById('detailIpAddress').textContent = data.ipAddress || 'N/A';
+                    document.getElementById('detailSubmitTime').textContent = data.submitTime ? new Date(data.submitTime).toLocaleString() : 'N/A';
+                    document.getElementById('detailStatus').innerHTML = data.status === 'COMPLETED'
+                        ? '<span class="badge bg-success">Completed</span>'
+                        : '<span class="badge bg-warning">In Progress</span>';
+                    
+                    const answersContainer = document.getElementById('answersContainer');
+                    answersContainer.innerHTML = '';
+                    
+                    if (data.answers && data.answers.length > 0) {
+                        data.answers.forEach(answer => {
+                            const answerHtml = `
+                                <div class="answer-item">
+                                    <div class="question-label">${escapeHtml(answer.questionCode)}: ${escapeHtml(answer.questionText)}</div>
+                                    <div class="answer-text">
+                                        <i class="fas fa-check-circle"></i> ${escapeHtml(answer.selectedOptionsText || 'No answer')}
+                                    </div>
+                                </div>
+                            `;
+                            answersContainer.insertAdjacentHTML('beforeend', answerHtml);
+                        });
+                    } else {
+                        answersContainer.innerHTML = '<p class="text-muted">No answers recorded</p>';
+                    }
+                    
+                    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+                } else {
+                    showAlert('Error loading details', 'danger');
+                }
+            } catch (error) {
+                hideLoader();
+                console.error('Error loading details:', error);
+                showAlert('Error loading details. Please try again.', 'danger');
+            }
+        }
+
+        function showExportOptions() {
+            new bootstrap.Modal(document.getElementById('exportModal')).show();
+        }
+
+        function downloadExcel() {
+            const assessmentCode = document.getElementById('exportAssessmentCode').value;
+            
+            if (!assessmentCode) {
+                showAlert('Please select an assessment to export', 'warning');
+                return;
+            }
+            
+            window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(assessmentCode)}`);
+            bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+        }
+    </script>
+}

@@ -1,0 +1,763 @@
+﻿@model IQA_SOURCE.Models.QuestionPageViewModel
+@{
+    ViewData["Title"] = $"{Model.AssessmentName} - Questions";
+    Layout = "_AssessmentLayout";
+    var sessionId = ViewBag.SessionId?.ToString() ?? "";
+    var questions = Model.Questions;
+}
+
+@section Styles {
+    <style>
+        .question-container {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .question-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #5568d3;
+        }
+
+        .question-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .question-number {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .question-type-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-single {
+            background: rgba(72, 187, 120, 0.9);
+            color: white;
+        }
+
+        .badge-multiple {
+            background: rgba(66, 153, 225, 0.9);
+            color: white;
+        }
+
+        .badge-dropdown {
+            background: rgba(237, 137, 54, 0.9);
+            color: white;
+        }
+
+        .question-body {
+            padding: 25px;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .dropdown-select {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        .dropdown-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .options-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .options-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .options-table thead th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .options-table thead th:first-child {
+            border-radius: 8px 0 0 0;
+            width: 60px;
+            text-align: center;
+        }
+
+        .options-table thead th:last-child {
+            border-radius: 0 8px 0 0;
+            border-right: none;
+        }
+
+        .options-table tbody tr {
+            transition: all 0.2s;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .options-table tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .options-table tbody tr.selected {
+            background: #edf2f7;
+            border-left: 4px solid #667eea;
+        }
+
+        .options-table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+        .options-table tbody td:first-child {
+            text-align: center;
+            width: 60px;
+        }
+
+        .option-input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .option-text {
+            font-size: 1rem;
+            color: #2d3748;
+            cursor: pointer;
+        }
+
+        .max-selection-hint {
+            background: #fff5f5;
+            border-left: 4px solid #fc8181;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #742a2a;
+        }
+
+        .submit-container {
+            position: sticky;
+            bottom: 20px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .progress-text {
+            font-size: 1rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 9999;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+            transition: width 0.3s;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        .main-container {
+            max-width: 95%;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2d3748;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: #718096;
+        }
+
+        /* Success Modal Styles */
+        .success-modal-custom {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .success-modal-custom.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-modal-content {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: auto;
+            animation: slideInDown 0.4s ease-out;
+        }
+
+        .success-modal-header {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .success-modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .success-modal-body {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .success-modal-body p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #4a5568;
+            margin-bottom: 20px;
+        }
+
+        .success-modal-body strong {
+            color: #2d3748;
+        }
+
+        .success-modal-footer {
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .success-modal-btn {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .success-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(49, 130, 206, 0.4);
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @@keyframes slideInDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .question-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .submit-container {
+                flex-direction: column;
+            }
+
+            .options-table {
+                font-size: 0.9rem;
+            }
+
+            .success-modal-content {
+                width: 95%;
+            }
+
+            .success-modal-title {
+                font-size: 1.5rem;
+            }
+
+            .success-modal-body p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+}
+
+<!-- Progress Bar -->
+<div class="progress-bar-container">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+</div>
+
+<div class="main-container">
+    <div class="content-card">
+        <div class="page-header">
+            <h1><i class="fas fa-clipboard-list"></i> @Model.AssessmentName</h1>
+            <p>Please answer all questions below. Select your answers carefully.</p>
+        </div>
+
+        <form id="questionsForm">
+            @for (int i = 0; i < questions.Count; i++)
+            {
+                var questionWithOptions = questions[i];
+                var question = questionWithOptions.Question;
+                var options = questionWithOptions.Options;
+                
+                // HARDCODED LOGIC: Check if question text contains "country" (case-insensitive)
+                var isCountryQuestion = question.QsText?.ToLower().Contains("country") ?? false;
+                
+                // Override type detection if it's a country question
+                var isSingleChoice = !isCountryQuestion && question.QsType?.ToUpper() == "SINGLE";
+                var isMultipleChoice = !isCountryQuestion && question.QsType?.ToUpper() == "MULTIPLE";
+                var isDropdown = isCountryQuestion || question.QsType?.ToUpper() == "DROPDOWN";
+                
+                var inputType = isSingleChoice ? "radio" : "checkbox";
+                var inputName = $"question_{question.QId}";
+
+                <div class="question-container" data-question-id="@question.QId" data-question-type="@(isDropdown ? "DROPDOWN" : question.QsType)">
+                    <div class="question-header">
+                        <div class="question-header-left">
+                            <span class="question-number">
+                                <i class="fas fa-question-circle"></i> Question @(i + 1) / @questions.Count
+                            </span>
+                            @if (isSingleChoice)
+                            {
+                                <span class="question-type-badge badge-single">
+                                    <i class="fas fa-dot-circle"></i> Single Choice
+                                </span>
+                            }
+                            else if (isMultipleChoice)
+                            {
+                                <span class="question-type-badge badge-multiple">
+                                    <i class="fas fa-check-square"></i> Multiple Choice
+                                    @if (question.QsMaxSelections.HasValue)
+                                    {
+                                        <span>(Max @question.QsMaxSelections)</span>
+                                    }
+                                </span>
+                            }
+                            else if (isDropdown)
+                            {
+                                <span class="question-type-badge badge-dropdown">
+                                    <i class="fas fa-list"></i> Dropdown
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="question-body">
+                        <div class="question-text">
+                            @Html.Raw(question.QsText)
+                        </div>
+
+                        @if (isMultipleChoice && question.QsMaxSelections.HasValue)
+                        {
+                            <div class="max-selection-hint">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Note:</strong> You can select up to <strong>@question.QsMaxSelections</strong> option(s) for this question.
+                            </div>
+                        }
+
+                        @if (isDropdown)
+                        {
+                            <!-- Dropdown rendering -->
+                            <select class="dropdown-select" 
+                                    id="dropdown_@question.QId"
+                                    data-question-id="@question.QId"
+                                    data-question-type="DROPDOWN"
+                                    onchange="handleDropdownChange(this)">
+                                <option value="">-- Please Select --</option>
+                                @foreach (var option in options)
+                                {
+                                    <option value="@option.QoId" 
+                                            data-option-text="@option.QoText"
+                                            data-option-value="@option.QoValue">
+                                        @option.QoText
+                                    </option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <!-- Radio/Checkbox rendering -->
+                            <table class="options-table">
+                                <thead>
+                                    <tr>
+                                        <th>Select</th>
+                                        <th>Option</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var option in options)
+                                    {
+                                        <tr class="option-row" data-option-id="@option.QoId">
+                                            <td>
+                                                <input type="@inputType" 
+                                                       class="option-input" 
+                                                       name="@inputName" 
+                                                       id="option_@option.QoId"
+                                                       value="@option.QoId"
+                                                       data-question-id="@question.QId"
+                                                       data-question-type="@question.QsType"
+                                                       data-max-selections="@(question.QsMaxSelections?.ToString() ?? "")"
+                                                       data-option-value="@option.QoValue"
+                                                       data-option-text="@option.QoText"
+                                                       onchange="handleOptionChange(this)">
+                                            </td>
+                                            <td>
+                                                <label for="option_@option.QoId" class="option-text mb-0">
+                                                    @Html.Raw(option.QoText)
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            }
+        </form>
+
+        <div class="submit-container">
+            <div class="progress-info">
+                <div class="progress-text">
+                    <i class="fas fa-tasks"></i> 
+                    Progress: <strong><span id="answeredCount">0</span> / @questions.Count</strong> questions answered
+                </div>
+            </div>
+            <button type="button" class="submit-btn" id="submitBtn" onclick="submitResponses()">
+                <i class="fas fa-paper-plane"></i> Submit All Responses
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Success Modal -->
+<div class="success-modal-custom" id="successModal">
+    <div class="success-modal-content">
+        <div class="success-modal-header">
+            <h1 class="success-modal-title">Image Quality Assessment</h1>
+        </div>
+        <div class="success-modal-body">
+            <p>In this session, you will watch a series of <strong>image sequences</strong>. After each image, you will be asked to evaluate your experience.</p>
+            <p>You will use a 5-point scale to provide your assessment, where <strong>"Bad"</strong> indicates the lowest quality and <strong>"Excellent"</strong> indicates the highest quality.</p>
+            <p>Your feedback is valuable and will help us improve our content delivery.</p>
+        </div>
+        <div class="success-modal-footer">
+            <button type="button" class="success-modal-btn" onclick="startImageSequences()">
+                Start the image sequences
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const assessmentCode = '@Model.AssessmentCode';
+        const sessionId = '@sessionId';
+        const totalQuestions = @questions.Count;
+
+        function handleDropdownChange(dropdown) {
+            const questionId = dropdown.dataset.questionId;
+            updateProgress();
+        }
+
+        function handleOptionChange(input) {
+            const questionId = input.dataset.questionId;
+            const questionType = input.dataset.questionType;
+            const maxSelections = parseInt(input.dataset.maxSelections) || null;
+            const row = input.closest('tr');
+
+            // Update visual selection
+            if (input.type === 'radio') {
+                // Clear all selections for this question
+                document.querySelectorAll(`input[name="${input.name}"]`).forEach(opt => {
+                    opt.closest('tr').classList.remove('selected');
+                });
+            }
+
+            if (input.checked) {
+                row.classList.add('selected');
+
+                // Check max selections for multiple choice
+                if (input.type === 'checkbox' && maxSelections) {
+                    const checked = document.querySelectorAll(`input[name="${input.name}"]:checked`).length;
+                    if (checked > maxSelections) {
+                        input.checked = false;
+                        row.classList.remove('selected');
+                        alert(`⚠️ Maximum Selection Limit\n\nYou can only select up to ${maxSelections} option(s) for this question.`);
+                        return;
+                    }
+                }
+            } else {
+                row.classList.remove('selected');
+            }
+
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const questions = document.querySelectorAll('.question-container');
+            let answeredCount = 0;
+
+            questions.forEach(q => {
+                const questionType = q.dataset.questionType?.toUpperCase();
+                
+                if (questionType === 'DROPDOWN') {
+                    const dropdown = q.querySelector('select');
+                    if (dropdown && dropdown.value) answeredCount++;
+                } else {
+                    const inputs = q.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+                    const hasAnswer = Array.from(inputs).some(input => input.checked);
+                    if (hasAnswer) answeredCount++;
+                }
+            });
+
+            document.getElementById('answeredCount').textContent = answeredCount;
+            const progressPercent = (answeredCount / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = progressPercent + '%';
+        }
+
+        function submitResponses() {
+            const answers = [];
+            const questions = document.querySelectorAll('.question-container');
+
+            questions.forEach(q => {
+                const questionId = parseInt(q.dataset.questionId);
+                const questionType = q.dataset.questionType?.toUpperCase();
+
+                if (questionType === 'DROPDOWN') {
+                    const dropdown = q.querySelector('select');
+                    if (dropdown && dropdown.value) {
+                        const selectedOption = dropdown.options[dropdown.selectedIndex];
+                        answers.push({
+                            QuestionId: questionId,
+                            QuestionType: questionType,
+                            SelectedOptionIds: [parseInt(dropdown.value)],
+                            SelectedOptionValues: [selectedOption.dataset.optionText || selectedOption.text]
+                        });
+                    }
+                } else {
+                    const inputs = q.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
+                    
+                    if (inputs.length > 0) {
+                        const selectedIds = [];
+                        const selectedValues = [];
+
+                        inputs.forEach(input => {
+                            selectedIds.push(parseInt(input.value));
+                            selectedValues.push(input.dataset.optionText || input.dataset.optionValue || '');
+                        });
+
+                        answers.push({
+                            QuestionId: questionId,
+                            QuestionType: questionType,
+                            SelectedOptionIds: selectedIds,
+                            SelectedOptionValues: selectedValues
+                        });
+                    }
+                }
+            });
+
+            if (answers.length === 0) {
+                alert('⚠️ No Answers Selected\n\nPlease answer at least one question before submitting.');
+                return;
+            }
+
+            if (answers.length < totalQuestions) {
+                if (!confirm(`⚠️ Incomplete Submission\n\nYou have answered ${answers.length} out of ${totalQuestions} questions.\n\nDo you want to submit anyway?`)) {
+                    return;
+                }
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+            const payload = {
+                AssessmentCode: assessmentCode,
+                SessionId: sessionId,
+                Answers: answers
+            };
+
+            console.log('Submitting payload:', payload);
+
+            fetch(buildApiUrl('/Assessment/SubmitResponses'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show custom success modal
+                    document.getElementById('successModal').classList.add('show');
+                } else {
+                    alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit All Responses';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Network Error\n\nAn error occurred while submitting. Please check your connection and try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit All Responses';
+            });
+        }
+
+        function startImageSequences() {
+            // Redirect to Image Assessment page
+            const url = assessmentCode 
+                ? buildApiUrl(`/Assessment/${assessmentCode}/ImageAssessment`)
+                : buildApiUrl('/Assessment/ImageAssessment');
+            
+            console.log('Redirecting to Image Assessment:', url);
+            window.location.href = url;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+
+            // Add click handlers to table rows for better UX
+            document.querySelectorAll('.option-row').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                        const input = this.querySelector('input');
+                        input.click();
+                    }
+                });
+            });
+
+            // Close modal on outside click
+            document.getElementById('successModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    startImageSequences();
+                }
+            });
+        });
+    </script>
+}

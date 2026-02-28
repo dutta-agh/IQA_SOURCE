@@ -1,47 +1,13 @@
 ﻿@{
     ViewData["Title"] = "System Check - Speed Test";
-    Layout = null;
+    Layout = "_AssessmentLayout";
     var assessmentType = ViewBag.AssessmentType as string ?? "";
 }
 
-<!DOCTYPE html> 
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    @await Html.PartialAsync("_AppConfigScript")
-    
-    <!-- detect-incognito Library -->
-    <script src="https://cdn.jsdelivr.net/npm/detect-incognito@1.3.0/dist/es5/detect-incognito.min.js"></script>
-    
+@section Styles {
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            background: white;
-            padding: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .main-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
         .content-card {
-            background: white;
+            background-color: white !important;
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -104,48 +70,6 @@
             font-size: 0.9rem;
         }
 
-        .start-check-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 15px 50px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .start-check-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        .start-check-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .continue-btn {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            border: none;
-            color: white;
-            padding: 15px 50px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-        }
-
-        .continue-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
-        }
-
-        .continue-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .error-message {
             background: #fff5f5;
             border: 2px solid #dc3545;
@@ -173,102 +97,254 @@
             margin-bottom: 30px;
             border-left: 4px solid #667eea;
         }
+
+        /* Countdown Overlay */
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+       @@keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .countdown-popup {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 80px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transform: scale(0.8);
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        @@keyframes popIn {
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .countdown-popup h5 {
+            color: #28a745;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .countdown-popup p {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .countdown-display {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0;
+            transition: transform 0.2s ease;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        .countdown-label {
+            font-size: 1rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @@keyframes successPulse {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .redirect-notice {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border: 2px solid #0c5460;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .redirect-notice h5 {
+            color: #0c5460;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .redirect-notice p {
+            color: #0c5460;
+            font-size: 1.1rem;
+        }
+
+       @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .checking .check-icon i {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
     </style>
-</head>
-<body>
-    <header class="header">
-        <div class="container">
-            <h1 class="text-center mb-0">
-                <i class="fas fa-tachometer-alt"></i> System Requirements Check
-            </h1>
+}
+
+<div class="main-container">
+    <div class="content-card">
+        <div class="intro-text">
+            <h5><i class="fas fa-info-circle"></i> Running System Verification</h5>
+            <p class="mb-0">
+                We are verifying that your system meets the requirements for taking this assessment.
+                This process will complete automatically.
+            </p>
         </div>
-    </header>
 
-    <div class="main-container">
-        <div class="content-card">
-            <div class="intro-text">
-                <h5><i class="fas fa-info-circle"></i> Before You Begin</h5>
-                <p class="mb-0">
-                    We need to verify that your system meets the requirements for taking this assessment.
-                    Click the button below to start the verification process.
-                </p>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="progress-container" id="progressContainer" style="display: none;">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: 0%" 
-                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBar">
-                        0%
-                    </div>
-                </div>
-                <p class="text-center mt-2 status-text" id="statusText">Preparing checks...</p>
-            </div>
-            
-            <!-- Check 1: Private Mode -->
-            <div class="check-item pending" id="checkPrivateMode">
-                <div class="d-flex align-items-center">
-                    <div class="check-icon pending">
-                        <i class="fas fa-circle"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h5 class="mb-1">1. Private/Incognito Mode</h5>
-                        <p class="mb-0 text-muted">Verifying browser privacy mode...</p>
-                    </div>
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 0%" 
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBar">
+                    0%
                 </div>
             </div>
-
-            <!-- Check 2: Screen Resolution -->
-            <div class="check-item pending" id="checkResolution">
-                <div class="d-flex align-items-center">
-                    <div class="check-icon pending">
-                        <i class="fas fa-circle"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h5 class="mb-1">2. Screen Resolution</h5>
-                        <p class="mb-0 text-muted">Checking display requirements...</p>
-                        <div class="resolution-info" id="resolutionInfo"></div>
-                    </div>
+            <p class="text-center mt-2 status-text" id="statusText">Preparing checks...</p>
+        </div>
+        
+        <!-- Check 1: Private Mode -->
+        <div class="check-item pending" id="checkPrivateMode">
+            <div class="d-flex align-items-center">
+                <div class="check-icon pending">
+                    <i class="fas fa-circle"></i>
                 </div>
-            </div>
-
-            <!-- Check 3: Device Type -->
-            <div class="check-item pending" id="checkDevice">
-                <div class="d-flex align-items-center">
-                    <div class="check-icon pending">
-                        <i class="fas fa-circle"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h5 class="mb-1">3. Device Type</h5>
-                        <p class="mb-0 text-muted">Verifying device compatibility...</p>
-                    </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">1. Private/Incognito Mode</h5>
+                    <p class="mb-0 text-muted">Verifying browser privacy mode...</p>
                 </div>
-            </div>
-
-            <div id="errorContainer"></div>
-
-            <div class="text-center mt-4">
-                <button class="btn start-check-btn" id="startCheckBtn" onclick="startChecks()">
-                    <i class="fas fa-play"></i> Start System Check
-                </button>
-                <button class="btn continue-btn" id="continueBtn" style="display: none;" onclick="continueToAssessment()">
-                    <i class="fas fa-arrow-right"></i> Continue to Assessment
-                </button>
             </div>
         </div>
+
+        <!-- Check 2: Screen Resolution -->
+        <div class="check-item pending" id="checkResolution">
+            <div class="d-flex align-items-center">
+                <div class="check-icon pending">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">2. Screen Resolution</h5>
+                    <p class="mb-0 text-muted">Checking display requirements...</p>
+                    <div class="resolution-info" id="resolutionInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check 3: Device Type -->
+        <div class="check-item pending" id="checkDevice">
+            <div class="d-flex align-items-center">
+                <div class="check-icon pending">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">3. Device Type</h5>
+                    <p class="mb-0 text-muted">Verifying device compatibility...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check 4: Speed Test -->
+        <div class="check-item pending" id="checkSpeed">
+            <div class="d-flex align-items-center">
+                <div class="check-icon pending">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">4. Internet Speed</h5>
+                    <p class="mb-0 text-muted">Testing connection speed...</p>
+                    <div class="resolution-info" id="speedInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorContainer"></div>
+        <div id="redirectContainer"></div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@section Scripts {
     <script>
+        // Get assessment type from server-side rendering
         const assessmentType = '@assessmentType';
+        const sessionId = '@ViewBag.SessionId';
+        
+        // Log for debugging
+        console.log('=== Page Initialization ===');
+        console.log('Assessment Type:', assessmentType);
+        console.log('Session ID:', sessionId);
+        
         let currentCheck = 0;
         let checksPassed = 0;
-        const totalChecks = 3;
+        const totalChecks = 4;
 
         // Configuration from server
         let minWidth = 1024;
         let minHeight = 768;
+
+        // Store test results globally
+        let testResults = {
+            privateModeDetected: false,
+            privateModeBrowser: 'Unknown',
+            screenWidth: 0,
+            screenHeight: 0,
+            resolutionPassed: false,
+            deviceType: 'Unknown',
+            speedPassed: false,
+            downloadSpeedMbps: null,
+            uploadSpeedMbps: null,
+            latency: null,
+            overallPassed: false
+        };
+
+        // Auto-start checks on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, starting checks automatically...');
+            setTimeout(() => {
+                startChecks();
+            }, 1000);
+        });
 
         // Fetch configuration from server
         async function loadConfiguration() {
@@ -303,29 +379,33 @@
 
         // Start all checks
         async function startChecks() {
-            const startBtn = document.getElementById('startCheckBtn');
-            const progressContainer = document.getElementById('progressContainer');
-            
-            startBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            
             await loadConfiguration();
             
             // Run checks sequentially
             await checkPrivateMode();
-            await delay(1000);
+            await delay(800);
             
             await checkScreenResolution();
-            await delay(1000);
+            await delay(800);
             
             await checkDeviceType();
+            await delay(800);
+            
+            // Perform actual speed test
+            await performSpeedTest();
             
             // Final progress update
             updateProgress(100, 'System check completed!');
             
-            // Show appropriate button
+            // Calculate overall pass
+            testResults.overallPassed = (checksPassed === totalChecks);
+            
+            // Save results to database
+            await saveSpeedTestLog();
+            
+            // Show results and redirect
             await delay(500);
-            showResults();
+            await showResults();
         }
 
         // Delay helper
@@ -336,7 +416,7 @@
         // Check 1: Private Mode
         async function checkPrivateMode() {
             currentCheck = 1;
-            updateProgress(10, 'Step 1/3: Checking private/incognito mode...');
+            updateProgress(10, 'Step 1/4: Checking private/incognito mode...');
             
             const checkEl = document.getElementById('checkPrivateMode');
             const iconEl = checkEl.querySelector('.check-icon');
@@ -351,13 +431,17 @@
             iconI.className = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Checking...';
             
-            await delay(800);
+            await delay(500);
             
             try {
                 const result = await detectIncognito();
                 console.log('Private mode check:', result);
                 
-                updateProgress(30, 'Private mode check completed');
+                // CAPTURE ACTUAL VALUES
+                testResults.privateModeDetected = result.isPrivate || false;
+                testResults.privateModeBrowser = result.browserName || 'Unknown';
+                
+                updateProgress(25, 'Private mode check completed');
                 
                 if (result.isPrivate) {
                     updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
@@ -371,7 +455,12 @@
                 }
             } catch (error) {
                 console.error('Private mode check error:', error);
-                updateProgress(30, 'Private mode check completed (with warning)');
+                
+                // CAPTURE ERROR STATE
+                testResults.privateModeDetected = false;
+                testResults.privateModeBrowser = 'Detection Failed: ' + navigator.userAgent.split(' ')[0];
+                
+                updateProgress(25, 'Private mode check completed (with warning)');
                 // Fail-open: allow on error
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
                     '✓ Privacy check completed');
@@ -382,7 +471,7 @@
         // Check 2: Screen Resolution
         async function checkScreenResolution() {
             currentCheck = 2;
-            updateProgress(40, 'Step 2/3: Checking screen resolution...');
+            updateProgress(30, 'Step 2/4: Checking screen resolution...');
             
             const checkEl = document.getElementById('checkResolution');
             const iconEl = checkEl.querySelector('.check-icon');
@@ -398,16 +487,18 @@
             iconI.className = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Checking...';
             
-            await delay(1000);
+            await delay(800);
             
-            const screenWidth = window.screen.width;
-            const screenHeight = window.screen.height;
+            // CAPTURE SCREEN DIMENSIONS
+            testResults.screenWidth = window.screen.width;
+            testResults.screenHeight = window.screen.height;
+            testResults.resolutionPassed = (testResults.screenWidth >= minWidth && testResults.screenHeight >= minHeight);
             
-            infoEl.textContent = `Current: ${screenWidth} × ${screenHeight} | Required: ${minWidth} × ${minHeight}`;
+            infoEl.textContent = `Current: ${testResults.screenWidth} × ${testResults.screenHeight} | Required: ${minWidth} × ${minHeight}`;
             
-            updateProgress(65, 'Screen resolution check completed');
+            updateProgress(50, 'Screen resolution check completed');
             
-            if (screenWidth >= minWidth && screenHeight >= minHeight) {
+            if (testResults.resolutionPassed) {
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
                     `✓ Screen resolution meets requirements`);
                 checksPassed++;
@@ -415,14 +506,14 @@
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
                     `✗ Screen resolution too low`);
                 showError('Insufficient Screen Resolution', 
-                    `Your screen resolution (${screenWidth}×${screenHeight}) does not meet the minimum requirements (${minWidth}×${minHeight}). Please use a device with a larger display.`);
+                    `Your screen resolution (${testResults.screenWidth}×${testResults.screenHeight}) does not meet the minimum requirements (${minWidth}×${minHeight}). Please use a device with a larger display.`);
             }
         }
 
         // Check 3: Device Type
         async function checkDeviceType() {
             currentCheck = 3;
-            updateProgress(70, 'Step 3/3: Checking device type...');
+            updateProgress(55, 'Step 3/4: Checking device type...');
             
             const checkEl = document.getElementById('checkDevice');
             const iconEl = checkEl.querySelector('.check-icon');
@@ -437,13 +528,25 @@
             iconI.className = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Checking...';
             
-            await delay(800);
+            await delay(500);
             
+            // CAPTURE DEVICE TYPE
             const userAgent = navigator.userAgent.toLowerCase();
             const isMobile = /mobile|android|iphone|ipad|tablet/.test(userAgent);
-            const isDesktop = !isMobile;
+            const isTablet = /tablet|ipad/.test(userAgent);
+            const isDesktop = !isMobile && !isTablet;
             
-            updateProgress(95, 'Device type check completed');
+            if (isTablet) {
+                testResults.deviceType = 'Tablet';
+            } else if (isMobile) {
+                testResults.deviceType = 'Mobile';
+            } else if (isDesktop) {
+                testResults.deviceType = 'Desktop';
+            } else {
+                testResults.deviceType = 'Unknown';
+            }
+            
+            updateProgress(65, 'Device type check completed');
             
             if (isDesktop) {
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
@@ -451,9 +554,167 @@
                 checksPassed++;
             } else {
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
-                    '✗ Mobile/Tablet device detected');
+                    `✗ ${testResults.deviceType} device detected`);
                 showError('Desktop Required', 
                     'This assessment must be taken on a desktop or laptop computer. Mobile devices and tablets are not supported.');
+            }
+        }
+
+        // Perform Speed Test (Download, Upload, Latency)
+        async function performSpeedTest() {
+            currentCheck = 4;
+            updateProgress(70, 'Step 4/4: Testing internet speed...');
+            
+            const checkEl = document.getElementById('checkSpeed');
+            const iconEl = checkEl.querySelector('.check-icon');
+            const iconI = iconEl.querySelector('i');
+            const textEl = checkEl.querySelector('.text-muted');
+            const infoEl = document.getElementById('speedInfo');
+            
+            // Update to checking state
+            checkEl.classList.remove('pending');
+            checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');
+            iconEl.classList.add('checking');
+            iconI.className = 'fas fa-spinner fa-spin';
+            textEl.textContent = 'Testing connection...';
+            
+            try {
+                console.log('=== Starting Speed Test ===');
+                
+                // Measure latency (ping) - test multiple times for accuracy
+                console.log('Testing latency...');
+                const latencyTests = [];
+                for (let i = 0; i < 3; i++) {
+                    const latencyStart = performance.now();
+                    try {
+                        await fetch(buildApiUrl('/isalive'), { 
+                            method: 'GET', 
+                            cache: 'no-cache',
+                            mode: 'cors'
+                        });
+                        const latencyEnd = performance.now();
+                        latencyTests.push(latencyEnd - latencyStart);
+                    } catch (err) {
+                        console.error('Latency test failed:', err);
+                    }
+                }
+                
+                if (latencyTests.length > 0) {
+                    testResults.latency = Math.round(latencyTests.reduce((a, b) => a + b, 0) / latencyTests.length);
+                    console.log('Average latency:', testResults.latency, 'ms');
+                } else {
+                    testResults.latency = null;
+                    console.warn('All latency tests failed');
+                }
+                
+                updateProgress(80, 'Testing download speed...');
+                
+                // Measure download speed
+                console.log('Testing download speed...');
+                try {
+                    const testSizes = [
+                        { url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', size: 200000 },
+                        { url: 'https://code.jquery.com/jquery-3.6.0.min.js', size: 90000 }
+                    ];
+                    
+                    const downloadTests = [];
+                    
+                    for (const test of testSizes) {
+                        const downloadStart = performance.now();
+                        try {
+                            const response = await fetch(test.url + '?cache_bust=' + Date.now(), { 
+                                cache: 'no-cache',
+                                mode: 'cors'
+                            });
+                            
+                            if (!response.ok) {
+                                console.warn(`Download test failed for ${test.url}: ${response.status}`);
+                                continue;
+                            }
+                            
+                            const blob = await response.blob();
+                            const downloadEnd = performance.now();
+                            
+                            const downloadDuration = (downloadEnd - downloadStart) / 1000;
+                            const actualSize = blob.size || test.size;
+                            const speedMbps = ((actualSize * 8) / (downloadDuration * 1000000));
+                            
+                            downloadTests.push(speedMbps);
+                            console.log(`Download test ${downloadTests.length}: ${speedMbps.toFixed(2)} Mbps`);
+                        } catch (err) {
+                            console.error(`Download test error for ${test.url}:`, err);
+                        }
+                    }
+                    
+                    if (downloadTests.length > 0) {
+                        const avgSpeed = downloadTests.reduce((a, b) => a + b, 0) / downloadTests.length;
+                        testResults.downloadSpeedMbps = parseFloat(avgSpeed.toFixed(2));
+                        console.log('Average download speed:', testResults.downloadSpeedMbps, 'Mbps');
+                    } else {
+                        console.warn('All download tests failed, estimating from latency');
+                        if (testResults.latency && testResults.latency < 100) {
+                            testResults.downloadSpeedMbps = 10;
+                        } else if (testResults.latency && testResults.latency < 200) {
+                            testResults.downloadSpeedMbps = 5;
+                        } else {
+                            testResults.downloadSpeedMbps = 2;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Download speed test error:', error);
+                    testResults.downloadSpeedMbps = null;
+                }
+                
+                // Estimate upload speed
+                if (testResults.downloadSpeedMbps !== null) {
+                    testResults.uploadSpeedMbps = parseFloat((testResults.downloadSpeedMbps * 0.25).toFixed(2));
+                    console.log('Estimated upload speed:', testResults.uploadSpeedMbps, 'Mbps');
+                } else {
+                    testResults.uploadSpeedMbps = null;
+                }
+                
+                // Check if speed meets minimum requirements
+                const minSpeedMbps = 2;
+                if (testResults.downloadSpeedMbps !== null) {
+                    testResults.speedPassed = (testResults.downloadSpeedMbps >= minSpeedMbps);
+                } else {
+                    testResults.speedPassed = true;
+                }
+                
+                updateProgress(90, 'Speed test completed');
+                
+                // Update UI with results
+                const speedText = testResults.downloadSpeedMbps !== null 
+                    ? `Download: ${testResults.downloadSpeedMbps} Mbps | Upload: ${testResults.uploadSpeedMbps} Mbps | Latency: ${testResults.latency} ms`
+                    : 'Speed test estimation completed';
+                
+                infoEl.textContent = speedText;
+                
+                if (testResults.speedPassed) {
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                        '✓ Connection speed acceptable');
+                    checksPassed++;
+                } else {
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
+                        '✗ Connection speed too slow');
+                    showError('Slow Connection', 
+                        'Your internet connection may be too slow for optimal assessment experience.');
+                }
+                
+                console.log('=== Speed Test Completed ===');
+                
+            } catch (error) {
+                console.error('Error performing speed test:', error);
+                
+                testResults.downloadSpeedMbps = null;
+                testResults.uploadSpeedMbps = null;
+                testResults.latency = null;
+                testResults.speedPassed = true;
+                
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
+                    '✓ Speed check completed');
+                checksPassed++;
             }
         }
 
@@ -481,36 +742,173 @@
             errorContainer.innerHTML = errorHtml;
         }
 
-        // Show results and appropriate buttons
-        function showResults() {
-            const startBtn = document.getElementById('startCheckBtn');
-            const continueBtn = document.getElementById('continueBtn');
-            
-            startBtn.style.display = 'none';
-            
-            if (checksPassed === totalChecks) {
-                continueBtn.style.display = 'inline-block';
-                continueBtn.disabled = false;
-                continueBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Assessment';
-            } else {
-                continueBtn.style.display = 'inline-block';
-                continueBtn.disabled = true;
-                continueBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-                continueBtn.innerHTML = '<i class="fas fa-times"></i> Requirements Not Met';
+        // Save speed test log to database
+        async function saveSpeedTestLog() {
+            try {
+                console.log('=== saveSpeedTestLog Started ===');
+                console.log('Assessment Type (from variable):', assessmentType);
+                console.log('Session ID (from variable):', sessionId);
+                
+                const requestData = {
+                    sessionId: sessionId,
+                    assessmentCode: assessmentType,
+                    privateModeDetected: testResults.privateModeDetected,
+                    privateModeBrowser: testResults.privateModeBrowser,
+                    screenWidth: testResults.screenWidth,
+                    screenHeight: testResults.screenHeight,
+                    resolutionPassed: testResults.resolutionPassed,
+                    deviceType: testResults.deviceType,
+                    speedPassed: testResults.speedPassed,
+                    downloadSpeedMbps: testResults.downloadSpeedMbps,
+                    uploadSpeedMbps: testResults.uploadSpeedMbps,
+                    latency: testResults.latency,
+                    overallPassed: testResults.overallPassed
+                };
+                
+                console.log('Request Data:', JSON.stringify(requestData, null, 2));
+                
+                const apiUrl = buildApiUrl('/Assessment/SaveSpeedTestLog');
+                console.log('API URL:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('Response Status:', response.status);
+                console.log('Response Headers:', [...response.headers.entries()]);
+                
+                // Get response text first to see what we received
+                const responseText = await response.text();
+                console.log('Response Text:', responseText);
+                
+                if (!response.ok) {
+                    console.error('Response Error:', responseText);
+                    throw new Error(`HTTP ${response.status}: ${responseText}`);
+                }
+                
+                // Try to parse as JSON
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('Parsed Response Result:', JSON.stringify(result, null, 2));
+                } catch (parseError) {
+                    console.error('JSON Parse Error:', parseError);
+                    console.error('Response was not valid JSON:', responseText);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
+                if (result.success) {
+                    console.log('✓ Speed test log saved successfully');
+                } else {
+                    console.warn('⚠ Speed test log save returned unsuccessful:', result.message);
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error('Error saving speed test log:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                // Don't fail the whole process, just log the error
+                return { success: false, message: error.message };
             }
         }
 
-        // Continue to assessment
-        function continueToAssessment() {
-            const url = assessmentType ? `/Assessment/${assessmentType}/Start` : '/Assessment/Start';
-            window.location.href = url;
+        // Show results and redirect
+        async function showResults() {
+            const redirectContainer = document.getElementById('redirectContainer');
+            
+            if (testResults.overallPassed) {
+                // Show success message in the container first
+                redirectContainer.innerHTML = `
+                    <div class="redirect-notice">
+                        <h5><i class="fas fa-check-circle"></i> All Checks Passed!</h5>
+                        <p class="mb-0">Your system meets all requirements for the assessment.</p>
+                    </div>
+                `;
+                
+                // Wait a moment, then show countdown popup
+                await delay(800);
+                
+                // Create countdown overlay popup
+                const overlay = document.createElement('div');
+                overlay.className = 'countdown-overlay';
+                overlay.innerHTML = `
+                    <div class="countdown-popup">
+                        <div class="success-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h5>Ready to Begin!</h5>
+                        <p>Starting your assessment in...</p>
+                        <div class="countdown-display" id="countdownDisplay">3</div>
+                        <div class="countdown-label">seconds</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                
+                // Countdown timer with animation
+                let countdown = 3;
+                const countdownDisplay = document.getElementById('countdownDisplay');
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    
+                    if (countdownDisplay) {
+                        if (countdown > 0) {
+                            countdownDisplay.textContent = countdown;
+                            
+                            // Add scale animation on each count
+                            countdownDisplay.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                countdownDisplay.style.transform = 'scale(1)';
+                            }, 200);
+                        } else {
+                            // Show spinner when countdown reaches 0
+                            countdownDisplay.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            countdownDisplay.style.fontSize = '4rem';
+                        }
+                    }
+                    
+                    if (countdown < 0) {
+                        clearInterval(countdownInterval);
+                        
+                        // Fade out and redirect
+                        overlay.style.opacity = '0';
+                        overlay.style.transition = 'opacity 0.3s ease';
+                        
+                        setTimeout(() => {
+                            redirectToQuestions();
+                        }, 300);
+                    }
+                }, 1000);
+                
+            } else {
+                // Some checks failed
+                redirectContainer.innerHTML = `
+                    <div class="error-message text-center">
+                        <h5><i class="fas fa-exclamation-triangle"></i> System Requirements Not Met</h5>
+                        <p class="mb-0">Please resolve the issues highlighted above before proceeding with the assessment.</p>
+                    </div>
+                `;
+            }
         }
 
-        // Load configuration on page load (but don't start checks)
-        (async function() {
-            await loadConfiguration();
-            console.log('System check ready. Configuration loaded.');
-        })();
+        // Redirect to questions page
+        function redirectToQuestions() {
+            console.log('Redirecting to questions page...');
+            const url = assessmentType ? `/Assessment/${assessmentType}/Questions` : '/Assessment/Questions';
+            console.log('Redirect URL:', url);
+            window.location.href = url;
+        }
     </script>
-</body>
-</html>
+}
