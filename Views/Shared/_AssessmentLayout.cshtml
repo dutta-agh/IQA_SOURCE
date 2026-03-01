@@ -142,7 +142,13 @@
             opacity: 0.9;
         }
 
+        .main-container {
+            zoom: 0.65 !important;
+        }
+
         @RenderSection("Styles", required: false)
+
+       
     </style>
 
     <script type="text/javascript">
@@ -260,11 +266,32 @@
             });
         })();
 
-        // ── Page refresh: intercept F5 / Ctrl+R / Cmd+R ───────────────────────────
+        // ── Disable right-click context menu ─────────────────────────────────────
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+
+        // ── Page refresh / DevTools key blocking ──────────────────────────────────
         document.addEventListener('keydown', function (e) {
             const isF5     = e.key === 'F5';
             const isCtrlR  = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
             const isCtrlF5 = (e.ctrlKey || e.metaKey) && e.key === 'F5';
+
+            // Block F12 (DevTools)
+            const isF12 = e.key === 'F12';
+
+            // Block Ctrl+Shift+I / Cmd+Shift+I (DevTools)
+            const isCtrlShiftI = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i';
+
+            // Block Ctrl+Shift+J / Cmd+Shift+J (Console)
+            const isCtrlShiftJ = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'j';
+
+            // Block Ctrl+Shift+C / Cmd+Shift+C (Inspect Element)
+            const isCtrlShiftC = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c';
+
+            // Block Ctrl+U / Cmd+U (View Source)
+            const isCtrlU = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u';
+
             if (isF5 || isCtrlR || isCtrlF5) {
                 e.preventDefault();
                 showBlockedOverlay(
@@ -272,6 +299,10 @@
                     'Refresh Not Allowed',
                     'Refreshing the page during the assessment is not permitted.<br>Please continue and complete your current image set.'
                 );
+            }
+
+            if (isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlU) {
+                e.preventDefault();
             }
         });
 

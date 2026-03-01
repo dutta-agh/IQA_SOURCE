@@ -1,6 +1,7 @@
 wwwroot\css\site.css
 wwwroot\favicon.ico
 wwwroot\js\app-config.js
+wwwroot\js\detectIncognito.js
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -74,4 +75,3 @@ wwwroot\uploads\images\Rating\3+2.png
 wwwroot\uploads\images\Rating\3-1.png
 wwwroot\uploads\images\Rating\3-2.png
 wwwroot\uploads\images\Rating\3.png
-wwwroot\js\detectIncognito.js
