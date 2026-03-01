@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using IQA_SOURCE.Models;
 using MySqlConnector;
 using YourApp.Data;
@@ -245,7 +245,7 @@ namespace IQA_SOURCE.Data
                             iqr_quality_rating = @qualityRating,
                             iqr_ip_address = @ipAddress,
                             iqr_user_agent = @userAgent,
-                            iqr_created_date = NOW()
+                            iqr_created_date = UTC_TIMESTAMP()                        -- ✅ fixed
                         WHERE iqr_session_id = @sessionId
                         AND iqr_assessment_code = @assessmentCode
                         AND iqr_im_id = @rawImageSetId";
@@ -276,7 +276,7 @@ namespace IQA_SOURCE.Data
                          iqr_quality_rating, iqr_ip_address, iqr_user_agent, iqr_created_date)
                         VALUES
                         (@sessionId, @assessmentCode, @rawImageSetId, @linkedImageId,
-                         @qualityRating, @ipAddress, @userAgent, NOW())";
+                         @qualityRating, @ipAddress, @userAgent, UTC_TIMESTAMP())";  // ✅ fixed
 
                     var insertParams = new[]
                     {
@@ -360,6 +360,102 @@ namespace IQA_SOURCE.Data
             {
                 _logger.LogError(ex, "Error in GetAssessmentProgress");
                 return (-1, ex.Message, new ImageAssessmentProgress());
+            }
+        }
+
+        public async Task<(int OutputCode, string OutputMsg, List<ImageRatingAdminRow> Data)> GetImageRatingsForAdmin(string? assessmentCode, string userCode)
+        {
+            try
+            {
+                var whereClause = string.IsNullOrWhiteSpace(assessmentCode)
+                    ? string.Empty
+                    : "WHERE iqr.iqr_assessment_code = @assessmentCode";
+
+                var query = $@"
+                    SELECT
+                        iqr.iqr_id,
+                        iqr.iqr_session_id,
+                        iqr.iqr_assessment_code,
+                        iqr.iqr_ip_address,
+                        iqr.iqr_created_date,
+                        iqr.iqr_quality_rating,
+
+                        im.im_id,
+                        im.im_file_name        AS master_file_name,
+                        im.im_file_path        AS master_file_path,
+                        im.im_width            AS master_width,
+                        im.im_height           AS master_height,
+                        im.im_format           AS master_format,
+                        im.im_dpi_x            AS master_dpi_x,
+                        im.im_dpi_y            AS master_dpi_y,
+                        im.im_exif_data        AS master_exif_data,
+
+                        il.il_id,
+                        il.il_file_name        AS linked_file_name,
+                        il.il_file_path        AS linked_file_path,
+                        il.il_width            AS linked_width,
+                        il.il_height           AS linked_height,
+                        il.il_format           AS linked_format,
+                        il.il_dpi_x            AS linked_dpi_x,
+                        il.il_dpi_y            AS linked_dpi_y,
+                        il.il_exif_data        AS linked_exif_data,
+                        il.il_quality_level    AS linked_quality_level,
+                        il.il_quality_type     AS linked_quality_type
+
+                    FROM tbl_image_quality_ratings iqr
+                    INNER JOIN image_master  im ON im.im_id  = iqr.iqr_im_id
+                    INNER JOIN image_linked  il ON il.il_id  = iqr.iqr_il_id
+                    {whereClause}
+                    ORDER BY iqr.iqr_created_date DESC";
+
+                MySqlParameter[]? parameters = string.IsNullOrWhiteSpace(assessmentCode)
+                    ? null
+                    : new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
+
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+
+                var data = new List<ImageRatingAdminRow>();
+                foreach (DataRow row in result.Rows)
+                {
+                    data.Add(new ImageRatingAdminRow
+                    {
+                        RatingId        = Convert.ToInt32(row["iqr_id"]),
+                        SessionId       = row["iqr_session_id"]?.ToString() ?? string.Empty,
+                        AssessmentCode  = row["iqr_assessment_code"]?.ToString() ?? string.Empty,
+                        IpAddress       = row["iqr_ip_address"]?.ToString() ?? string.Empty,
+                        RatedAt         = row["iqr_created_date"] != DBNull.Value ? Convert.ToDateTime(row["iqr_created_date"]) : null,
+                        QualityRating   = Convert.ToInt32(row["iqr_quality_rating"]),
+
+                        MasterImageId   = Convert.ToInt32(row["im_id"]),
+                        MasterImageName = row["master_file_name"]?.ToString() ?? string.Empty,
+                        MasterImageUrl  = row["master_file_path"]?.ToString() ?? string.Empty,
+                        MasterWidth     = row["master_width"]  != DBNull.Value ? Convert.ToInt32(row["master_width"])  : null,
+                        MasterHeight    = row["master_height"] != DBNull.Value ? Convert.ToInt32(row["master_height"]) : null,
+                        MasterFormat    = row["master_format"]?.ToString(),
+                        MasterDpiX      = row["master_dpi_x"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_x"])  : null,
+                        MasterDpiY      = row["master_dpi_y"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_y"])  : null,
+                        MasterExifData  = row["master_exif_data"]?.ToString(),
+
+                        LinkedImageId      = Convert.ToInt32(row["il_id"]),
+                        LinkedImageName    = row["linked_file_name"]?.ToString() ?? string.Empty,
+                        LinkedImageUrl     = row["linked_file_path"]?.ToString() ?? string.Empty,
+                        LinkedWidth        = row["linked_width"]  != DBNull.Value ? Convert.ToInt32(row["linked_width"])  : null,
+                        LinkedHeight       = row["linked_height"] != DBNull.Value ? Convert.ToInt32(row["linked_height"]) : null,
+                        LinkedFormat       = row["linked_format"]?.ToString(),
+                        LinkedDpiX         = row["linked_dpi_x"]  != DBNull.Value ? Convert.ToDouble(row["linked_dpi_x"])  : null,
+                        LinkedDpiY         = row["linked_dpi_y"]  != DBNull.Value ? Convert.ToDouble(row["linked_dpi_y"])  : null,
+                        LinkedExifData     = row["linked_exif_data"]?.ToString(),
+                        LinkedQualityLevel = row["linked_quality_level"]?.ToString(),
+                        LinkedQualityType  = row["linked_quality_type"]?.ToString(),
+                    });
+                }
+
+                return (1, "Success", data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetImageRatingsForAdmin");
+                return (-1, ex.Message, new List<ImageRatingAdminRow>());
             }
         }
     }

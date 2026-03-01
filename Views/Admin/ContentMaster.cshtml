@@ -254,26 +254,49 @@
         let currentViewCode = '';
 
         $(document).ready(function() {
-            // Initialize DataTable
+            console.log('Initializing Content Master...');
+            
+            // Initialize DataTable with case-insensitive column mapping
             contentTable = $('#contentTable').DataTable({
+                data: [], // Start with empty data
                 columns: [
-                    { data: 'cmCode' },
+                    { 
+                        data: function(row) {
+                            return row.cmCode || row.CmCode || '';
+                        },
+                        defaultContent: ''
+                    },
                     {
-                        data: 'cmContent',
+                        data: function(row) {
+                            return row.cmContent || row.CmContent || '';
+                        },
+                        defaultContent: '',
                         render: function(data) {
-                            const text = data ? $('<div>').html(data).text() : '';
+                            if (!data) return '';
+                            const text = $('<div>').html(data).text();
                             return text.length > 80 ? text.substring(0, 80) + '...' : text;
                         }
                     },
-                    { data: 'cmCreatedUser' },
+                    { 
+                        data: function(row) {
+                            return row.cmCreatedUser || row.CmCreatedUser || '';
+                        },
+                        defaultContent: ''
+                    },
                     {
-                        data: 'cmCreatedDate',
+                        data: function(row) {
+                            return row.cmCreatedDate || row.CmCreatedDate || '';
+                        },
+                        defaultContent: '',
                         render: function(data) {
                             return data ? new Date(data).toLocaleDateString() : '';
                         }
                     },
                     {
-                        data: 'cmActive',
+                        data: function(row) {
+                            return row.cmActive || row.CmActive || 'Y';
+                        },
+                        defaultContent: 'Y',
                         render: function(data) {
                             return data === 'Y'
                                 ? '<span class="badge bg-success">Active</span>'
@@ -283,39 +306,55 @@
                     {
                         data: null,
                         orderable: false,
+                        defaultContent: '',
                         render: function(data, type, row) {
-                            const code = escapeHtml(row.cmCode);
+                            if (!row) return '';
+                            const code = row.cmCode || row.CmCode || '';
+                            if (!code) return '';
+                            const escapedCode = escapeHtml(code);
                             return `
                                 <div class="action-buttons">
-                                    <button class="btn btn-sm btn-info" onclick="viewContent('${code}')" title="View">
+                                    <button class="btn btn-sm btn-info" onclick="viewContent('${escapedCode}')" title="View">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-warning" onclick="editContent('${code}')" title="Edit">
+                                    <button class="btn btn-sm btn-warning" onclick="editContent('${escapedCode}')" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${code}')" title="Delete">
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${escapedCode}')" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             `;
                         }
                     }
-                ]
+                ],
+                order: [[3, 'desc']], // Sort by created date descending
+                processing: true,
+                language: {
+                    emptyTable: "No content records found",
+                    loadingRecords: "Loading...",
+                    processing: "Processing..."
+                }
             });
 
             loadContents();
         });
 
         function loadContents() {
+            console.log('Loading contents...');
             showLoader();
             $.ajax({
                 url: buildApiUrl('/Admin/GetAllContents'),
                 type: 'GET',
                 success: function(response) {
                     hideLoader();
+                    console.log('Response:', response);
                     if (response.success) {
                         contentTable.clear();
-                        contentTable.rows.add(response.data || []);
+                        if (response.data && response.data.length > 0) {
+                            console.log('Sample data:', response.data[0]);
+                            contentTable.rows.add(response.data);
+                        }
                         contentTable.draw();
                     } else {
                         showAlert('Error: ' + response.message, 'danger');
@@ -363,29 +402,28 @@
                     hideLoader();
                     if (response.success && response.data) {
                         const content = response.data;
-                        currentViewCode = content.cmCode;
+                        currentViewCode = content.cmCode || content.CmCode || '';
 
-                        $('#viewCmCode').text(content.cmCode || '');
+                        $('#viewCmCode').text(currentViewCode);
                         $('#viewCmActive').html(
-                            content.cmActive === 'Y'
+                            (content.cmActive || content.CmActive) === 'Y'
                                 ? '<span class="badge bg-success">Active</span>'
                                 : '<span class="badge bg-danger">Inactive</span>'
                         );
 
-                        $('#viewCmContent').html(content.cmContent || '<em class="text-muted">No content available</em>');
-                        $('#viewCmContentRaw').text(content.cmContent || '');
+                        const htmlContent = content.cmContent || content.CmContent || '';
+                        $('#viewCmContent').html(htmlContent || '<em class="text-muted">No content available</em>');
+                        $('#viewCmContentRaw').text(htmlContent);
 
-                        $('#viewCmCreatedUser').text(content.cmCreatedUser || 'N/A');
+                        $('#viewCmCreatedUser').text(content.cmCreatedUser || content.CmCreatedUser || 'N/A');
+                        const createdDate = content.cmCreatedDate || content.CmCreatedDate;
                         $('#viewCmCreatedDate').text(
-                            content.cmCreatedDate
-                                ? new Date(content.cmCreatedDate).toLocaleString()
-                                : 'N/A'
+                            createdDate ? new Date(createdDate).toLocaleString() : 'N/A'
                         );
-                        $('#viewCmModifiedUser').text(content.cmModifiedUser || 'N/A');
+                        $('#viewCmModifiedUser').text(content.cmModifiedUser || content.CmModifiedUser || 'N/A');
+                        const modifiedDate = content.cmModifiedDate || content.CmModifiedDate;
                         $('#viewCmModifiedDate').text(
-                            content.cmModifiedDate
-                                ? new Date(content.cmModifiedDate).toLocaleString()
-                                : 'N/A'
+                            modifiedDate ? new Date(modifiedDate).toLocaleString() : 'N/A'
                         );
 
                         new bootstrap.Modal(document.getElementById('viewContentModal')).show();
@@ -414,11 +452,12 @@
                 success: function(response) {
                     hideLoader();
                     if (response.success && response.data) {
+                        const content = response.data;
                         isEditMode = true;
                         $('#modalTitle').text('Edit Content');
-                        $('#cmCode').val(response.data.cmCode).prop('readonly', true);
-                        $('#cmContent').val(response.data.cmContent);
-                        $('#cmActive').val(response.data.cmActive || 'Y');
+                        $('#cmCode').val(content.cmCode || content.CmCode).prop('readonly', true);
+                        $('#cmContent').val(content.cmContent || content.CmContent);
+                        $('#cmActive').val((content.cmActive || content.CmActive) || 'Y');
                         $('#formError').addClass('d-none');
                         new bootstrap.Modal(document.getElementById('contentModal')).show();
                     }

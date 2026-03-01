@@ -361,8 +361,7 @@ namespace IQA_SOURCE.Data
                                     @shutterSpeed, @iso, @flash,
                                     @exposureMode, @whiteBalance, @dateTaken,
                                     @orientation, @compressionQuality,
-                                    @qualityLevel, @qualityType, @uploadBatch,
-                                    @userId, NOW(), 1
+                                    @uploadBatch, @userId, NOW(), 1
                                 )";
 
                             var linkedParams = new[]
@@ -437,8 +436,7 @@ namespace IQA_SOURCE.Data
                             @shutterSpeed, @iso, @flash,
                             @exposureMode, @whiteBalance, @dateTaken,
                             @orientation, @compressionQuality,
-                            @qualityLevel, @qualityType, @uploadBatch,
-                            @userId, NOW(), 1
+                            @uploadBatch, @userId, NOW(), 1
                         )";
 
                     var linkedParams = new[]
@@ -997,6 +995,28 @@ namespace IQA_SOURCE.Data
                                 il_file_name,
                                 il_file_path,
                                 il_file_size,
+                                il_width,
+                                il_height,
+                                il_format,
+                                il_color_space,
+                                il_bit_depth,
+                                il_dpi_x,
+                                il_dpi_y,
+                                il_orientation,
+                                il_compression_quality,
+                                il_exif_data,
+                                il_camera_make,
+                                il_camera_model,
+                                il_lens_model,
+                                il_focal_length,
+                                il_aperture,
+                                il_shutter_speed,
+                                il_iso,
+                                il_flash,
+                                il_exposure_mode,
+                                il_white_balance,
+                                il_date_taken,
+                                il_upload_batch,
                                 il_quality_level,
                                 il_quality_type,
                                 il_created_date,
@@ -1017,14 +1037,36 @@ namespace IQA_SOURCE.Data
                         {
                             imageAudit.LinkedImages.Add(new LinkedImageAuditTrail
                             {
-                                IlId = linkedRow["il_id"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_id"]) : 0,
-                                IlFileName = linkedRow["il_file_name"]?.ToString(),
-                                IlFilePath = linkedRow["il_file_path"]?.ToString(),
-                                IlFileSize = linkedRow["il_file_size"] != DBNull.Value ? Convert.ToInt64(linkedRow["il_file_size"]) : null,
-                                IlQualityLevel = linkedRow["il_quality_level"]?.ToString(),
-                                IlQualityType = linkedRow["il_quality_type"]?.ToString(),
-                                IlCreatedDate = linkedRow["il_created_date"] != DBNull.Value ? (DateTime?)linkedRow["il_created_date"] : null,
-                                IlCreatedUser = linkedRow["il_created_user"]?.ToString()
+                                IlId               = linkedRow["il_id"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_id"]) : 0,
+                                IlFileName         = linkedRow["il_file_name"]?.ToString(),
+                                IlFilePath         = linkedRow["il_file_path"]?.ToString(),
+                                IlFileSize         = linkedRow["il_file_size"] != DBNull.Value ? Convert.ToInt64(linkedRow["il_file_size"]) : null,
+                                IlWidth            = linkedRow["il_width"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_width"]) : null,
+                                IlHeight           = linkedRow["il_height"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_height"]) : null,
+                                IlFormat           = linkedRow["il_format"]?.ToString(),
+                                IlColorSpace       = linkedRow["il_color_space"]?.ToString(),
+                                IlBitDepth         = linkedRow["il_bit_depth"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_bit_depth"]) : null,
+                                IlDpiX             = linkedRow["il_dpi_x"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_x"]) : null,
+                                IlDpiY             = linkedRow["il_dpi_y"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_y"]) : null,
+                                IlOrientation      = linkedRow["il_orientation"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_orientation"]) : null,
+                                IlCompressionQuality = linkedRow["il_compression_quality"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_compression_quality"]) : null,
+                                IlExifData         = linkedRow["il_exif_data"]?.ToString(),
+                                IlCameraMake       = linkedRow["il_camera_make"]?.ToString(),
+                                IlCameraModel      = linkedRow["il_camera_model"]?.ToString(),
+                                IlLensModel        = linkedRow["il_lens_model"]?.ToString(),
+                                IlFocalLength      = linkedRow["il_focal_length"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_focal_length"]) : null,
+                                IlAperture         = linkedRow["il_aperture"]?.ToString(),
+                                IlShutterSpeed     = linkedRow["il_shutter_speed"]?.ToString(),
+                                IlIso              = linkedRow["il_iso"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_iso"]) : null,
+                                IlFlash            = linkedRow["il_flash"]?.ToString(),
+                                IlExposureMode     = linkedRow["il_exposure_mode"]?.ToString(),
+                                IlWhiteBalance     = linkedRow["il_white_balance"]?.ToString(),
+                                IlDateTaken        = linkedRow["il_date_taken"] != DBNull.Value ? (DateTime?)linkedRow["il_date_taken"] : null,
+                                IlUploadBatch      = linkedRow["il_upload_batch"]?.ToString(),
+                                IlQualityLevel     = linkedRow["il_quality_level"]?.ToString(),
+                                IlQualityType      = linkedRow["il_quality_type"]?.ToString(),
+                                IlCreatedDate      = linkedRow["il_created_date"] != DBNull.Value ? (DateTime?)linkedRow["il_created_date"] : null,
+                                IlCreatedUser      = linkedRow["il_created_user"]?.ToString()
                             });
                         }
                     }

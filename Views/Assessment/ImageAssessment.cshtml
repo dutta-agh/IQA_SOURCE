@@ -7,38 +7,38 @@
 @section Styles {
     <style>
         .image-assessment-container {
-            width: 95%;
+            width: 98%;
             max-width: 100%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
         }
 
         .progress-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .progress-header h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.8rem;
+            margin: 0 0 5px 0;
+            font-size: 1.5rem;
             font-weight: 700;
         }
 
         .progress-info {
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: 600;
         }
 
         .progress-bar-custom {
             background: rgba(255, 255, 255, 0.3);
-            height: 8px;
+            height: 6px;
             border-radius: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
             overflow: hidden;
         }
 
@@ -49,259 +49,310 @@
             border-radius: 10px;
         }
 
-        .raw-image-container {
+        .raw-image-section {
             background: white;
-            border-radius: 10px;
-            padding: 30px;
+            border-radius: 8px;
+            padding: 15px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
             text-align: center;
+            margin-bottom: 20px;
         }
 
-        .raw-image-container h3 {
+        .raw-image-section h3 {
             color: #2d3748;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
             font-weight: 700;
         }
 
         .raw-image-wrapper {
-            margin: 20px 0;
-            display: inline-block;
-            max-width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
         }
 
         .raw-image {
-            max-width: 100%;
-            height: auto;
+            width: 256px;
+            height: 256px;
+            object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            width: auto;
             display: block;
-            margin: 0 auto;
         }
 
-        .linked-images-container {
+        .raw-image-section p {
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .linked-images-section {
             background: white;
-            border-radius: 10px;
-            padding: 30px;
+            border-radius: 8px;
+            padding: 15px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
         }
 
-        .linked-images-container h3 {
+        .linked-images-section h3 {
             color: #2d3748;
-            margin-bottom: 25px;
-            font-size: 1.5rem;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
             font-weight: 700;
             text-align: center;
         }
 
         .selection-hint {
             text-align: center;
-            padding: 15px;
-            background: #fff5f5;
-            border-left: 4px solid #fc8181;
+            padding: 10px;
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
             border-radius: 5px;
-            color: #742a2a;
-            margin-bottom: 25px;
-            font-size: 1.05rem;
+            color: #234e52;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
         }
 
-        .linked-images-grid {
+        .linked-images-list {
             display: flex;
+            flex-direction: row;
             flex-wrap: wrap;
-            gap: 25px;
-            margin-bottom: 30px;
+            gap: 15px;
             justify-content: center;
+            padding-bottom: 10px;
         }
 
-        .linked-image-card {
+        .linked-image-item {
             border: 3px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
+            border-radius: 8px;
+            padding: 12px;
             background: #f7fafc;
-            position: relative;
-            flex: 1 1 calc(50% - 12.5px);
-            min-width: 300px;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            width: 290px;
+            flex-shrink: 0;
         }
 
-        @@media (max-width: 768px) {
-            .linked-image-card {
-                flex: 1 1 100%;
-                max-width: 100%;
-            }
-        }
-
-        .linked-image-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        .linked-image-item:hover {
             border-color: #cbd5e0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .linked-image-card.selected {
+        .linked-image-item.selected {
             border-color: #667eea;
             background: #edf2f7;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
-        .linked-image-card.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #667eea;
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            font-weight: bold;
+        /* Red outline when no image selected on failed submit */
+        .linked-image-item.unrated {
+            border-color: #fc8181;
+            box-shadow: 0 0 0 3px rgba(252, 129, 129, 0.25);
         }
 
-        .linked-image-card img {
-            width: auto;
-            height: auto;
-            max-width: 100%;
-            max-height: 800px;
-            border-radius: 5px;
+        .image-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .linked-image-wrapper {
+            width: 256px;
+            height: 256px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             margin-bottom: 10px;
-            display: block; 
+        }
+
+        .linked-image-wrapper img {
+            width: 256px;
+            height: 256px;
             object-fit: contain;
+            border-radius: 5px;
+            display: block;
         }
 
         .linked-image-label {
             text-align: center;
             font-weight: 600;
             color: #4a5568;
-            margin-top: 10px;
-            font-size: 1.05rem;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .image-rating-section {
             width: 100%;
-        }
-
-        .quality-rating-section {
-            background: #f7fafc;
-            border-radius: 10px;
-            padding: 30px;
-            margin-top: 25px;
+            padding: 15px;
+            background: #f0f4f8;
+            border-radius: 6px;
+            margin-top: 12px;
+            border: 2px solid #cbd5e0;
             display: none;
-            border: 2px solid #e2e8f0;
-        }
-
-        .quality-rating-section.show {
-            display: block;
             animation: slideDown 0.3s ease-out;
         }
 
-        @@keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .image-rating-section.show {
+            display: block;
         }
 
-        .quality-rating-section h4 {
-            color: #2d3748;
-            margin-bottom: 25px;
-            text-align: center;
-            font-size: 1.4rem;
+        @@keyframes slideDown {
+            from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+            to   { opacity: 1; max-height: 300px; padding-top: 15px; padding-bottom: 15px; }
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .rating-title {
+            font-size: 0.95rem;
             font-weight: 700;
+            color: #2d3748;
+        }
+
+        .reset-button {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reset-button:hover {
+            background: #f56565;
+            transform: scale(1.05);
         }
 
         .rating-slider-container {
-            max-width: 650px;
-            margin: 0 auto;
+            width: 100%;
+            margin: 6px 0 0 0;
+        }
+
+        /* Unset slider thumb style — shown before user interacts */
+        .rating-slider.unset::-webkit-slider-thumb {
+            background: #a0aec0;
+        }
+
+        .rating-slider.unset::-moz-range-thumb {
+            background: #a0aec0;
         }
 
         .rating-slider {
-            width: 100%;
-            height: 10px;
-            border-radius: 5px;
-            background: linear-gradient(to right, 
-                #fc8181 0%, 
-                #f6ad55 25%, 
-                #ecc94b 50%, 
-                #68d391 75%, 
-                #48bb78 100%);
-            outline: none;
             -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            width: 100%;
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+
+        .rating-slider::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right,
+                #fc8181 0%, #f6ad55 25%, #ecc94b 50%, #68d391 75%, #48bb78 100%);
         }
 
         .rating-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 2px solid white;
+            margin-top: -8px;
+        }
+
+        .rating-slider::-moz-range-track {
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right,
+                #fc8181 0%, #f6ad55 25%, #ecc94b 50%, #68d391 75%, #48bb78 100%);
         }
 
         .rating-slider::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 2px solid white;
         }
 
         .rating-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            font-size: 1rem;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            padding: 4px 12px 0 12px;
+            margin: 0;
+            font-size: 0.75rem;
             color: #4a5568;
             font-weight: 600;
+            box-sizing: border-box;
         }
 
-        .rating-label {
-            text-align: center;
-            flex: 1;
-        }
+        .rating-label { text-align: center; }
 
         .rating-value-display {
             text-align: center;
-            margin: 25px 0;
-            font-size: 2rem;
+            margin: 12px 0 5px 0;
+            font-size: 1.4rem;
             font-weight: 700;
             color: #667eea;
+            min-height: 2rem;
+        }
+
+        /* Placeholder shown before slider is touched */
+        .rating-value-display.placeholder {
+            color: #a0aec0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-style: italic;
         }
 
         .rating-description {
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             color: #718096;
-            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .submit-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            position: sticky;
+            bottom: 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
 
         .submit-button {
             background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
             color: white;
             border: none;
-            padding: 18px 60px;
-            font-size: 1.2rem;
+            padding: 14px 50px;
+            font-size: 1.1rem;
             font-weight: 700;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
-            display: block;
-            margin: 30px auto 0;
             box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
         }
 
@@ -311,18 +362,50 @@
         }
 
         .submit-button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Thank You Modal */
+        .submit-info {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .submit-info.error {
+            color: #e53e3e;
+            font-weight: 600;
+        }
+
+        .submit-info.success {
+            color: #38a169;
+            font-weight: 600;
+        }
+
+        /* Validation banner for image assessment */
+        .img-validation-banner {
+            display: none;
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            border-radius: 8px;
+            padding: 12px 18px;
+            margin-bottom: 12px;
+            color: #742a2a;
+            font-weight: 600;
+            font-size: 0.9rem;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .img-validation-banner.show {
+            display: flex;
+        }
+
         .thankyou-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9);
             z-index: 10000;
             justify-content: center;
@@ -330,9 +413,7 @@
             animation: fadeIn 0.3s ease-in-out;
         }
 
-        .thankyou-modal.show {
-            display: flex;
-        }
+        .thankyou-modal.show { display: flex; }
 
         .thankyou-content {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -345,20 +426,10 @@
             width: 90%;
         }
 
-        @@keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
+        @@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @@keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(50px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .thankyou-icon {
@@ -369,154 +440,127 @@
         }
 
         @@keyframes checkmark {
-            0%, 50% {
-                transform: scale(0);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0%, 50% { transform: scale(0); opacity: 0; }
+            100%    { transform: scale(1); opacity: 1; }
         }
 
-        .thankyou-content h2 {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-
-        .thankyou-content p {
-            color: #e2e8f0;
-            font-size: 1.2rem;
-            line-height: 1.8;
-            margin-bottom: 30px;
-        }
-
-        .redirect-message {
-            color: #c7d2fe;
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
-        .redirect-timer {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-left: 5px;
-        }
-
-        @@media (min-width: 769px) and (max-width: 1200px) {
-            .linked-image-card {
-                flex: 1 1 calc(50% - 12.5px);
-                min-width: 250px;
-            }
-        }
-
-        @@media (min-width: 1201px) {
-            .linked-image-card {
-                flex: 1 1 calc(50% - 12.5px);
-                max-width: calc(50% - 12.5px);
-            }
-        }
+        .thankyou-content h2    { color: white; font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; }
+        .thankyou-content p     { color: #e2e8f0; font-size: 1.2rem; line-height: 1.8; margin-bottom: 30px; }
+        .redirect-message       { color: #c7d2fe; font-size: 1rem; font-weight: 600; }
+        .redirect-timer         { display: inline-block; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; margin-left: 5px; }
 
         @@media (max-width: 768px) {
-            .thankyou-content {
-                padding: 40px 30px;
-            }
-
-            .thankyou-content h2 {
-                font-size: 2rem;
-            }
-
-            .thankyou-content p {
-                font-size: 1rem;
-            }
+            .thankyou-content           { padding: 40px 30px; }
+            .thankyou-content h2        { font-size: 2rem; }
+            .thankyou-content p         { font-size: 1rem; }
+            .image-assessment-container { padding: 5px; }
+            .progress-header            { padding: 10px 15px; }
+            .linked-image-item          { width: 100%; }
+            .linked-image-wrapper,
+            .linked-image-wrapper img   { width: 100%; height: auto; }
         }
     </style>
 }
 
 <div class="image-assessment-container">
     <div class="progress-header">
-        <h2><i class="fas fa-images"></i> @Model.AssessmentName</h2>
         <div class="progress-info">
             Image Set <span id="currentSetNumber">@Model.CurrentSetNumber</span> of <span id="totalSets">@Model.TotalSets</span>
         </div>
         <div class="progress-bar-custom">
-            <div class="progress-bar-fill" id="progressBarFill" style="width: @(((double)Model.CurrentSetNumber / Model.TotalSets) * 100)%"></div>
+            <div class="progress-bar-fill" id="progressBarFill"
+                 style="width: @(((double)Model.CurrentSetNumber / Model.TotalSets) * 100)%"></div>
         </div>
     </div>
 
-    <!-- Raw Image Display -->
-    <div class="raw-image-container">
+    <!-- Reference Image -->
+    <div class="raw-image-section">
         <h3><i class="fas fa-image"></i> Reference Image</h3>
         <div class="raw-image-wrapper">
-            <img src="@Model.RawImage.RisRawImagePath" 
-                 alt="@Model.RawImage.RisName" 
+            <img src="@Model.RawImage.RisRawImagePath"
+                 alt="@Model.RawImage.RisName"
                  class="raw-image"
                  id="rawImage"
                  loading="eager">
         </div>
-        <p class="text-muted mt-3">@Model.RawImage.RisName</p>
     </div>
 
-    <!-- Linked Images Selection -->
-    <div class="linked-images-container">
-        <h3><i class="fas fa-th"></i> Select an Image to Rate</h3>
-        
+    <!-- Linked Images -->
+    <div class="linked-images-section">
+        <h3><i class="fas fa-th-list"></i> Rate Image Quality</h3>
+
         <div class="selection-hint">
-            <i class="fas fa-info-circle"></i> 
-            <strong>Please select ONE image below and rate its quality. You can change your selection before submitting.</strong>
+            <i class="fas fa-info-circle"></i>
+            <strong>Click on one image</strong> to select it, set your quality rating, then submit.
         </div>
 
-        <div class="linked-images-grid" id="linkedImagesGrid">
+        <div class="linked-images-list" id="linkedImagesList">
             @foreach (var linkedImage in Model.LinkedImages)
             {
-                <div class="linked-image-card" 
+                <div class="linked-image-item"
+                     id="item-@linkedImage.LiId"
                      data-image-id="@linkedImage.LiId"
-                     onclick="selectLinkedImage(@linkedImage.LiId)">
-                    <img src="@linkedImage.LiImagePath" 
-                         alt="@linkedImage.LiImageLabel"
-                         loading="lazy">
-                    <div class="linked-image-label">@linkedImage.LiImageLabel</div>
+                     onclick="selectImage(@linkedImage.LiId)">
+                    <div class="image-content">
+                        <div class="linked-image-wrapper">
+                            <img src="@linkedImage.LiImagePath"
+                                 alt="@linkedImage.LiImageLabel"
+                                 loading="lazy">
+                        </div>
+
+                        <div class="image-rating-section" id="rating-@linkedImage.LiId">
+                            <div class="rating-header">
+                                <span class="rating-title"><i class="fas fa-star"></i> Quality Rating</span>
+                                <button type="button"
+                                        class="reset-button"
+                                        onclick="event.stopPropagation(); resetRating(@linkedImage.LiId)">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                            </div>
+
+                            <div class="rating-slider-container">
+                                <input type="range"
+                                       min="1" max="5"
+                                       class="rating-slider unset"
+                                       id="slider-@linkedImage.LiId"
+                                       data-image-id="@linkedImage.LiId"
+                                       data-touched="false"
+                                       onclick="event.stopPropagation()"
+                                       oninput="updateRating(@linkedImage.LiId, this.value)">
+                                <div class="rating-labels">
+                                    <div class="rating-label">1</div>
+                                    <div class="rating-label">2</div>
+                                    <div class="rating-label">3</div>
+                                    <div class="rating-label">4</div>
+                                    <div class="rating-label">5</div>
+                                </div>
+                            </div>
+
+                            <div class="rating-value-display placeholder" id="value-display-@linkedImage.LiId">
+                                Move the slider to rate
+                            </div>
+                            <div class="rating-description" id="desc-@linkedImage.LiId"></div>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
 
-        <!-- Quality Rating Section -->
-        <div class="quality-rating-section" id="qualityRatingSection">
-            <h4><i class="fas fa-star"></i> Rate the Quality of Selected Image</h4>
-            
-            <div class="rating-slider-container">
-                <input type="range" 
-                       min="1" 
-                       max="5" 
-                       value="3" 
-                       class="rating-slider" 
-                       id="qualitySlider"
-                       oninput="updateRatingDisplay(this.value)">
-                
-                <div class="rating-labels">
-                    <div class="rating-label">1<br><small>Bad</small></div>
-                    <div class="rating-label">2<br><small>Poor</small></div>
-                    <div class="rating-label">3<br><small>Fair</small></div>
-                    <div class="rating-label">4<br><small>Good</small></div>
-                    <div class="rating-label">5<br><small>Excellent</small></div>
-                </div>
+        <!-- Submit Section -->
+        <div class="submit-section">
+            <div class="img-validation-banner" id="imgValidationBanner">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="imgValidationMsg"></span>
             </div>
-
-            <div class="rating-value-display">
-                Quality Rating: <span id="ratingValue">3</span> / 5
-            </div>
-            <div class="rating-description" id="ratingDescription">Fair</div>
-
-            <button type="button" 
-                    class="submit-button" 
+            <button type="button"
+                    class="submit-button"
                     id="submitButton"
                     onclick="submitRating()">
-                <i class="fas fa-paper-plane"></i> Submit Rating
+                <i class="fas fa-paper-plane"></i> Submit
             </button>
+            <div class="submit-info" id="submitInfo">
+                Select one image and rate it, then submit.
+            </div>
         </div>
     </div>
 </div>
@@ -524,9 +568,7 @@
 <!-- Thank You Modal -->
 <div class="thankyou-modal" id="thankyouModal">
     <div class="thankyou-content">
-        <div class="thankyou-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
+        <div class="thankyou-icon"><i class="fas fa-check-circle"></i></div>
         <h2>Thank You!</h2>
         <p>Your feedback has been successfully recorded. We greatly appreciate your time and valuable input in helping us improve image quality.</p>
         <div class="redirect-message">
@@ -537,201 +579,236 @@
 
 @section Scripts {
     <script>
-        const sessionId = '@Model.SessionId';
+        const sessionId      = '@Model.SessionId';
         const assessmentCode = '@Model.AssessmentCode';
-        const rawImageSetId = @Model.RawImage.RisId;
-        let selectedLinkedImageId = null;
-        let currentRating = 3;
+        const rawImageSetId  = @Model.RawImage.RisId;
 
-        const ratingDescriptions = {
-            1: 'Bad',
-            2: 'Poor',
-            3: 'Fair',
-            4: 'Good',
-            5: 'Excellent'
-        };
+        // Tracks the currently selected image and its rating state
+        let selectedImageId  = null;   // int | null
+        let selectedRating   = null;   // int | null — only set after slider is touched
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentSetNum = parseInt('@Model.CurrentSetNumber');
+        const ratingDescriptions = { 1: 'Bad', 2: 'Poor', 3: 'Fair', 4: 'Good', 5: 'Excellent' };
 
-            console.log('Image Assessment initialized');
-            console.log('Session ID:', sessionId);
-            console.log('Assessment Code:', assessmentCode);
-            console.log('Raw Image Set ID:', rawImageSetId);
-            console.log('Current Set:', currentSetNum);
+        let clientIpAddress = '';
 
-            // Dynamically adjust grid based on actual image sizes
-            adjustImageGrid();
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fetch public IP (non-blocking)
+            fetch('https://api.ipify.org?format=json')
+                .then(r => r.json())
+                .then(data => { clientIpAddress = data.ip || ''; })
+                .catch(() => { clientIpAddress = ''; });
         });
 
-        // Adjust grid layout based on loaded image sizes
-        function adjustImageGrid() {
-            const grid = document.getElementById('linkedImagesGrid');
-            const cards = grid.querySelectorAll('.linked-image-card');
-            
-            if (cards.length === 0) return;
+        function selectImage(imageId) {
+            const id = parseInt(imageId);
 
-            const images = Array.from(cards).map(card => card.querySelector('img'));
-            let loadedCount = 0;
-
-            images.forEach(img => {
-                if (img.complete) {
-                    checkAndAdjust();
-                } else {
-                    img.addEventListener('load', function() {
-                        loadedCount++;
-                        if (loadedCount === images.length) {
-                            checkAndAdjust();
-                        }
-                    });
-                }
-            });
-
-            function checkAndAdjust() {
-                const containerWidth = grid.offsetWidth;
-                const cardWidths = Array.from(cards).map(card => {
-                    const img = card.querySelector('img');
-                    return img ? img.naturalWidth + 30 : 0;
-                });
-
-                const maxCardWidth = Math.max(...cardWidths);
-                const totalTwoColumnsWidth = maxCardWidth * 2 + 25;
-
-                if (totalTwoColumnsWidth > containerWidth) {
-                    cards.forEach(card => {
-                        card.style.flex = '1 1 100%';
-                        card.style.maxWidth = '100%';
-                    });
-                    console.log('Images too large for 2 columns - switching to single column layout');
-                } else {
-                    console.log('Images fit in 2 column layout');
-                }
-            }
-        }
-
-        function selectLinkedImage(imageId) {
-            // IMPORTANT: Remove ALL previous selections (only ONE image can be selected)
-            document.querySelectorAll('.linked-image-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // Add selection to clicked card
-            const selectedCard = document.querySelector(`[data-image-id="${imageId}"]`);
-            if (selectedCard) {
-                selectedCard.classList.add('selected');
-                selectedLinkedImageId = imageId;
-
-                // Reset rating to default (3) when selecting a new image
-                currentRating = 3;
-                document.getElementById('qualitySlider').value = 3;
-                document.getElementById('ratingValue').textContent = 3;
-                document.getElementById('ratingDescription').textContent = 'Fair';
-
-                // Show rating section with animation
-                const ratingSection = document.getElementById('qualityRatingSection');
-                ratingSection.classList.add('show');
-                
-                // Scroll to rating section
-                setTimeout(() => {
-                    ratingSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
-
-                console.log('Selected image:', imageId, '- Rating reset to 3');
-            }
-        }
-
-        function updateRatingDisplay(value) {
-            currentRating = parseInt(value);
-            document.getElementById('ratingValue').textContent = currentRating;
-            document.getElementById('ratingDescription').textContent = ratingDescriptions[currentRating];
-        }
-
-        function submitRating() {
-            if (!selectedLinkedImageId) {
-                alert('⚠️ Please select an image first');
+            // If already selected, deselect (toggle off)
+            if (selectedImageId === id) {
+                const item          = document.getElementById(`item-${id}`);
+                const ratingSection = document.getElementById(`rating-${id}`);
+                item.classList.remove('selected');
+                ratingSection.classList.remove('show');
+                selectedImageId = null;
+                selectedRating  = null;
+                updateSubmitInfo();
                 return;
             }
 
-            if (currentRating < 1 || currentRating > 5) {
-                alert('⚠️ Please select a valid rating (1-5)');
+            // Collapse and deselect previously selected image
+            if (selectedImageId !== null) {
+                const prevItem          = document.getElementById(`item-${selectedImageId}`);
+                const prevRatingSection = document.getElementById(`rating-${selectedImageId}`);
+                if (prevItem)          prevItem.classList.remove('selected', 'unrated');
+                if (prevRatingSection) prevRatingSection.classList.remove('show');
+            }
+
+            // Select the new image
+            selectedImageId = id;
+            selectedRating  = null; // rating is cleared until slider is touched for this selection
+
+            const item          = document.getElementById(`item-${id}`);
+            const ratingSection = document.getElementById(`rating-${id}`);
+            item.classList.add('selected');
+            item.classList.remove('unrated');
+            ratingSection.classList.add('show');
+
+            // Reset slider to unset state for the newly selected image
+            const slider = document.getElementById(`slider-${id}`);
+            slider.removeAttribute('value');
+            slider.dataset.touched = 'false';
+            slider.classList.add('unset');
+
+            const valueDisplay = document.getElementById(`value-display-${id}`);
+            valueDisplay.textContent = 'Move the slider to rate';
+            valueDisplay.classList.add('placeholder');
+            document.getElementById(`desc-${id}`).textContent = '';
+
+            updateSubmitInfo();
+        }
+
+        function updateRating(imageId, value) {
+            const id     = parseInt(imageId);
+            const rating = parseInt(value);
+
+            selectedRating = rating;
+
+            const slider = document.getElementById(`slider-${imageId}`);
+            slider.dataset.touched = 'true';
+            slider.classList.remove('unset');
+
+            const valueDisplay = document.getElementById(`value-display-${imageId}`);
+            valueDisplay.textContent = `${rating} / 5`;
+            valueDisplay.classList.remove('placeholder');
+
+            document.getElementById(`desc-${imageId}`).textContent = ratingDescriptions[rating] || '';
+
+            document.getElementById(`item-${imageId}`).classList.remove('unrated');
+
+            // Hide validation banner once both conditions are satisfied
+            if (selectedImageId === id && selectedRating !== null) {
+                document.getElementById('imgValidationBanner').classList.remove('show');
+            }
+
+            updateSubmitInfo();
+        }
+
+        function resetRating(imageId) {
+            const id = parseInt(imageId);
+
+            // Only reset if this is the currently selected image
+            if (selectedImageId !== id) return;
+
+            selectedRating = null;
+
+            const slider = document.getElementById(`slider-${imageId}`);
+            slider.removeAttribute('value');
+            slider.dataset.touched = 'false';
+            slider.classList.add('unset');
+
+            const valueDisplay = document.getElementById(`value-display-${imageId}`);
+            valueDisplay.textContent = 'Move the slider to rate';
+            valueDisplay.classList.add('placeholder');
+            document.getElementById(`desc-${imageId}`).textContent = '';
+
+            updateSubmitInfo();
+        }
+
+        function updateSubmitInfo() {
+            const submitInfo = document.getElementById('submitInfo');
+
+            if (selectedImageId === null) {
+                submitInfo.textContent = 'Select one image and rate it, then submit.';
+                submitInfo.className   = 'submit-info';
+            } else if (selectedRating === null) {
+                submitInfo.textContent = 'Image selected. Move the slider to set a rating, then submit.';
+                submitInfo.className   = 'submit-info';
+            } else {
+                submitInfo.textContent = `Image selected with rating ${selectedRating} (${ratingDescriptions[selectedRating]}). Ready to submit.`;
+                submitInfo.className   = 'submit-info success';
+                document.getElementById('imgValidationBanner').classList.remove('show');
+            }
+        }
+
+        async function submitRating() {
+            const banner = document.getElementById('imgValidationBanner');
+            const msg    = document.getElementById('imgValidationMsg');
+
+            // Validate: an image must be selected
+            if (selectedImageId === null) {
+                document.querySelectorAll('.linked-image-item').forEach(item => item.classList.add('unrated'));
+                msg.textContent = 'Please select one image before submitting.';
+                banner.classList.add('show');
+                document.getElementById('linkedImagesList').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return;
             }
 
+            // Validate: a rating must be set via the slider
+            if (selectedRating === null) {
+                const item = document.getElementById(`item-${selectedImageId}`);
+                item.classList.add('unrated');
+                msg.textContent = 'Please move the slider to set a quality rating before submitting.';
+                banner.classList.add('show');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // --- Submit ---
             const submitButton = document.getElementById('submitButton');
-            submitButton.disabled = true;
+            const submitInfo   = document.getElementById('submitInfo');
+
+            submitButton.disabled  = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitInfo.textContent = 'Submitting your rating...';
+            submitInfo.className   = 'submit-info';
 
             const payload = {
-                SessionId: sessionId,
-                AssessmentCode: assessmentCode,
-                RawImageSetId: rawImageSetId,
-                SelectedLinkedImageId: selectedLinkedImageId,
-                QualityRating: currentRating
+                SessionId:             sessionId,
+                AssessmentCode:        assessmentCode,
+                RawImageSetId:         rawImageSetId,
+                SelectedLinkedImageId: selectedImageId,
+                QualityRating:         selectedRating,
+                IpAddress:             clientIpAddress
             };
 
-            console.log('Submitting final rating:', payload);
+            console.log('Submitting rating:', payload);
 
-            fetch(buildApiUrl('/Assessment/SubmitImageQualityRating'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/SubmitImageQualityRating'), {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
                 console.log('Response:', data);
-                
-                if (data.success) {
-                    if (data.data.isCompleted) {
-                        // All sets completed - Show thank you modal
-                        showThankYouModal();
-                    } else {
-                        // Load next image set
-                        window.location.href = buildApiUrl('/Assessment/ImageAssessment?assessmentCode=' + assessmentCode);
-                    }
-                } else {
+
+                if (!data.success) {
                     alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Rating';
+                    submitButton.disabled  = false;
+                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                    submitInfo.textContent = 'Submission failed. Please try again.';
+                    submitInfo.className   = 'submit-info error';
+                    return;
                 }
-            })
-            .catch(error => {
+
+                if (data.data.isCompleted) {
+                    showThankYouModal();
+                } else {
+                    navigateTo(buildApiUrl('/Assessment/ImageAssessment?assessmentCode=' + assessmentCode));
+                }
+
+            } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Network Error\n\nAn error occurred while submitting. Please check your connection and try again.');
-                submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Rating';
-            });
+                submitButton.disabled  = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                submitInfo.textContent = 'Network error. Please try again.';
+                submitInfo.className   = 'submit-info error';
+            }
         }
 
         function showThankYouModal() {
-            const modal = document.getElementById('thankyouModal');
-            const timerElement = document.getElementById('redirectTimer');
-            
+            const modal   = document.getElementById('thankyouModal');
+            const timerEl = document.getElementById('redirectTimer');
             modal.classList.add('show');
-            
+
+            // Prevent any beforeunload prompt during the redirect
+            window.onbeforeunload = null;
+
             let countdown = 3;
-            timerElement.textContent = countdown;
+            timerEl.textContent = countdown;
 
-            const countdownInterval = setInterval(() => {
+            const interval = setInterval(() => {
                 countdown--;
-                timerElement.textContent = countdown;
-
+                timerEl.textContent = countdown;
                 if (countdown <= 0) {
-                    clearInterval(countdownInterval);
-                    // Redirect to home page
-                    window.location.href = buildApiUrl('/');
+                    clearInterval(interval);
+                    // Use replace() so the browser does not treat this as a reload
+                    window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
                 }
             }, 1000);
         }
-
-        // Handle window resize
-        window.addEventListener('resize', adjustImageGrid);
     </script>
 }

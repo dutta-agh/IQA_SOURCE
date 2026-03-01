@@ -20,82 +20,49 @@ namespace IQA_SOURCE.Data
             {
                 var query = @"
                     INSERT INTO SpeedTestLog (
-                        IpAddress,
-                        UserAgent,
-                        ScreenWidth,
-                        ScreenHeight,
-                        DownloadSpeedMbps,
-                        ResolutionPassed,
-                        SpeedPassed,
-                        OverallPassed,
-                        TestDateTime,
-                        SessionId,
-                        ReferrerUrl,
-                        BrowserInfo,
-                        AssessmentCode,
-                        PrivateModeDetected,
-                        PrivateModeBrowser,
-                        DeviceType,
-                        UploadSpeedMbps,
-                        Latency
+                        IpAddress, UserAgent, ScreenWidth, ScreenHeight,
+                        DownloadSpeedMbps, ResolutionPassed, SpeedPassed, OverallPassed,
+                        TestDateTime, SessionId, ReferrerUrl, BrowserInfo, AssessmentCode,
+                        PrivateModeDetected, PrivateModeBrowser, DeviceType, UploadSpeedMbps, Latency
                     )
                     VALUES (
-                        @ipAddress,
-                        @userAgent,
-                        @screenWidth,
-                        @screenHeight,
-                        @downloadSpeed,
-                        @resolutionPassed,
-                        @speedPassed,
-                        @overallPassed,
-                        NOW(),
-                        @sessionId,
-                        @referrerUrl,
-                        @browserInfo,
-                        @assessmentCode,
-                        @privateModeDetected,
-                        @privateModeBrowser,
-                        @deviceType,
-                        @uploadSpeed,
-                        @latency
+                        @ipAddress, @userAgent, @screenWidth, @screenHeight,
+                        @downloadSpeed, @resolutionPassed, @speedPassed, @overallPassed,
+                        UTC_TIMESTAMP(), @sessionId, @referrerUrl, @browserInfo, @assessmentCode,
+                        @privateModeDetected, @privateModeBrowser, @deviceType, @uploadSpeed, @latency
                     )";
 
                 var parameters = new[]
                 {
-                    new MySqlParameter("@ipAddress", ipAddress ?? "Unknown"),
-                    new MySqlParameter("@userAgent", userAgent ?? "Unknown"),
-                    new MySqlParameter("@screenWidth", (object?)request.ScreenWidth ?? DBNull.Value),
-                    new MySqlParameter("@screenHeight", (object?)request.ScreenHeight ?? DBNull.Value),
-                    new MySqlParameter("@downloadSpeed", (object?)request.DownloadSpeedMbps ?? DBNull.Value),
-                    new MySqlParameter("@resolutionPassed", request.ResolutionPassed),
-                    new MySqlParameter("@speedPassed", request.SpeedPassed),
-                    new MySqlParameter("@overallPassed", request.OverallPassed),
-                    new MySqlParameter("@sessionId", request.SessionId ?? Guid.NewGuid().ToString()),
-                    new MySqlParameter("@referrerUrl", (object?)referrerUrl ?? DBNull.Value),
-                    new MySqlParameter("@browserInfo", userAgent ?? "Unknown"),
-                    new MySqlParameter("@assessmentCode", (object?)request.AssessmentCode ?? DBNull.Value),
+                    new MySqlParameter("@ipAddress",           ipAddress ?? "Unknown"),
+                    new MySqlParameter("@userAgent",           userAgent ?? "Unknown"),
+                    new MySqlParameter("@screenWidth",         (object?)request.ScreenWidth         ?? DBNull.Value),
+                    new MySqlParameter("@screenHeight",        (object?)request.ScreenHeight        ?? DBNull.Value),
+                    new MySqlParameter("@downloadSpeed",       (object?)request.DownloadSpeedMbps   ?? DBNull.Value),
+                    new MySqlParameter("@resolutionPassed",    request.ResolutionPassed),
+                    new MySqlParameter("@speedPassed",         request.SpeedPassed),
+                    new MySqlParameter("@overallPassed",       request.OverallPassed),
+                    new MySqlParameter("@sessionId",           request.SessionId ?? Guid.NewGuid().ToString()),
+                    new MySqlParameter("@referrerUrl",         (object?)referrerUrl                 ?? DBNull.Value),
+                    new MySqlParameter("@browserInfo",         userAgent ?? "Unknown"),
+                    new MySqlParameter("@assessmentCode",      (object?)request.AssessmentCode      ?? DBNull.Value),
                     new MySqlParameter("@privateModeDetected", request.PrivateModeDetected),
-                    new MySqlParameter("@privateModeBrowser", (object?)request.PrivateModeBrowser ?? DBNull.Value),
-                    new MySqlParameter("@deviceType", (object?)request.DeviceType ?? DBNull.Value),
-                    new MySqlParameter("@uploadSpeed", (object?)request.UploadSpeedMbps ?? DBNull.Value),
-                    new MySqlParameter("@latency", (object?)request.Latency ?? DBNull.Value)
+                    new MySqlParameter("@privateModeBrowser",  (object?)request.PrivateModeBrowser  ?? DBNull.Value),
+                    new MySqlParameter("@deviceType",          (object?)request.DeviceType          ?? DBNull.Value),
+                    new MySqlParameter("@uploadSpeed",         (object?)request.UploadSpeedMbps     ?? DBNull.Value),
+                    new MySqlParameter("@latency",             (object?)request.Latency             ?? DBNull.Value)
                 };
 
                 var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
-
                 return new SpeedTestLogResponse
                 {
                     OutputCode = rowsAffected > 0 ? 1 : 0,
-                    OutputMsg = rowsAffected > 0 ? "Speed test log saved successfully" : "Failed to save speed test log"
+                    OutputMsg  = rowsAffected > 0 ? "Speed test log saved successfully" : "Failed to save speed test log"
                 };
             }
             catch (Exception ex)
             {
-                return new SpeedTestLogResponse
-                {
-                    OutputCode = 0,
-                    OutputMsg = $"Error saving speed test log: {ex.Message}"
-                };
+                return new SpeedTestLogResponse { OutputCode = 0, OutputMsg = $"Error saving speed test log: {ex.Message}" };
             }
         }
 

@@ -30,9 +30,7 @@ namespace IQA_SOURCE.Data
                 var assessmentResult = await Task.Run(() => _dbHelper.ExecuteQuery(assessmentQuery, assessmentParams));
 
                 if (assessmentResult.Rows.Count == 0)
-                {
                     return null;
-                }
 
                 var viewModel = new QuestionPageViewModel
                 {
@@ -41,7 +39,6 @@ namespace IQA_SOURCE.Data
                     Questions = new List<QuestionWithOptions>()
                 };
 
-                // REVERTED: Keep your original column names
                 var questionsQuery = @"
                     SELECT 
                         QsId, QsCode, QsText, QsType, QsCategory,
@@ -56,17 +53,16 @@ namespace IQA_SOURCE.Data
                 {
                     var question = new QuestionMaster
                     {
-                        QId = Convert.ToInt32(qRow["QsId"]),
-                        QsCode = qRow["QsCode"]?.ToString(),
-                        QsText = qRow["QsText"]?.ToString(),
-                        QsType = qRow["QsType"]?.ToString(),
-                        QsCategory = qRow["QsCategory"]?.ToString(),
+                        QId             = Convert.ToInt32(qRow["QsId"]),
+                        QsCode          = qRow["QsCode"]?.ToString(),
+                        QsText          = qRow["QsText"]?.ToString(),
+                        QsType          = qRow["QsType"]?.ToString(),
+                        QsCategory      = qRow["QsCategory"]?.ToString(),
                         QsMaxSelections = qRow["QsMaxSelections"] != DBNull.Value ? (int?)Convert.ToInt32(qRow["QsMaxSelections"]) : null,
-                        QsOrderNo = qRow["QsOrderNo"] != DBNull.Value ? (int?)Convert.ToInt32(qRow["QsOrderNo"]) : null,
-                        QsActive = Convert.ToInt32(qRow["QsActive"])
+                        QsOrderNo       = qRow["QsOrderNo"]       != DBNull.Value ? (int?)Convert.ToInt32(qRow["QsOrderNo"])       : null,
+                        QsActive        = Convert.ToInt32(qRow["QsActive"])
                     };
 
-                    // REVERTED: Keep your original column names
                     var optionsQuery = @"
                         SELECT 
                             QoId, QoQsId, QoText, QoValue, QoOrderNo, QoActive
@@ -83,19 +79,19 @@ namespace IQA_SOURCE.Data
                     {
                         options.Add(new QuestionOption
                         {
-                            QoId = Convert.ToInt32(oRow["QoId"]),
-                            QoQId = Convert.ToInt32(oRow["QoQsId"]),
-                            QoText = oRow["QoText"]?.ToString(),
-                            QoValue = oRow["QoValue"]?.ToString(),
+                            QoId      = Convert.ToInt32(oRow["QoId"]),
+                            QoQId     = Convert.ToInt32(oRow["QoQsId"]),
+                            QoText    = oRow["QoText"]?.ToString(),
+                            QoValue   = oRow["QoValue"]?.ToString(),
                             QoOrderNo = oRow["QoOrderNo"] != DBNull.Value ? (int?)Convert.ToInt32(oRow["QoOrderNo"]) : null,
-                            QoActive = Convert.ToInt32(oRow["QoActive"])
+                            QoActive  = Convert.ToInt32(oRow["QoActive"])
                         });
                     }
 
                     viewModel.Questions.Add(new QuestionWithOptions
                     {
                         Question = question,
-                        Options = options
+                        Options  = options
                     });
                 }
 
@@ -111,21 +107,18 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // FIXED: Correct column names from database screenshots
                 var checkQuery = @"
-                    SELECT Urid, UrSessionid, UrAssessmentCode, UrIpAddress, 
+                    SELECT Urid, UrSessionid, UrAssessmentCode, UrIpAddress,
                            UrUserAgent, UrSubmitTime, UrStatus, UrCreatedDate
                     FROM tbl_question_answers
-                    WHERE UrSessionid = @sessionId 
-                    AND UrAssessmentCode = @assessmentCode
+                    WHERE UrSessionid = @sessionId AND UrAssessmentCode = @assessmentCode
                     LIMIT 1";
 
                 var checkParams = new[]
                 {
-                    new MySqlParameter("@sessionId", sessionId),
+                    new MySqlParameter("@sessionId",      sessionId),
                     new MySqlParameter("@assessmentCode", assessmentCode)
                 };
-
                 var result = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
 
                 if (result.Rows.Count > 0)
@@ -133,32 +126,31 @@ namespace IQA_SOURCE.Data
                     var row = result.Rows[0];
                     return new QuestionAnswerResponse
                     {
-                        UrId = Convert.ToInt32(row["Urid"]),
-                        UrSessionId = row["UrSessionid"]?.ToString(),
+                        UrId             = Convert.ToInt32(row["Urid"]),
+                        UrSessionId      = row["UrSessionid"]?.ToString(),
                         UrAssessmentCode = row["UrAssessmentCode"]?.ToString(),
-                        UrIpAddress = row["UrIpAddress"]?.ToString(),
-                        UrUserAgent = row["UrUserAgent"]?.ToString(),
-                        UrStartTime = null, // Not in database
-                        UrSubmitTime = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
-                        UrStatus = row["UrStatus"]?.ToString(),
-                        UrCreatedDate = row["UrCreatedDate"] != DBNull.Value ? (DateTime?)row["UrCreatedDate"] : null
+                        UrIpAddress      = row["UrIpAddress"]?.ToString(),
+                        UrUserAgent      = row["UrUserAgent"]?.ToString(),
+                        UrStartTime      = null,
+                        UrSubmitTime     = row["UrSubmitTime"]  != DBNull.Value ? (DateTime?)row["UrSubmitTime"]  : null,
+                        UrStatus         = row["UrStatus"]?.ToString(),
+                        UrCreatedDate    = row["UrCreatedDate"] != DBNull.Value ? (DateTime?)row["UrCreatedDate"] : null
                     };
                 }
 
-                // FIXED: Correct column names
                 var insertQuery = @"
-                    INSERT INTO tbl_question_answers 
+                    INSERT INTO tbl_question_answers
                     (UrSessionid, UrAssessmentCode, UrIpAddress, UrUserAgent, UrStatus, UrCreatedDate)
-                    VALUES 
-                    (@sessionId, @assessmentCode, @ipAddress, @userAgent, 'IN_PROGRESS', NOW());
+                    VALUES
+                    (@sessionId, @assessmentCode, @ipAddress, @userAgent, 'IN_PROGRESS', UTC_TIMESTAMP());
                     SELECT LAST_INSERT_ID();";
 
                 var insertParams = new[]
                 {
-                    new MySqlParameter("@sessionId", sessionId),
+                    new MySqlParameter("@sessionId",      sessionId),
                     new MySqlParameter("@assessmentCode", assessmentCode),
-                    new MySqlParameter("@ipAddress", ipAddress),
-                    new MySqlParameter("@userAgent", userAgent)
+                    new MySqlParameter("@ipAddress",      ipAddress),
+                    new MySqlParameter("@userAgent",      userAgent)
                 };
 
                 var insertResult = await Task.Run(() => _dbHelper.ExecuteQuery(insertQuery, insertParams));
@@ -166,14 +158,14 @@ namespace IQA_SOURCE.Data
 
                 return new QuestionAnswerResponse
                 {
-                    UrId = newId,
-                    UrSessionId = sessionId,
+                    UrId             = newId,
+                    UrSessionId      = sessionId,
                     UrAssessmentCode = assessmentCode,
-                    UrIpAddress = ipAddress,
-                    UrUserAgent = userAgent,
-                    UrStartTime = null,
-                    UrStatus = "IN_PROGRESS",
-                    UrCreatedDate = DateTime.Now
+                    UrIpAddress      = ipAddress,
+                    UrUserAgent      = userAgent,
+                    UrStartTime      = null,
+                    UrStatus         = "IN_PROGRESS",
+                    UrCreatedDate    = DateTime.UtcNow
                 };
             }
             catch (Exception ex)
@@ -187,28 +179,19 @@ namespace IQA_SOURCE.Data
             try
             {
                 var questionAnswer = await GetOrCreateQuestionAnswer(
-                    submission.SessionId,
-                    submission.AssessmentCode,
-                    "::1",
-                    "User Agent",
-                    userId
-                );
+                    submission.SessionId, submission.AssessmentCode, "::1", "User Agent", userId);
 
-                // FIXED: Correct column names - UrdUrid instead of UrdUrId
                 var deleteQuery = @"
-                    DELETE FROM tbl_question_answer_details 
-                    WHERE UrdUrid = @responseId 
-                    AND UrdAssessmentCode = @assessmentCode";
+                    DELETE FROM tbl_question_answer_details
+                    WHERE UrdUrid = @responseId AND UrdAssessmentCode = @assessmentCode";
 
                 var deleteParams = new[]
                 {
-                    new MySqlParameter("@responseId", questionAnswer.UrId),
+                    new MySqlParameter("@responseId",     questionAnswer.UrId),
                     new MySqlParameter("@assessmentCode", submission.AssessmentCode)
                 };
-
                 await Task.Run(() => _dbHelper.ExecuteNonQuery(deleteQuery, deleteParams));
 
-                // FIXED: Correct column names - UrdUrid and UrdQoid
                 int insertedCount = 0;
                 foreach (var answer in submission.Answers)
                 {
@@ -217,31 +200,30 @@ namespace IQA_SOURCE.Data
                         for (int i = 0; i < answer.SelectedOptionIds.Count; i++)
                         {
                             var insertQuery = @"
-                                INSERT INTO tbl_question_answer_details 
-                                (UrdUrid, UrdAssessmentCode, UrdQoid, UrdQoId, UrdCreatedDate)
-                                VALUES 
-                                (@responseId, @assessmentCode, @questionId, @answerText, NOW())";
+                                INSERT INTO tbl_question_answer_details
+                                (UrdUrid, UrdAssessmentCode, UrdQsId, UrdQoId, UrdAnswerText, UrdCreatedDate)
+                                VALUES
+                                (@responseId, @assessmentCode, @questionId, @optionId, @answerText, UTC_TIMESTAMP())";
 
                             var insertParams = new[]
                             {
-                                new MySqlParameter("@responseId", questionAnswer.UrId),
+                                new MySqlParameter("@responseId",     questionAnswer.UrId),
                                 new MySqlParameter("@assessmentCode", submission.AssessmentCode),
-                                new MySqlParameter("@questionId", answer.QuestionId),
-                                new MySqlParameter("@answerText", answer.SelectedOptionValues != null && i < answer.SelectedOptionValues.Count 
-                                    ? answer.SelectedOptionValues[i] 
-                                    : (object)DBNull.Value)
+                                new MySqlParameter("@questionId",     answer.QuestionId),
+                                new MySqlParameter("@optionId",       answer.SelectedOptionIds[i]),
+                                new MySqlParameter("@answerText",     answer.SelectedOptionValues != null && i < answer.SelectedOptionValues.Count
+                                                                          ? answer.SelectedOptionValues[i]
+                                                                          : (object)DBNull.Value)
                             };
-
                             await Task.Run(() => _dbHelper.ExecuteNonQuery(insertQuery, insertParams));
                             insertedCount++;
                         }
                     }
                 }
 
-                // FIXED: Correct column name
                 var updateQuery = @"
-                    UPDATE tbl_question_answers 
-                    SET UrSubmitTime = NOW(), UrStatus = 'COMPLETED'
+                    UPDATE tbl_question_answers
+                    SET UrSubmitTime = UTC_TIMESTAMP(), UrStatus = 'COMPLETED'
                     WHERE Urid = @responseId";
 
                 var updateParams = new[] { new MySqlParameter("@responseId", questionAnswer.UrId) };
@@ -250,23 +232,19 @@ namespace IQA_SOURCE.Data
                 return new SubmissionResponse
                 {
                     OutputCode = 1,
-                    OutputMsg = "Question answers saved successfully",
+                    OutputMsg  = "Question answers saved successfully",
                     Data = new SubmissionResult
                     {
-                        ResponseId = questionAnswer.UrId,
-                        TotalQuestions = submission.Answers.Count,
+                        ResponseId        = questionAnswer.UrId,
+                        TotalQuestions    = submission.Answers.Count,
                         AnsweredQuestions = insertedCount,
-                        SubmittedAt = DateTime.Now
+                        SubmittedAt       = DateTime.UtcNow
                     }
                 };
             }
             catch (Exception ex)
             {
-                return new SubmissionResponse
-                {
-                    OutputCode = 0,
-                    OutputMsg = $"Error saving question answers: {ex.Message}"
-                };
+                return new SubmissionResponse { OutputCode = 0, OutputMsg = $"Error saving question answers: {ex.Message}" };
             }
         }
 
@@ -274,13 +252,12 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // FIXED: Correct column names
                 var query = @"
                     SELECT 
                         qa.Urid, qa.UrSessionid, qa.UrAssessmentCode, qa.UrIpAddress,
                         qa.UrSubmitTime, qa.UrStatus,
-                        atm.atm_name as AssessmentName,
-                        COUNT(DISTINCT qad.UrdQoid) as AnsweredQuestions
+                        atm.atm_name AS AssessmentName,
+                        COUNT(DISTINCT qad.UrdQsId) AS AnsweredQuestions
                     FROM tbl_question_answers qa
                     LEFT JOIN assessment_type_mstr atm ON qa.UrAssessmentCode = atm.atm_code
                     LEFT JOIN tbl_question_answer_details qad ON qa.Urid = qad.UrdUrid
@@ -295,14 +272,14 @@ namespace IQA_SOURCE.Data
                 {
                     summaries.Add(new QuestionAnswerSummary
                     {
-                        ResponseId = Convert.ToInt32(row["Urid"]),
-                        SessionId = row["UrSessionid"]?.ToString(),
-                        AssessmentCode = row["UrAssessmentCode"]?.ToString(),
-                        AssessmentName = row["AssessmentName"]?.ToString(),
-                        IpAddress = row["UrIpAddress"]?.ToString(),
-                        StartTime = null,
-                        SubmitTime = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
-                        Status = row["UrStatus"]?.ToString(),
+                        ResponseId        = Convert.ToInt32(row["Urid"]),
+                        SessionId         = row["UrSessionid"]?.ToString(),
+                        AssessmentCode    = row["UrAssessmentCode"]?.ToString(),
+                        AssessmentName    = row["AssessmentName"]?.ToString(),
+                        IpAddress         = row["UrIpAddress"]?.ToString(),
+                        StartTime         = null,
+                        SubmitTime        = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
+                        Status            = row["UrStatus"]?.ToString(),
                         AnsweredQuestions = Convert.ToInt32(row["AnsweredQuestions"])
                     });
                 }
@@ -310,8 +287,8 @@ namespace IQA_SOURCE.Data
                 return new QuestionAnswerResultsResponse
                 {
                     OutputCode = 1,
-                    OutputMsg = "Question answers retrieved successfully",
-                    Data = summaries
+                    OutputMsg  = "Question answers retrieved successfully",
+                    Data       = summaries
                 };
             }
             catch (Exception ex)
@@ -319,8 +296,8 @@ namespace IQA_SOURCE.Data
                 return new QuestionAnswerResultsResponse
                 {
                     OutputCode = 0,
-                    OutputMsg = $"Error retrieving question answers: {ex.Message}",
-                    Data = new List<QuestionAnswerSummary>()
+                    OutputMsg  = $"Error retrieving question answers: {ex.Message}",
+                    Data       = new List<QuestionAnswerSummary>()
                 };
             }
         }
@@ -329,37 +306,39 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // FIXED: Correct column names
                 var query = @"
                     SELECT 
                         qa.Urid, qa.UrSessionid, qa.UrAssessmentCode, qa.UrIpAddress,
                         qa.UrSubmitTime, qa.UrStatus,
-                        atm.atm_name as AssessmentName
+                        atm.atm_name AS AssessmentName
                     FROM tbl_question_answers qa
                     LEFT JOIN assessment_type_mstr atm ON qa.UrAssessmentCode = atm.atm_code
                     WHERE qa.UrAssessmentCode = @assessmentCode
                     ORDER BY qa.UrSubmitTime DESC";
 
                 var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
-                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var result     = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
 
                 var summaries = new List<QuestionAnswerSummary>();
-                
+
                 foreach (DataRow row in result.Rows)
                 {
                     var responseId = Convert.ToInt32(row["Urid"]);
-                    
-                    // FIXED: UrdQoid and keep QsCode, QsText, QsType as they were
+
+                    // FIX: Join on UrdQsId (question FK) and display UrdAnswerText (stored option label).
+                    // UserResponseRepository saves: UrdQsId = QuestionId, UrdQoId = OptionId (int), UrdAnswerText = option label text.
                     var answersQuery = @"
                         SELECT 
-                            qad.UrdQoid, q.QsCode, q.QsText, q.QsType,
-                            GROUP_CONCAT(qo.QoText SEPARATOR ', ') as SelectedOptions
+                            qad.UrdQsId                                                    AS QuestionId,
+                            q.QsCode                                                       AS QuestionCode,
+                            q.QsText                                                       AS QuestionText,
+                            q.QsType                                                       AS QuestionType,
+                            GROUP_CONCAT(qad.UrdAnswerText ORDER BY qad.UrdId SEPARATOR ', ') AS SelectedOptions
                         FROM tbl_question_answer_details qad
-                        INNER JOIN tbl_questions q ON qad.UrdQoid = q.QsId
-                        LEFT JOIN tbl_question_options qo ON qad.UrdQoId = qo.QoId
+                        INNER JOIN tbl_questions q ON qad.UrdQsId = q.QsId
                         WHERE qad.UrdUrid = @responseId
-                        GROUP BY qad.UrdQoid, q.QsCode, q.QsText, q.QsType
-                        ORDER BY q.QsOrderNo";
+                        GROUP BY qad.UrdQsId, q.QsCode, q.QsText, q.QsType, q.QsOrderNo
+                        ORDER BY q.QsOrderNo, q.QsId";
 
                     var answersParams = new[] { new MySqlParameter("@responseId", responseId) };
                     var answersResult = await Task.Run(() => _dbHelper.ExecuteQuery(answersQuery, answersParams));
@@ -369,35 +348,35 @@ namespace IQA_SOURCE.Data
                     {
                         answers.Add(new ResponseAnswer
                         {
-                            QuestionId = Convert.ToInt32(aRow["UrdQoid"]),
-                            QuestionCode = aRow["QsCode"]?.ToString(),
-                            QuestionText = aRow["QsText"]?.ToString(),
-                            QuestionType = aRow["QsType"]?.ToString(),
-                            SelectedOptionsText = aRow["SelectedOptions"]?.ToString()
+                            QuestionId          = Convert.ToInt32(aRow["QuestionId"]),
+                            QuestionCode        = aRow["QuestionCode"]?.ToString(),
+                            QuestionText        = aRow["QuestionText"]?.ToString(),
+                            QuestionType        = aRow["QuestionType"]?.ToString(),
+                            SelectedOptionsText = aRow["SelectedOptions"]?.ToString() ?? "No answer"
                         });
                     }
 
                     summaries.Add(new QuestionAnswerSummary
                     {
-                        ResponseId = responseId,
-                        SessionId = row["UrSessionid"]?.ToString(),
-                        AssessmentCode = row["UrAssessmentCode"]?.ToString(),
-                        AssessmentName = row["AssessmentName"]?.ToString(),
-                        IpAddress = row["UrIpAddress"]?.ToString(),
-                        StartTime = null,
-                        SubmitTime = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
-                        Status = row["UrStatus"]?.ToString(),
-                        TotalQuestions = answers.Count,
+                        ResponseId        = responseId,
+                        SessionId         = row["UrSessionid"]?.ToString(),
+                        AssessmentCode    = row["UrAssessmentCode"]?.ToString(),
+                        AssessmentName    = row["AssessmentName"]?.ToString(),
+                        IpAddress         = row["UrIpAddress"]?.ToString(),
+                        StartTime         = null,
+                        SubmitTime        = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
+                        Status            = row["UrStatus"]?.ToString(),
+                        TotalQuestions    = answers.Count,
                         AnsweredQuestions = answers.Count,
-                        Answers = answers
+                        Answers           = answers
                     });
                 }
 
                 return new QuestionAnswerResultsResponse
                 {
                     OutputCode = 1,
-                    OutputMsg = "Question answers retrieved successfully",
-                    Data = summaries
+                    OutputMsg  = "Question answers retrieved successfully",
+                    Data       = summaries
                 };
             }
             catch (Exception ex)
@@ -405,8 +384,8 @@ namespace IQA_SOURCE.Data
                 return new QuestionAnswerResultsResponse
                 {
                     OutputCode = 0,
-                    OutputMsg = $"Error retrieving question answers: {ex.Message}",
-                    Data = new List<QuestionAnswerSummary>()
+                    OutputMsg  = $"Error retrieving question answers: {ex.Message}",
+                    Data       = new List<QuestionAnswerSummary>()
                 };
             }
         }
@@ -415,38 +394,37 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // FIXED: Only tbl_question_answers and tbl_question_answer_details columns changed
+                // FIX: Join on UrdQsId (question FK), display UrdAnswerText (stored option label text)
                 var query = @"
                     SELECT 
                         qa.UrSessionid, qa.UrAssessmentCode, qa.UrIpAddress, qa.UrSubmitTime,
                         q.QsId, q.QsCode, q.QsText, q.QsType,
-                        GROUP_CONCAT(qo.QoText ORDER BY qad.Urdid SEPARATOR ', ') as SelectedOptions
+                        GROUP_CONCAT(qad.UrdAnswerText ORDER BY qad.UrdId SEPARATOR ', ') AS SelectedOptions
                     FROM tbl_question_answers qa
                     INNER JOIN tbl_question_answer_details qad ON qa.Urid = qad.UrdUrid
-                    INNER JOIN tbl_questions q ON qad.UrdQoid = q.QsId
-                    LEFT JOIN tbl_question_options qo ON qad.UrdQoId = qo.QoId
+                    INNER JOIN tbl_questions q ON qad.UrdQsId = q.QsId
                     WHERE qa.UrAssessmentCode = @assessmentCode
                     GROUP BY qa.UrSessionid, qa.UrAssessmentCode, qa.UrIpAddress, qa.UrSubmitTime,
                              q.QsId, q.QsCode, q.QsText, q.QsType
                     ORDER BY qa.UrSubmitTime DESC, q.QsOrderNo";
 
                 var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
-                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var result     = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
 
                 var rows = new List<QuestionAnswerExcelRow>();
-                
                 foreach (DataRow row in result.Rows)
                 {
                     rows.Add(new QuestionAnswerExcelRow
                     {
-                        SessionId = row["UrSessionid"]?.ToString(),
-                        AssessmentCode = row["UrAssessmentCode"]?.ToString(),
-                        IpAddress = row["UrIpAddress"]?.ToString(),
-                        SubmitTime = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
-                        QuestionCode = row["QsCode"]?.ToString(),
-                        QuestionText = row["QsText"]?.ToString(),
-                        QuestionType = row["QsType"]?.ToString(),
-                        OptionColumns = new Dictionary<string, string>()
+                        SessionId       = row["UrSessionid"]?.ToString(),
+                        AssessmentCode  = row["UrAssessmentCode"]?.ToString(),
+                        IpAddress       = row["UrIpAddress"]?.ToString(),
+                        SubmitTime      = row["UrSubmitTime"] != DBNull.Value ? (DateTime?)row["UrSubmitTime"] : null,
+                        QuestionCode    = row["QsCode"]?.ToString(),
+                        QuestionText    = row["QsText"]?.ToString(),
+                        QuestionType    = row["QsType"]?.ToString(),
+                        SelectedOptions = row["SelectedOptions"]?.ToString() ?? "",
+                        OptionColumns   = new Dictionary<string, string>()
                     });
                 }
 

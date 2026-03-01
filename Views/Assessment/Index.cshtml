@@ -7,9 +7,9 @@
 @section Styles {
     <style>
         .content-card {
-            background-color: white !im;
+            background-color: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: 40px;      
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             max-width: 900px;
             width: 100%;
@@ -17,14 +17,8 @@
         }
 
         @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .intro-content {
@@ -52,10 +46,8 @@
 
         .loader-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5);
             display: none;
             justify-content: center;
@@ -63,9 +55,7 @@
             z-index: 9999;
         }
 
-        .loader-overlay.show {
-            display: flex;
-        }
+        .loader-overlay.show { display: flex; }
 
         .spinner {
             border: 5px solid #f3f3f3;
@@ -77,7 +67,7 @@
         }
 
         @@keyframes spin {
-            0% { transform: rotate(0deg); }
+            0%   { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
@@ -97,10 +87,8 @@
 
         .private-mode-warning {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.95);
             display: none;
             justify-content: center;
@@ -108,9 +96,7 @@
             z-index: 10000;
         }
 
-        .private-mode-warning.show {
-            display: flex;
-        }
+        .private-mode-warning.show { display: flex; }
 
         .warning-content {
             background: white;
@@ -127,10 +113,7 @@
             margin-bottom: 20px;
         }
 
-        .warning-content h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
+        .warning-content h2 { color: #333; margin-bottom: 20px; }
 
         .warning-content p {
             color: #666;
@@ -172,7 +155,7 @@
     </style>
 }
 
-<!-- Private Mode Warning -->
+<!-- Private Mode Warning — shown when NOT in incognito (including detection errors) -->
 <div class="private-mode-warning" id="privateModeWarning">
     <div class="warning-content">
         <div class="warning-icon">
@@ -180,7 +163,7 @@
         </div>
         <h2>Private/Incognito Mode Required</h2>
         <p>This assessment must be accessed using your browser's private/incognito mode to ensure data privacy and test integrity.</p>
-        
+
         <div class="browser-instructions">
             <div class="browser-card">
                 <strong><i class="fab fa-chrome"></i> Chrome</strong>
@@ -223,8 +206,8 @@
 <!-- Alert Container -->
 <div class="alert-container" id="alertContainer"></div>
 
-<!-- Main Content -->
-<div class="main-container">
+<!-- Main Content — hidden by default until incognito is confirmed -->
+<div class="main-container" id="mainContainer" style="display:none;">
     <div class="content-card" style="max-width:95%;">
         <div class="intro-content" id="introContent">
             <div class="text-center">
@@ -234,7 +217,6 @@
                 <p class="mt-3">Loading content...</p>
             </div>
         </div>
-
         <div class="text-center">
             <button class="btn start-btn" onclick="startAssessment()">
                 <i class="fas fa-play-circle"></i> Start Assessment
@@ -247,41 +229,44 @@
     <script>
         const assessmentType = '@assessmentType';
 
-        // Initialize on page load using detect-incognito library
-        (async function() {
-            console.log('=== Private Mode Detection Started (using detect-incognito) ===');
-            console.log('Assessment type:', assessmentType);
-            
+        /**
+         * Blocks access by showing the warning overlay and hiding all page content.
+         * Called when NOT in incognito — including on any detection error (fail-closed).
+         */
+        function blockAccess() {
+            document.getElementById('privateModeWarning').classList.add('show');
+            document.querySelector('.header').style.display       = 'none';
+            document.getElementById('mainContainer').style.display = 'none';
+            document.querySelector('.footer').style.display        = 'none';
+        }
+
+        /**
+         * Allows access: shows the main content and loads the intro.
+         */
+        function allowAccess() {
+            sessionStorage.setItem('incognitoVerified', 'true');
+            document.getElementById('mainContainer').style.display = 'flex';
+            loadIntroContent();
+        }
+
+        // ── Incognito gate — FAIL-CLOSED ─────────────────────────────────────────
+        // Uses the shared promise kicked off in _AssessmentLayout.
+        // Any result where isPrivate !== true is treated as blocked.
+        (async function () {
             try {
-                // Use the detect-incognito library
-                const result = await detectIncognito();
-                console.log('=== Detection Result ===', result);
-                console.log('Is Private/Incognito:', result.isPrivate);
-                console.log('Browser Name:', result.browserName);
-                
-                if (!result.isPrivate) {
-                    console.warn('⚠️ BLOCKING ACCESS - Not in private/incognito mode');
-                    document.getElementById('privateModeWarning').classList.add('show');
-                    // Hide main content
-                    document.querySelector('.header').style.display = 'none';
-                    document.querySelector('.main-container').style.display = 'none';
-                    document.querySelector('.footer').style.display = 'none';
+                const result = await window.checkIncognito();
+                if (result.isPrivate === true) {
+                    allowAccess();
                 } else {
-                    console.log('✓ ALLOWING ACCESS - Private mode confirmed');
-                    // Store incognito status for speed test
-                    sessionStorage.setItem('incognitoVerified', 'true');
-                    // Load content normally
-                    loadIntroContent();
+                    blockAccess();
                 }
-            } catch (error) {
-                console.error('Private mode detection error:', error);
-                // On error, allow access (fail-open approach)
-                console.log('Allowing access due to detection error');
-                loadIntroContent();
+            } catch (err) {
+                // Detection threw — fail-closed: block access
+                console.error('Incognito detection error — blocking access:', err);
+                blockAccess();
             }
         })();
 
-        // Loader functions
         function showLoader() {
             document.getElementById('loaderOverlay').classList.add('show');
         }
@@ -290,100 +275,67 @@
             document.getElementById('loaderOverlay').classList.remove('show');
         }
 
-        // Alert functions
         function showAlert(message, type = 'info') {
             const alertContainer = document.getElementById('alertContainer');
-            const alertId = 'alert-' + Date.now();
-
-            const alertHtml = `
+            const alertId        = 'alert-' + Date.now();
+            alertContainer.insertAdjacentHTML('beforeend', `
                 <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
                     <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
                     ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-
-            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
-
-            // Auto-dismiss after 5 seconds
+                </div>`);
             setTimeout(() => {
-                const alertElement = document.getElementById(alertId);
-                if (alertElement) {
-                    const bsAlert = new bootstrap.Alert(alertElement);
-                    bsAlert.close();
-                }
+                const el = document.getElementById(alertId);
+                if (el) new bootstrap.Alert(el).close();
             }, 5000);
         }
 
-        // Load intro content
         function loadIntroContent() {
             showLoader();
-            
-            const url = buildApiUrl('/Assessment/GetIntroContent');
-            
-            console.log('Loading intro content from:', url);
-            
             $.ajax({
-                url: url,
-                type: 'GET',
-                data: { assessmentType: assessmentType },
+                url:      buildApiUrl('/Assessment/GetIntroContent'),
+                type:     'GET',
+                data:     { assessmentType },
                 dataType: 'json',
-                success: function(response) {
-                    console.log('Response received:', response);
+                success: function (response) {
                     hideLoader();
-                    
                     if (response.success && response.data) {
                         $('#introContent').html(response.data.cmContent);
-                        
-                        if (response.data.sessionId) {
+                        if (response.data.sessionId)
                             sessionStorage.setItem('assessmentSessionId', response.data.sessionId);
-                        }
                     } else {
-                        console.warn('Response unsuccessful or no data:', response);
                         $('#introContent').html(`
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <strong>Welcome to IQA Assessment Platform</strong>
                                 <p class="mt-2">Please click the button below to start your assessment.</p>
-                            </div>
-                        `);
+                            </div>`);
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', {
-                        status: status,
-                        error: error,
-                        xhr: xhr,
-                        responseText: xhr.responseText
-                    });
+                error: function (xhr, status, error) {
                     hideLoader();
-                    
-                    let errorMessage = 'Error loading content. Please refresh the page.';
-                    if (xhr.status === 404) {
-                        errorMessage = 'Content endpoint not found. Please check your routing configuration.';
-                    } else if (xhr.status === 0) {
-                        errorMessage = 'Network error. Please check your connection.';
-                    }
-                    
+                    const msg = xhr.status === 404
+                        ? 'Content endpoint not found.'
+                        : xhr.status === 0
+                            ? 'Network error. Please check your connection.'
+                            : 'Error loading content. Please refresh the page.';
                     $('#introContent').html(`
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle"></i>
-                            <strong>${errorMessage}</strong>
-                            <p class="mt-2"><small>Status: ${xhr.status} - ${error}</small></p>
-                        </div>
-                    `);
-                    
-                    showAlert(errorMessage, 'danger');
+                            <strong>${msg}</strong>
+                            <p class="mt-2"><small>Status: ${xhr.status} — ${error}</small></p>
+                        </div>`);
+                    showAlert(msg, 'danger');
                 }
             });
         }
 
-        // Start assessment - redirect to speed test
         function startAssessment() {
             showLoader();
-            const url = assessmentType ? `/Assessment/${assessmentType}/SpeedTest` : '/Assessment/SpeedTest';
-            console.log('Redirecting to:', url);
-            window.location.href = url;
+            const url = assessmentType
+                ? buildApiUrl(`/Assessment/${assessmentType}/SpeedTest`)
+                : buildApiUrl('/Assessment/SpeedTest');
+            navigateTo(url);
         }
     </script>
 }

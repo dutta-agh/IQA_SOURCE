@@ -306,24 +306,19 @@
 
 @section Scripts {
     <script>
-        // Get assessment type from server-side rendering
-        const assessmentType = '@assessmentType';
-        const sessionId = '@ViewBag.SessionId';
-        
-        // Log for debugging
-        console.log('=== Page Initialization ===');
-        console.log('Assessment Type:', assessmentType);
-        console.log('Session ID:', sessionId);
-        
-        let currentCheck = 0;
-        let checksPassed = 0;
+            const assessmentType = '@assessmentType';
+        const sessionId      = '@ViewBag.SessionId';
+
+        let currentCheck  = 0;
+        let checksPassed  = 0;
         const totalChecks = 4;
 
-        // Configuration from server
-        let minWidth = 1024;
-        let minHeight = 768;
+        // Defaults — overwritten by loadConfiguration()
+        let minWidth          = 1024;
+        let minHeight         = 768;
+        let minSpeedMbps      = 2;
+        let incognitoRequired = true;
 
-        // Store test results globally
         let testResults = {
             privateModeDetected: false,
             privateModeBrowser: 'Unknown',
@@ -338,23 +333,20 @@
             overallPassed: false
         };
 
-        // Auto-start checks on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, starting checks automatically...');
-            setTimeout(() => {
-                startChecks();
-            }, 1000);
+        window.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => startChecks(), 1000);
         });
 
-        // Fetch configuration from server
         async function loadConfiguration() {
             try {
                 const response = await fetch(buildApiUrl('/Assessment/GetAssessmentSettings'));
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        minWidth = data.data.minScreenWidth || 1024;
-                        minHeight = data.data.minScreenHeight || 768;
+                        minWidth          = data.data.minScreenWidth       || 1024;
+                        minHeight         = data.data.minScreenHeight      || 768;
+                        minSpeedMbps      = data.data.minDownloadSpeedMbps || 2;
+                        incognitoRequired = data.data.incognitoRequired    ?? true;
                         console.log('Configuration loaded:', data.data);
                     }
                 }
@@ -414,57 +406,64 @@
         }
 
         // Check 1: Private Mode
+        // FAIL-CLOSED
         async function checkPrivateMode() {
             currentCheck = 1;
             updateProgress(10, 'Step 1/4: Checking private/incognito mode...');
-            
+                
             const checkEl = document.getElementById('checkPrivateMode');
-            const iconEl = checkEl.querySelector('.check-icon');
-            const iconI = iconEl.querySelector('i');
-            const textEl = checkEl.querySelector('.text-muted');
-            
-            // Update to checking state
-            checkEl.classList.remove('pending');
-            checkEl.classList.add('checking');
-            iconEl.classList.remove('pending');
-            iconEl.classList.add('checking');
-            iconI.className = 'fas fa-spinner fa-spin';
+            const iconEl  = checkEl.querySelector('.check-icon');
+            const iconI   = iconEl.querySelector('i');
+            const textEl  = checkEl.querySelector('.text-muted');
+
+            checkEl.classList.remove('pending'); checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');  iconEl.classList.add('checking');
+            iconI.className    = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Checking...';
-            
+
             await delay(500);
-            
-            try {
-                const result = await detectIncognito();
-                console.log('Private mode check:', result);
-                
-                // CAPTURE ACTUAL VALUES
-                testResults.privateModeDetected = result.isPrivate || false;
-                testResults.privateModeBrowser = result.browserName || 'Unknown';
-                
-                updateProgress(25, 'Private mode check completed');
-                
-                if (result.isPrivate) {
-                    updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
-                        `✓ Private mode confirmed (${result.browserName})`);
-                    checksPassed++;
-                } else {
-                    updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
-                        `✗ You must use private/incognito mode`);
-                    showError('Private Mode Required', 
-                        'Please open this assessment in a private/incognito browser window.');
-                }
-            } catch (error) {
-                console.error('Private mode check error:', error);
-                
-                // CAPTURE ERROR STATE
+
+            // If admin disabled the incognito check via system settings, always pass
+            if (!incognitoRequired) {
                 testResults.privateModeDetected = false;
-                testResults.privateModeBrowser = 'Detection Failed: ' + navigator.userAgent.split(' ')[0];
-                
-                updateProgress(25, 'Private mode check completed (with warning)');
-                // Fail-open: allow on error
-                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
-                    '✓ Privacy check completed');
+                testResults.privateModeBrowser  = 'Not required';
+                updateProgress(25, 'Private mode check skipped (not required)');
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true,
+                    '✓ Incognito mode not required for this assessment');
                 checksPassed++;
+                return;
+            }
+
+            // Re-use the shared promise from _AssessmentLayout — no duplicate detection work
+            // FAIL-CLOSED: any error or non-private result blocks progression
+            let isPrivate   = false;
+            let browserName = 'Unknown';
+
+            try {
+                const result = await window.checkIncognito();
+                isPrivate   = result.isPrivate   === true;
+                browserName = result.browserName ?? 'Unknown';
+            } catch (err) {
+                // Detection threw — treat as NOT incognito (fail-closed)
+                console.error('Incognito detection error on SpeedTest — failing closed:', err);
+                isPrivate   = false;
+                browserName = 'Detection error';
+            }
+
+            testResults.privateModeDetected = isPrivate;
+            testResults.privateModeBrowser  = browserName;
+            updateProgress(25, 'Private mode check completed');
+
+            if (isPrivate) {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true,
+                    `✓ Private mode confirmed (${browserName})`);
+                checksPassed++;
+            } else {
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, false,
+                    '✗ You must use private/incognito mode');
+                showError('Private Mode Required',
+                    'Please open this assessment in a private/incognito browser window. ' +
+                    'Close this window, open a new private/incognito window, and navigate back to the URL.');
             }
         }
 
@@ -566,154 +565,90 @@
             updateProgress(70, 'Step 4/4: Testing internet speed...');
             
             const checkEl = document.getElementById('checkSpeed');
-            const iconEl = checkEl.querySelector('.check-icon');
-            const iconI = iconEl.querySelector('i');
-            const textEl = checkEl.querySelector('.text-muted');
-            const infoEl = document.getElementById('speedInfo');
+            const iconEl  = checkEl.querySelector('.check-icon');
+            const iconI   = iconEl.querySelector('i');
+            const textEl  = checkEl.querySelector('.text-muted');
+            const infoEl  = document.getElementById('speedInfo');
             
             // Update to checking state
             checkEl.classList.remove('pending');
             checkEl.classList.add('checking');
             iconEl.classList.remove('pending');
             iconEl.classList.add('checking');
-            iconI.className = 'fas fa-spinner fa-spin';
+            iconI.className   = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Testing connection...';
             
             try {
-                console.log('=== Starting Speed Test ===');
-                
-                // Measure latency (ping) - test multiple times for accuracy
-                console.log('Testing latency...');
+                // Latency
                 const latencyTests = [];
                 for (let i = 0; i < 3; i++) {
-                    const latencyStart = performance.now();
+                    const start = performance.now();
                     try {
-                        await fetch(buildApiUrl('/isalive'), { 
-                            method: 'GET', 
-                            cache: 'no-cache',
-                            mode: 'cors'
-                        });
-                        const latencyEnd = performance.now();
-                        latencyTests.push(latencyEnd - latencyStart);
-                    } catch (err) {
-                        console.error('Latency test failed:', err);
-                    }
+                        await fetch(buildApiUrl('/isalive'), { method: 'GET', cache: 'no-cache' });
+                        latencyTests.push(performance.now() - start);
+                    } catch (e) { /* ignore individual failure */ }
                 }
-                
-                if (latencyTests.length > 0) {
-                    testResults.latency = Math.round(latencyTests.reduce((a, b) => a + b, 0) / latencyTests.length);
-                    console.log('Average latency:', testResults.latency, 'ms');
-                } else {
-                    testResults.latency = null;
-                    console.warn('All latency tests failed');
-                }
-                
+                testResults.latency = latencyTests.length > 0
+                    ? Math.round(latencyTests.reduce((a, b) => a + b, 0) / latencyTests.length)
+                    : null;
+
                 updateProgress(80, 'Testing download speed...');
-                
-                // Measure download speed
-                console.log('Testing download speed...');
-                try {
-                    const testSizes = [
-                        { url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', size: 200000 },
-                        { url: 'https://code.jquery.com/jquery-3.6.0.min.js', size: 90000 }
-                    ];
-                    
-                    const downloadTests = [];
-                    
-                    for (const test of testSizes) {
-                        const downloadStart = performance.now();
-                        try {
-                            const response = await fetch(test.url + '?cache_bust=' + Date.now(), { 
-                                cache: 'no-cache',
-                                mode: 'cors'
-                            });
-                            
-                            if (!response.ok) {
-                                console.warn(`Download test failed for ${test.url}: ${response.status}`);
-                                continue;
-                            }
-                            
-                            const blob = await response.blob();
-                            const downloadEnd = performance.now();
-                            
-                            const downloadDuration = (downloadEnd - downloadStart) / 1000;
-                            const actualSize = blob.size || test.size;
-                            const speedMbps = ((actualSize * 8) / (downloadDuration * 1000000));
-                            
-                            downloadTests.push(speedMbps);
-                            console.log(`Download test ${downloadTests.length}: ${speedMbps.toFixed(2)} Mbps`);
-                        } catch (err) {
-                            console.error(`Download test error for ${test.url}:`, err);
-                        }
-                    }
-                    
-                    if (downloadTests.length > 0) {
-                        const avgSpeed = downloadTests.reduce((a, b) => a + b, 0) / downloadTests.length;
-                        testResults.downloadSpeedMbps = parseFloat(avgSpeed.toFixed(2));
-                        console.log('Average download speed:', testResults.downloadSpeedMbps, 'Mbps');
-                    } else {
-                        console.warn('All download tests failed, estimating from latency');
-                        if (testResults.latency && testResults.latency < 100) {
-                            testResults.downloadSpeedMbps = 10;
-                        } else if (testResults.latency && testResults.latency < 200) {
-                            testResults.downloadSpeedMbps = 5;
-                        } else {
-                            testResults.downloadSpeedMbps = 2;
-                        }
-                    }
-                } catch (error) {
-                    console.error('Download speed test error:', error);
-                    testResults.downloadSpeedMbps = null;
+
+                // Download speed
+                const testSizes = [
+                    { url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', size: 200000 },
+                    { url: 'https://code.jquery.com/jquery-3.6.0.min.js', size: 90000 }
+                ];
+                const downloadTests = [];
+                for (const test of testSizes) {
+                    const start = performance.now();
+                    try {
+                        const resp = await fetch(test.url + '?cb=' + Date.now(), { cache: 'no-cache' });
+                        if (!resp.ok) continue;
+                        const blob     = await resp.blob();
+                        const duration = (performance.now() - start) / 1000;
+                        downloadTests.push((blob.size || test.size) * 8 / (duration * 1_000_000));
+                    } catch (e) { /* ignore */ }
                 }
-                
-                // Estimate upload speed
-                if (testResults.downloadSpeedMbps !== null) {
-                    testResults.uploadSpeedMbps = parseFloat((testResults.downloadSpeedMbps * 0.25).toFixed(2));
-                    console.log('Estimated upload speed:', testResults.uploadSpeedMbps, 'Mbps');
+
+                if (downloadTests.length > 0) {
+                    testResults.downloadSpeedMbps = parseFloat(
+                        (downloadTests.reduce((a, b) => a + b, 0) / downloadTests.length).toFixed(2));
                 } else {
-                    testResults.uploadSpeedMbps = null;
+                    testResults.downloadSpeedMbps = testResults.latency
+                        ? (testResults.latency < 100 ? 10 : testResults.latency < 200 ? 5 : 2)
+                        : null;
                 }
-                
-                // Check if speed meets minimum requirements
-                const minSpeedMbps = 2;
-                if (testResults.downloadSpeedMbps !== null) {
-                    testResults.speedPassed = (testResults.downloadSpeedMbps >= minSpeedMbps);
-                } else {
-                    testResults.speedPassed = true;
-                }
-                
+
+                testResults.uploadSpeedMbps = testResults.downloadSpeedMbps !== null
+                    ? parseFloat((testResults.downloadSpeedMbps * 0.25).toFixed(2))
+                    : null;
+
+                // Use the DB-driven threshold (minSpeedMbps loaded from API)
+                testResults.speedPassed = testResults.downloadSpeedMbps !== null
+                    ? testResults.downloadSpeedMbps >= minSpeedMbps
+                    : true;
+
                 updateProgress(90, 'Speed test completed');
-                
-                // Update UI with results
-                const speedText = testResults.downloadSpeedMbps !== null 
-                    ? `Download: ${testResults.downloadSpeedMbps} Mbps | Upload: ${testResults.uploadSpeedMbps} Mbps | Latency: ${testResults.latency} ms`
+                infoEl.textContent = testResults.downloadSpeedMbps !== null
+                    ? `Download: ${testResults.downloadSpeedMbps} Mbps | Upload: ${testResults.uploadSpeedMbps} Mbps | Latency: ${testResults.latency} ms | Required: ≥ ${minSpeedMbps} Mbps`
                     : 'Speed test estimation completed';
-                
-                infoEl.textContent = speedText;
-                
+
                 if (testResults.speedPassed) {
-                    updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
-                        '✓ Connection speed acceptable');
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, true, '✓ Connection speed acceptable');
                     checksPassed++;
                 } else {
-                    updateCheckStatus(checkEl, iconEl, iconI, textEl, false, 
-                        '✗ Connection speed too slow');
-                    showError('Slow Connection', 
-                        'Your internet connection may be too slow for optimal assessment experience.');
+                    updateCheckStatus(checkEl, iconEl, iconI, textEl, false, '✗ Connection speed too slow');
+                    showError('Slow Connection',
+                        `Your download speed (${testResults.downloadSpeedMbps} Mbps) is below the minimum required ${minSpeedMbps} Mbps.`);
                 }
-                
-                console.log('=== Speed Test Completed ===');
-                
             } catch (error) {
-                console.error('Error performing speed test:', error);
-                
+                console.error('Speed test error:', error);
                 testResults.downloadSpeedMbps = null;
-                testResults.uploadSpeedMbps = null;
-                testResults.latency = null;
-                testResults.speedPassed = true;
-                
-                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, 
-                    '✓ Speed check completed');
+                testResults.uploadSpeedMbps   = null;
+                testResults.latency           = null;
+                testResults.speedPassed       = true;
+                updateCheckStatus(checkEl, iconEl, iconI, textEl, true, '✓ Speed check completed');
                 checksPassed++;
             }
         }
@@ -762,7 +697,8 @@
                     downloadSpeedMbps: testResults.downloadSpeedMbps,
                     uploadSpeedMbps: testResults.uploadSpeedMbps,
                     latency: testResults.latency,
-                    overallPassed: testResults.overallPassed
+                    overallPassed: testResults.overallPassed,
+                    ipAddress: window.clientIpAddress || ''
                 };
                 
                 console.log('Request Data:', JSON.stringify(requestData, null, 2));
@@ -906,9 +842,11 @@
         // Redirect to questions page
         function redirectToQuestions() {
             console.log('Redirecting to questions page...');
-            const url = assessmentType ? `/Assessment/${assessmentType}/Questions` : '/Assessment/Questions';
+            const url = assessmentType
+                ? buildApiUrl(`/Assessment/${assessmentType}/Questions`)
+                : buildApiUrl('/Assessment/Questions');
             console.log('Redirect URL:', url);
-            window.location.href = url;
+            navigateTo(url);
         }
     </script>
 }

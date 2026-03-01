@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using MySqlConnector;
 using IQA_SOURCE.Models;
 using IQA_SOURCE.Models.Admin;
@@ -146,7 +146,7 @@ namespace IQA_SOURCE.Data
                     INSERT INTO tbl_question_answers 
                     (UrSessionid, UrAssessmentCode, UrIpAddress, UrUserAgent, UrStatus, UrCreatedDate)
                     VALUES 
-                    (@sessionId, @assessmentCode, @ipAddress, @userAgent, 'IN_PROGRESS', NOW());
+                    (@sessionId, @assessmentCode, @ipAddress, @userAgent, 'IN_PROGRESS', UTC_TIMESTAMP());  -- ✅ fixed
                     SELECT LAST_INSERT_ID();";
 
                 var insertParams = new[]
@@ -169,7 +169,7 @@ namespace IQA_SOURCE.Data
                     UrUserAgent = userAgent,
                     UrStartTime = null,
                     UrStatus = "IN_PROGRESS",
-                    UrCreatedDate = DateTime.Now
+                    UrCreatedDate = DateTime.UtcNow  // ✅ fixed (was DateTime.Now)
                 };
             }
             catch (Exception ex)
@@ -185,7 +185,7 @@ namespace IQA_SOURCE.Data
                 var userResponse = await GetOrCreateUserResponse(
                     submission.SessionId,
                     submission.AssessmentCode,
-                    "::1",
+                    !string.IsNullOrWhiteSpace(submission.IpAddress) ? submission.IpAddress : "Unknown",
                     "User Agent",
                     userId
                 );
@@ -217,7 +217,7 @@ namespace IQA_SOURCE.Data
                                 INSERT INTO tbl_question_answer_details 
                                 (UrdUrid, UrdAssessmentCode, UrdQsId, UrdQoId, UrdAnswerText, UrdCreatedDate)
                                 VALUES 
-                                (@responseId, @assessmentCode, @questionId, @optionId, @answerText, NOW())";
+                                (@responseId, @assessmentCode, @questionId, @optionId, @answerText, UTC_TIMESTAMP())";  // ✅ fixed
 
                             var insertParams = new[]
                             {
@@ -240,7 +240,7 @@ namespace IQA_SOURCE.Data
                 // Update submission status
                 var updateQuery = @"
                     UPDATE tbl_question_answers 
-                    SET UrSubmitTime = NOW(), UrStatus = 'COMPLETED'
+                    SET UrSubmitTime = UTC_TIMESTAMP(), UrStatus = 'COMPLETED'
                     WHERE Urid = @responseId";
 
                 var updateParams = new[] { new MySqlParameter("@responseId", userResponse.UrId) };
@@ -255,7 +255,7 @@ namespace IQA_SOURCE.Data
                         ResponseId = userResponse.UrId,
                         TotalQuestions = submission.Answers.Count,
                         AnsweredQuestions = insertedCount,
-                        SubmittedAt = DateTime.Now
+                        SubmittedAt = DateTime.UtcNow  // ✅ fixed (was DateTime.Now)
                     }
                 };
             }

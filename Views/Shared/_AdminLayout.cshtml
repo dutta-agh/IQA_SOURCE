@@ -87,6 +87,7 @@
             transition: all 0.3s ease;
             z-index: 1000;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
         }
 
         .sidebar.collapsed {
@@ -120,6 +121,16 @@
 
         .menu-item {
             margin-bottom: 5px;
+        }
+
+        /* Divider between menu groups */
+        .menu-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 8px 20px;
+        }
+
+        .sidebar.collapsed .menu-divider {
+            margin: 8px 10px;
         }
 
         .menu-link {
@@ -238,6 +249,13 @@
     </style>
     
     @await RenderSectionAsync("Styles", required: false)
+
+    <script type="text/javascript">
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, "", window.location.href);
+        };
+    </script>
 </head>
 <body>
     <!-- Loader Overlay -->
@@ -257,51 +275,58 @@
             <h4><i class="fas fa-cogs"></i> <span>IQA Admin</span></h4>
         </div>
         <ul class="sidebar-menu">
+
+            <!-- Assessment Setup -->
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/Dashboard" class="menu-link @(currentPage == "Dashboard" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/Dashboard"
+                   class="menu-link @(currentPage == "Dashboard" ? "active" : "")">
                     <i class="fas fa-home menu-icon"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ContentMaster" class="menu-link @(currentPage == "ContentMaster" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ContentMaster"
+                   class="menu-link @(currentPage == "ContentMaster" ? "active" : "")">
                     <i class="fas fa-file-alt menu-icon"></i>
                     <span class="menu-text">Content Master</span>
-                </a>
+                </a>    
             </li>
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentTypeMaster" class="menu-link @(currentPage == "AssessmentTypeMaster" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentTypeMaster"
+                   class="menu-link @(currentPage == "AssessmentTypeMaster" ? "active" : "")">
                     <i class="fas fa-clipboard-list menu-icon"></i>
                     <span class="menu-text">Assessment Types</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionMaster" class="menu-link @(currentPage == "QuestionMaster" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionMaster"
+                   class="menu-link @(currentPage == "QuestionMaster" ? "active" : "")">
                     <i class="fas fa-question-circle menu-icon"></i>
                     <span class="menu-text">Question Master</span>
                 </a>
             </li>
+
+            <li><div class="menu-divider"></div></li>
+
+            <!-- Images -->
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ImagesMaster" 
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ImagesMaster"
                    class="menu-link @(currentPage == "ImagesMaster" ? "active" : "")">
                     <i class="fas fa-images menu-icon"></i>
                     <span class="menu-text">Images Upload</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentImages" 
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentImages"
                    class="menu-link @(currentPage == "AssessmentImages" ? "active" : "")">
                     <i class="fas fa-folder-open menu-icon"></i>
                     <span class="menu-text">Assessment Images</span>
                 </a>
             </li>
-            <li class="menu-item">
-                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/SpeedTestLogs" 
-                   class="menu-link @(currentPage == "SpeedTestLogs" ? "active" : "")">
-                    <i class="fas fa-tachometer-alt menu-icon"></i>
-                    <span class="menu-text">Speed Test Logs</span>
-                </a>
-            </li>
+
+            <li><div class="menu-divider"></div></li>
+
+            <!-- Reporting -->
             <li class="menu-item">
                 <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionAnswers"
                    class="menu-link @(currentPage == "QuestionAnswers" ? "active" : "")">
@@ -309,6 +334,25 @@
                     <span class="menu-text">Question Answers</span>
                 </a>
             </li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/SpeedTestLogs"
+                   class="menu-link @(currentPage == "SpeedTestLogs" ? "active" : "")">
+                    <i class="fas fa-tachometer-alt menu-icon"></i>
+                    <span class="menu-text">Speed Test Logs</span>
+                </a>
+            </li>
+
+            <li><div class="menu-divider"></div></li>
+
+            <!-- Configuration -->
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/SystemCheckParams"
+                   class="menu-link @(currentPage == "SystemCheckParams" ? "active" : "")">
+                    <i class="fas fa-sliders-h menu-icon"></i>
+                    <span class="menu-text">System Check Params</span>
+                </a>
+            </li>
+
         </ul>
     </div>
 
@@ -357,10 +401,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     
-    <!-- Global App Configuration - MUST be loaded before other scripts -->
     <script>
-       
-
         // Loader functions
         function showLoader() {
             document.getElementById('loaderOverlay').classList.add('show');
@@ -407,7 +448,7 @@
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
 
-            newConfirmBtn.addEventListener('click', function() {
+            newConfirmBtn.addEventListener('click', function () {
                 modal.hide();
                 onConfirm();
             });
@@ -416,23 +457,16 @@
         }
 
         function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         // Sidebar Toggle
-        $('#toggleBtn').on('click', function() {
+        $('#toggleBtn').on('click', function () {
             $('#sidebar').toggleClass('collapsed');
             $('#mainContent').toggleClass('expanded');
         });
 
-        // Show Logout Confirmation
         function showLogoutConfirmation() {
             showConfirmationModal(
                 'Confirm Logout',
@@ -443,19 +477,13 @@
             );
         }
 
-        // Logout
         function logout() {
             showLoader();
             $.ajax({
                 url: buildApiUrl('/Admin/Logout'),
                 type: 'POST',
-                success: function() {
-                    window.location.href = buildApiUrl('/Admin/Login');
-                },
-                error: function() {
-                    hideLoader();
-                    showAlert('Error during logout', 'danger');
-                }
+                success: function () { window.location.href = buildApiUrl('/Admin/Login'); },
+                error: function () { hideLoader(); showAlert('Error during logout', 'danger'); }
             });
         }
     </script>

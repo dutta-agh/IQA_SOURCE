@@ -20,7 +20,7 @@ namespace IQA_SOURCE.Models
     public class LinkedImage
     {
         public int LiId { get; set; }
-        public int LiRisId { get; set; } // References RawImageSet
+        public int LiRisId { get; set; }
         public string LiImagePath { get; set; } = string.Empty;
         public string LiImageLabel { get; set; } = string.Empty;
         public string LiActive { get; set; } = "Y";
@@ -37,12 +37,58 @@ namespace IQA_SOURCE.Models
         public int IqrId { get; set; }
         public string IqrSessionId { get; set; } = string.Empty;
         public string IqrAssessmentCode { get; set; } = string.Empty;
-        public int IqrRisId { get; set; } // Raw image set ID
-        public int IqrLiId { get; set; } // Selected linked image ID
-        public int IqrQualityRating { get; set; } // 1-5 scale
+        public int IqrRisId { get; set; }
+        public int IqrLiId { get; set; }
+        public int IqrQualityRating { get; set; }
         public string IqrIpAddress { get; set; } = string.Empty;
         public string IqrUserAgent { get; set; } = string.Empty;
         public DateTime? IqrCreatedDate { get; set; }
+    }
+
+    // Admin grid + Excel row for image ratings
+    public class ImageRatingAdminRow
+    {
+        public int RatingId { get; set; }
+        public string SessionId { get; set; } = string.Empty;
+        public string AssessmentCode { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
+        public DateTime? RatedAt { get; set; }
+
+        // Reference (master) image
+        public int MasterImageId { get; set; }
+        public string MasterImageName { get; set; } = string.Empty;
+        public string MasterImageUrl { get; set; } = string.Empty;
+        public int? MasterWidth { get; set; }
+        public int? MasterHeight { get; set; }
+        public string? MasterFormat { get; set; }
+        public double? MasterDpiX { get; set; }
+        public double? MasterDpiY { get; set; }
+        public string? MasterExifData { get; set; }
+
+        // Rated (linked) image
+        public int LinkedImageId { get; set; }
+        public string LinkedImageName { get; set; } = string.Empty;
+        public string LinkedImageUrl { get; set; } = string.Empty;
+        public int? LinkedWidth { get; set; }
+        public int? LinkedHeight { get; set; }
+        public string? LinkedFormat { get; set; }
+        public double? LinkedDpiX { get; set; }
+        public double? LinkedDpiY { get; set; }
+        public string? LinkedExifData { get; set; }
+        public string? LinkedQualityLevel { get; set; }
+        public string? LinkedQualityType { get; set; }
+
+        // Rating
+        public int QualityRating { get; set; }
+        public string QualityRatingLabel => QualityRating switch
+        {
+            1 => "Bad",
+            2 => "Poor",
+            3 => "Fair",
+            4 => "Good",
+            5 => "Excellent",
+            _ => "N/A"
+        };
     }
 
     // View models
@@ -64,7 +110,8 @@ namespace IQA_SOURCE.Models
         public string AssessmentCode { get; set; } = string.Empty;
         public int RawImageSetId { get; set; }
         public int SelectedLinkedImageId { get; set; }
-        public int QualityRating { get; set; } // 1-5
+        public int QualityRating { get; set; }
+        public string? IpAddress { get; set; }
     }
 
     public class ImageAssessmentProgress

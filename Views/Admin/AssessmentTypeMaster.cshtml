@@ -265,48 +265,75 @@
         let currentViewCode = '';
 
         $(document).ready(function() {
-            console.log(ASSESSMENT_BASE_URL);
-            console.log(APP_CONFIG.ASSESSMENT_BASE_URL);
-            // Initialize DataTable
+            console.log('Initializing Assessment Type Master...');
+            
+            // Initialize DataTable with proper configuration
             assessmentTypeTable = $('#assessmentTypeTable').DataTable({
+                data: [], // Start with empty data
                 columns: [
-                    { data: 'atmCode' },
-                    { data: 'atmName' },
+                    { 
+                        data: function(row) {
+                            return row.atmCode || row.AtmCode || '';
+                        },
+                        defaultContent: ''
+                    },
+                    { 
+                        data: function(row) {
+                            return row.atmName || row.AtmName || '';
+                        },
+                        defaultContent: ''
+                    },
                     {
-                        data: 'atmUrlSlug',
+                        data: function(row) {
+                            return row.atmUrlSlug || row.AtmUrlSlug || '';
+                        },
+                        defaultContent: '',
                         render: function(data) {
+                            if (!data) return '';
                             return '<span class="url-slug-badge">' + escapeHtml(data) + '</span>';
                         }
                     },
                     {
-                        data: 'atmDurationMinutes',
+                        data: function(row) {
+                            return row.atmDurationMinutes || row.AtmDurationMinutes || 0;
+                        },
+                        defaultContent: '0',
                         render: function(data) {
-                            if (data === 0) {
+                            if (!data || data === 0) {
                                 return '<span class="duration-badge">Untimed</span>';
                             }
                             return '<span class="duration-badge">' + data + ' min</span>';
                         }
                     },
                     {
-                        data: 'atmStartDate',
+                        data: function(row) {
+                            return row.atmStartDate || row.AtmStartDate || '';
+                        },
+                        defaultContent: '',
                         render: function(data) {
                             return data ? new Date(data).toLocaleString() : 'Immediate';
                         }
                     },
                     {
-                        data: 'atmEndDate',
+                        data: function(row) {
+                            return row.atmEndDate || row.AtmEndDate || '';
+                        },
+                        defaultContent: '',
                         render: function(data) {
                             return data ? new Date(data).toLocaleString() : 'No Expiry';
                         }
                     },
                     {
                         data: null,
+                        defaultContent: '',
                         render: function(data, type, row) {
+                            if (!row) return '';
                             const now = new Date();
-                            const startDate = row.atmStartDate ? new Date(row.atmStartDate) : null;
-                            const endDate = row.atmEndDate ? new Date(row.atmEndDate) : null;
+                            const startDate = (row.atmStartDate || row.AtmStartDate) ? new Date(row.atmStartDate || row.AtmStartDate) : null;
+                            const endDate = (row.atmEndDate || row.AtmEndDate) ? new Date(row.atmEndDate || row.AtmEndDate) : null;
+                            const active = row.atmActive || row.AtmActive || 'Y';
                             
-                            if (row.atmActive !== 'Y') {
+                            if (active !== 'Y') {
                                 return '<span class="badge bg-secondary">Inactive</span>';
                             }
                             
@@ -322,7 +349,10 @@
                         }
                     },
                     {
-                        data: 'atmActive',
+                        data: function(row) {
+                            return row.atmActive || row.AtmActive || 'Y';
+                        },
+                        defaultContent: 'Y',
                         render: function(data) {
                             return data === 'Y'
                                 ? '<span class="badge bg-success">Active</span>'
@@ -332,24 +362,35 @@
                     {
                         data: null,
                         orderable: false,
+                        defaultContent: '',
                         render: function(data, type, row) {
-                            const code = escapeHtml(row.atmCode);
+                            if (!row) return '';
+                            const code = row.atmCode || row.AtmCode || '';
+                            if (!code) return '';
+                            const escapedCode = escapeHtml(code);
                             return `
                                 <div class="action-buttons">
-                                    <button class="btn btn-sm btn-info" onclick="viewAssessmentType('${code}')" title="View">
+                                    <button class="btn btn-sm btn-info" onclick="viewAssessmentType('${escapedCode}')" title="View">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-warning" onclick="editAssessmentType('${code}')" title="Edit">
+                                    <button class="btn btn-sm btn-warning" onclick="editAssessmentType('${escapedCode}')" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${code}')" title="Delete">
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${escapedCode}')" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             `;
                         }
                     }
-                ]
+                ],
+                order: [[0, 'asc']], // Sort by code ascending
+                processing: true,
+                language: {
+                    emptyTable: "No assessment types found",
+                    loadingRecords: "Loading...",
+                    processing: "Processing..."
+                }
             });
 
             loadAssessmentTypes();
@@ -375,24 +416,35 @@
         });
 
         function loadAssessmentTypes() {
-            console.log( buildApiUrl('/Admin/GetAllAssessmentTypes'))
+            console.log('Loading assessment types...');
+            console.log('API URL:', buildApiUrl('/Admin/GetAllAssessmentTypes'));
             showLoader();
             $.ajax({
                 url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
                 type: 'GET',
                 success: function(response) {
                     hideLoader();
+                    console.log('Response received:', response);
                     if (response.success) {
                         assessmentTypeTable.clear();
-                        assessmentTypeTable.rows.add(response.data || []);
+                        if (response.data && response.data.length > 0) {
+                            console.log('Adding ' + response.data.length + ' rows to table');
+                            console.log('Sample data:', response.data[0]);
+                            assessmentTypeTable.rows.add(response.data);
+                        } else {
+                            console.log('No data found');
+                        }
                         assessmentTypeTable.draw();
                     } else {
+                        console.error('API Error:', response.message);
                         showAlert('Error: ' + response.message, 'danger');
                     }
                 },
                 error: function(xhr, status, error) {
                     hideLoader();
-                    console.error('Error loading assessment types:', error);
+                    console.error('AJAX Error:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
                     showAlert('Error loading assessment types. Please try again.', 'danger');
                 }
             });
@@ -550,7 +602,7 @@
             const data = {
                 atmCode: $('#atmCode').val().trim(),
                 atmName: $('#atmName').val().trim(),
-                atmUrlSlug: $('#atmUrlSlug').val().trim() || $('#atmCode').val().trim(), // Default to code if empty
+                atmUrlSlug: $('#atmUrlSlug').val().trim(),
                 atmDurationMinutes: parseInt($('#atmDurationMinutes').val()),
                 atmStartDate: $('#atmStartDate').val() || null,
                 atmEndDate: $('#atmEndDate').val() || null,

@@ -1,4 +1,4 @@
-<!DOCTYPE html>     
+﻿<!DOCTYPE html>     
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,10 +7,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @await Html.PartialAsync("_AppConfigScript")
-    
-    <!-- detect-incognito Library -->
-    <script src="https://cdn.jsdelivr.net/npm/detect-incognito@1.3.0/dist/es5/detect-incognito.min.js"></script>
-    
+
+    <!--
+        detect-incognito v1.3.2 — actively maintained fork by Joe Bell.
+        Source: https://github.com/Joe12387/detectIncognito
+        NOTE: No SRI integrity hash — the hash varies per build and an incorrect hash
+              silently blocks the script, causing everyone to be falsely blocked.
+    -->
+    <script src="~/js/detectincognito.js"
+            onerror="window._incognitoLibFailed = true;"></script>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -32,7 +38,7 @@
             justify-content: center;
         }
 
-        .content-card{
+        .content-card {
             background-color: white !important;
             padding: 2% 4% !important;
         }
@@ -75,21 +81,103 @@
             margin-top: auto;
         }
 
+        /* Blocked overlay — shared for both back-nav and refresh attempts */
+        .nav-blocked-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-blocked-overlay.show {
+            display: flex;
+        }
+
+        .nav-blocked-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px 50px;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-blocked-box .blocked-icon {
+            font-size: 3.5rem;
+            color: #e53e3e;
+            margin-bottom: 16px;
+        }
+
+        .nav-blocked-box h3 {
+            color: #2d3748;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .nav-blocked-box p {
+            color: #718096;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .nav-blocked-box .btn-restart {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .nav-blocked-box .btn-restart:hover {
+            opacity: 0.9;
+        }
+
         @RenderSection("Styles", required: false)
     </style>
+
+    <script type="text/javascript">
+        // Push a synthetic history entry immediately so popstate fires on back-press
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, "", window.location.href);
+        };
+    </script>
 </head>
 <body>
+    <!-- Blocked overlay: shown for back-nav AND refresh attempts -->
+    <div class="nav-blocked-overlay" id="navBlockedOverlay">
+        <div class="nav-blocked-box">
+            <div class="blocked-icon" id="blockedIcon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <h3 id="blockedTitle">Navigation Not Allowed</h3>
+            <p id="blockedMessage">
+                Going back during the assessment is not permitted.<br>
+                Please complete the assessment in order, or restart from the beginning.
+            </p>
+            <button class="btn-restart" onclick="restartAssessment()">
+                <i class="fas fa-redo"></i> Restart Assessment
+            </button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="header">
         <div class="container">
             <div class="logo-container">
                 <img src="~/images/logo.png" alt="Company Logo" class="logo" onerror="this.style.display='none'">
                 <h1 class="company-name">
-                    <i class="fas fa-graduation-cap"></i> IQA Assessment Platform
-                    @if (ViewBag.AssessmentType != null)
-                    {
-                        <span class="assessment-badge">@ViewBag.AssessmentType</span>
-                    }
+                    <i class="fas fa-graduation-cap"></i> Image Quality Assessment Platform
                 </h1>
             </div>
         </div>
@@ -107,7 +195,100 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <script>
+        // ── Global client IP ──────────────────────────────────────────────────────
+        window.clientIpAddress = '';
+        fetch('https://api.ipify.org?format=json')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { window.clientIpAddress = d.ip || ''; })
+            .catch(function ()  { window.clientIpAddress = ''; });
+
+        // ── Global incognito detection promise ────────────────────────────────────
+        window._incognitoPromise = (function () {
+            if (window._incognitoLibFailed || typeof detectIncognito !== 'function') {
+                console.warn('detect-incognito library unavailable — failing open (allow all).');
+                return Promise.resolve({ isPrivate: true, browserName: 'Unknown', libLoaded: false });
+            }
+            return detectIncognito()
+                .then(function (result) {
+                    result.libLoaded = true;
+                    return result;
+                })
+                .catch(function (err) {
+                    console.error('detect-incognito runtime error — failing open:', err);
+                    return { isPrivate: true, browserName: 'Unknown', libLoaded: false };
+                });
+        })();
+
+        window.checkIncognito = function () {
+            return window._incognitoPromise;
+        };
+
+        // ── Global flag: set to true before any programmatic redirect ────────────
+        window._allowNavigation = false;
+
+        function navigateTo(url) {
+            window._allowNavigation = true;
+            window.location.href = url;
+        }
+
+        // ── beforeunload handler — named so it can be removed later ──────────────
+        function _beforeUnloadHandler(e) {
+            if (window._allowNavigation) return;
+            e.preventDefault();
+            e.returnValue = '';
+        }
+        window.addEventListener('beforeunload', _beforeUnloadHandler);
+
+        // ── Exposed helper so any page can fully disable the leave prompt ─────────
+        window.disableLeavePrompt = function () {
+            window._allowNavigation = true;
+            window.removeEventListener('beforeunload', _beforeUnloadHandler);
+        };
+
+        // ── Back-button: intercept popstate ───────────────────────────────────────
+        (function () {
+            history.pushState(null, '', window.location.href);
+            window.addEventListener('popstate', function () {
+                history.pushState(null, '', window.location.href);
+                showBlockedOverlay(
+                    'fa-ban', '#e53e3e',
+                    'Navigation Not Allowed',
+                    'Going back during the assessment is not permitted.<br>Please complete the assessment in order, or restart from the beginning.'
+                );
+            });
+        })();
+
+        // ── Page refresh: intercept F5 / Ctrl+R / Cmd+R ───────────────────────────
+        document.addEventListener('keydown', function (e) {
+            const isF5     = e.key === 'F5';
+            const isCtrlR  = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
+            const isCtrlF5 = (e.ctrlKey || e.metaKey) && e.key === 'F5';
+            if (isF5 || isCtrlR || isCtrlF5) {
+                e.preventDefault();
+                showBlockedOverlay(
+                    'fa-sync-alt', '#dd6b20',
+                    'Refresh Not Allowed',
+                    'Refreshing the page during the assessment is not permitted.<br>Please continue and complete your current image set.'
+                );
+            }
+        });
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+        function showBlockedOverlay(iconClass, iconColor, title, message) {
+            document.getElementById('blockedIcon').innerHTML =
+                `<i class="fas ${iconClass}" style="color:${iconColor}"></i>`;
+            document.getElementById('blockedTitle').textContent = title;
+            document.getElementById('blockedMessage').innerHTML = message;
+            document.getElementById('navBlockedOverlay').classList.add('show');
+        }
+
+        function restartAssessment() {
+            navigateTo(buildApiUrl('/'));
+        }
+    </script>
+
     @RenderSection("Scripts", required: false)
 </body>
 </html>

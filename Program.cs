@@ -13,8 +13,7 @@ IQA_SOURCE.Constants.Initialize(builder.Configuration);
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Preserve property names
+
     });
 
 builder.Services.AddHttpContextAccessor();
@@ -62,6 +61,7 @@ builder.Services.AddScoped<ISpeedTestRepository, SpeedTestRepository>();
 builder.Services.AddScoped<IUserResponseRepository, UserResponseRepository>();
 builder.Services.AddScoped<IQuestionAnswerRepository, QuestionAnswerRepository>();
 builder.Services.AddScoped<IImageQualityRepository, ImageQualityRepository>();
+builder.Services.AddScoped<ISystemCheckParamRepository, SystemCheckParamRepository>();
 
 // Register services
 builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();
@@ -74,6 +74,13 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+
+// MUST come before UseRouting — tells ASP.NET Core about the /IQA/ sub-path
+var subAppPath = builder.Configuration.GetValue<string>("AppSettings:SubApplicationPath")?.TrimEnd('/') ?? "";
+if (!string.IsNullOrWhiteSpace(subAppPath))
+{
+    app.UsePathBase(subAppPath);
+}
 
 // Add global exception handling middleware
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();

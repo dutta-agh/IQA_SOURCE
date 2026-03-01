@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using IQA_SOURCE.Models.Admin;
 
 namespace IQA_SOURCE.Models
@@ -13,7 +14,7 @@ namespace IQA_SOURCE.Models
         public string UrUserAgent { get; set; }
         public DateTime? UrStartTime { get; set; }
         public DateTime? UrSubmitTime { get; set; }
-        public string UrStatus { get; set; } // IN_PROGRESS, COMPLETED
+        public string UrStatus { get; set; }
         public DateTime? UrCreatedDate { get; set; }
     }
 
@@ -21,7 +22,7 @@ namespace IQA_SOURCE.Models
     public class QuestionAnswerDetail
     {
         public int UrdId { get; set; }
-        public int UrdUrId { get; set; } // References QuestionAnswerResponse (UrId)
+        public int UrdUrId { get; set; }
         public string UrdAssessmentCode { get; set; }
         public int UrdQId { get; set; }
         public string UrdAnswerText { get; set; }
@@ -33,28 +34,36 @@ namespace IQA_SOURCE.Models
     public class QuestionSubmissionModel
     {
         [Required(ErrorMessage = "Assessment code is required")]
+        [JsonPropertyName("AssessmentCode")]
         public string AssessmentCode { get; set; } = string.Empty;
-        
+
+        [JsonPropertyName("SessionId")]
         public string SessionId { get; set; } = string.Empty;
-        
+
         [Required(ErrorMessage = "At least one answer is required")]
-        [MinLength(1, ErrorMessage = "At least one answer is required")]
+        [JsonPropertyName("Answers")]
         public List<QuestionAnswer> Answers { get; set; } = new List<QuestionAnswer>();
+
+        [JsonPropertyName("IpAddress")]
+        public string? IpAddress { get; set; }
     }
 
     public class QuestionAnswer
     {
         [Required]
+        [JsonPropertyName("QuestionId")]
         public int QuestionId { get; set; }
-        
+
+        [JsonPropertyName("QuestionCode")]
         public string QuestionCode { get; set; } = string.Empty;
-        
+
+        [JsonPropertyName("QuestionType")]
         public string QuestionType { get; set; } = string.Empty;
-        
-        [Required]
-        [MinLength(1, ErrorMessage = "At least one option must be selected")]
+
+        [JsonPropertyName("SelectedOptionIds")]
         public List<int> SelectedOptionIds { get; set; } = new List<int>();
-        
+
+        [JsonPropertyName("SelectedOptionValues")]
         public List<string> SelectedOptionValues { get; set; } = new List<string>();
     }
 
@@ -86,7 +95,6 @@ namespace IQA_SOURCE.Models
         public DateTime SubmittedAt { get; set; }
     }
 
-    // Admin results display models
     public class QuestionAnswerResultsResponse
     {
         public int OutputCode { get; set; }
@@ -116,10 +124,9 @@ namespace IQA_SOURCE.Models
         public string QuestionText { get; set; }
         public string QuestionType { get; set; }
         public List<string> SelectedOptions { get; set; }
-        public string SelectedOptionsText { get; set; } // Comma-separated
+        public string SelectedOptionsText { get; set; }
     }
 
-    // Excel export model
     public class QuestionAnswerExcelRow
     {
         public string SessionId { get; set; }
@@ -129,8 +136,11 @@ namespace IQA_SOURCE.Models
         public string QuestionCode { get; set; }
         public string QuestionText { get; set; }
         public string QuestionType { get; set; }
-        
-        // Dynamic columns for each option
+        /// <summary>
+        /// Raw CSV of selected option texts returned by GROUP_CONCAT in the repository query.
+        /// e.g. "Option A, Option C"
+        /// </summary>
+        public string SelectedOptions { get; set; }
         public Dictionary<string, string> OptionColumns { get; set; } = new Dictionary<string, string>();
     }
 

@@ -45,5 +45,6 @@ namespace IQA_SOURCE.Models.Admin
         public decimal? UploadSpeedMbps { get; set; }
         public int? Latency { get; set; }
         public bool OverallPassed { get; set; }
+        public string? IpAddress { get; set; }
     }
 }

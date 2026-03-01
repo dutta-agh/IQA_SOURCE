@@ -62,6 +62,28 @@ namespace IQA_SOURCE.Models.Admin
         public string IlFileName { get; set; }
         public string IlFilePath { get; set; }
         public long? IlFileSize { get; set; }
+        public int? IlWidth { get; set; }
+        public int? IlHeight { get; set; }
+        public string IlFormat { get; set; }
+        public string IlColorSpace { get; set; }
+        public int? IlBitDepth { get; set; }
+        public decimal? IlDpiX { get; set; }
+        public decimal? IlDpiY { get; set; }
+        public int? IlOrientation { get; set; }
+        public int? IlCompressionQuality { get; set; }
+        public string IlExifData { get; set; }
+        public string IlCameraMake { get; set; }
+        public string IlCameraModel { get; set; }
+        public string IlLensModel { get; set; }
+        public decimal? IlFocalLength { get; set; }
+        public string IlAperture { get; set; }
+        public string IlShutterSpeed { get; set; }
+        public int? IlIso { get; set; }
+        public string IlFlash { get; set; }
+        public string IlExposureMode { get; set; }
+        public string IlWhiteBalance { get; set; }
+        public DateTime? IlDateTaken { get; set; }
+        public string IlUploadBatch { get; set; }
         public string IlQualityLevel { get; set; }
         public string IlQualityType { get; set; }
         public DateTime? IlCreatedDate { get; set; }

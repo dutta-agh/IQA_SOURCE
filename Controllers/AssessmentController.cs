@@ -23,6 +23,7 @@ namespace IQA_SOURCE.Controllers
         private readonly ILogger<AssessmentController> _logger;
         private readonly IUserResponseRepository _responseRepository;
         private readonly IImageQualityRepository _imageQualityRepository;
+        private readonly ISystemCheckParamRepository _systemCheckParamRepository;
 
         public AssessmentController(
             ILogger<AssessmentController> logger, 
@@ -33,7 +34,8 @@ namespace IQA_SOURCE.Controllers
             IConfiguration configuration,
             ISpeedTestRepository speedTestRepository,
             IUserResponseRepository responseRepository,
-            IImageQualityRepository imageQualityRepository)
+            IImageQualityRepository imageQualityRepository,
+            ISystemCheckParamRepository systemCheckParamRepository)
         {
             _logger = logger;
             _db = db;
@@ -44,6 +46,7 @@ namespace IQA_SOURCE.Controllers
             _speedTestRepository = speedTestRepository;
             _responseRepository = responseRepository;
             _imageQualityRepository = imageQualityRepository;
+            _systemCheckParamRepository = systemCheckParamRepository;
         }
 
         [AllowAnonymous]
@@ -242,34 +245,29 @@ namespace IQA_SOURCE.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult GetAssessmentSettings()
+        public async Task<IActionResult> GetAssessmentSettings()
         {
             try
             {
-                var minWidth = _configuration.GetValue<int>("AssessmentSettings:MinScreenWidth", 1024);
-                var minHeight = _configuration.GetValue<int>("AssessmentSettings:MinScreenHeight", 768);
-                var allowedDevices = _configuration.GetSection("AssessmentSettings:AllowedDeviceTypes").Get<string[]>() 
-                    ?? new[] { "Desktop", "Laptop" };
+                var settings = await _systemCheckParamRepository.GetResolvedSettings();
 
                 return Json(new
                 {
                     success = true,
                     data = new
                     {
-                        minScreenWidth = minWidth,
-                        minScreenHeight = minHeight,
-                        allowedDeviceTypes = allowedDevices
+                        minScreenWidth       = settings.MinScreenWidth,
+                        minScreenHeight      = settings.MinScreenHeight,
+                        allowedDeviceTypes   = settings.AllowedDevices,
+                        minDownloadSpeedMbps = settings.MinDownloadMbps,
+                        incognitoRequired    = settings.IncognitoRequired
                     }
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading assessment settings");
-                return Json(new
-                {
-                    success = false,
-                    message = "Error loading settings"
-                });
+                return Json(new { success = false, message = "Error loading settings" });
             }
         }
 
@@ -304,7 +302,9 @@ namespace IQA_SOURCE.Controllers
                 request.SessionId = sessionId;
                 request.AssessmentCode = assessmentType ?? request.AssessmentCode;
                 
-                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+                var ipAddress = !string.IsNullOrWhiteSpace(request.IpAddress)
+                    ? request.IpAddress
+                    : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
                 var userAgent = Request.Headers["User-Agent"].ToString();
                 var referrerUrl = Request.Headers["Referer"].ToString();
                 
@@ -377,25 +377,32 @@ namespace IQA_SOURCE.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitResponses([FromBody] QuestionSubmissionModel submission)
         {
-            // Log validation errors
-            if (!ModelState.IsValid)
+            if (submission == null)
             {
-                var errors = ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
-                    .Select(x => new 
-                    { 
-                        Field = x.Key, 
-                        Errors = x.Value.Errors.Select(e => e.ErrorMessage).ToList() 
-                    })
-                    .ToList();
-        
-                _logger.LogError($"Model validation failed: {string.Join("; ", errors.Select(e => $"{e.Field}: {string.Join(", ", e.Errors)}"))}");
-        
-                return Json(new { 
-                    success = false, 
-                    message = "Invalid submission data", 
-                    errors = errors,
-                    modelState = errors.ToDictionary(e => e.Field, e => e.Errors)
+                return Json(new { success = false, message = "Invalid submission data" });
+            }
+
+            if (string.IsNullOrWhiteSpace(submission.AssessmentCode))
+            {
+                return Json(new { success = false, message = "Assessment code is required" });
+            }
+
+            if (submission.Answers == null || submission.Answers.Count == 0)
+            {
+                return Json(new { success = false, message = "At least one answer is required" });
+            }
+
+            // Validate each answer has at least one selected option
+            var invalidAnswers = submission.Answers
+                .Where(a => a.SelectedOptionIds == null || a.SelectedOptionIds.Count == 0)
+                .ToList();
+
+            if (invalidAnswers.Count > 0)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = $"{invalidAnswers.Count} answer(s) have no option selected"
                 });
             }
 
@@ -404,7 +411,9 @@ namespace IQA_SOURCE.Controllers
                 var sessionId = _sessionService.GetOrCreateSessionId();
                 submission.SessionId = sessionId;
 
-                _logger.LogInformation($"Submitting {submission.Answers?.Count ?? 0} answers for session {sessionId}, assessment {submission.AssessmentCode}");
+                _logger.LogInformation(
+                    "Submitting {Count} answers for session {SessionId}, assessment {AssessmentCode}",
+                    submission.Answers.Count, sessionId, submission.AssessmentCode);
 
                 var result = await _responseRepository.SaveUserResponses(submission, sessionId);
 
@@ -457,17 +466,11 @@ namespace IQA_SOURCE.Controllers
 
                 // Get next random image set
                 var imageSetResult = await _imageQualityRepository.GetNextRandomRawImageSet(sessionId, assessmentCode, "Anonymous");
-                
-                if (imageSetResult.OutputCode == 0) // All completed
-                {
-                    ViewBag.AssessmentName = assessmentName;
-                    return View("ImageAssessmentComplete");
-                }
 
-                if (imageSetResult.OutputCode != 1 || imageSetResult.Data == null)
+                if (imageSetResult.OutputCode == 0 || imageSetResult.Data == null) // All completed or none available
                 {
-                    _logger.LogWarning($"No image sets found for assessment: {assessmentCode}");
-                    TempData["ErrorMessage"] = "No image sets available for this assessment.";
+                    _logger.LogInformation($"All image sets completed for session: {sessionId}, assessment: {assessmentCode}");
+                    TempData["SuccessMessage"] = "You have completed all image sets. Thank you!";
                     return RedirectToAction("Index", new { assessmentType = assessmentCode });
                 }
 
@@ -490,7 +493,7 @@ namespace IQA_SOURCE.Controllers
                     AssessmentCode = assessmentCode,
                     AssessmentName = assessmentName,
                     RawImage = imageSetResult.Data,
-                    LinkedImages = linkedImagesResult.Data,
+                    LinkedImages = linkedImagesResult.Data.OrderBy(_ => Random.Shared.Next()).ToList(),
                     CurrentSetNumber = progressResult.Data.CompletedSets + 1,
                     TotalSets = progressResult.Data.TotalSets,
                     IsCompleted = progressResult.Data.IsCompleted
@@ -526,7 +529,11 @@ namespace IQA_SOURCE.Controllers
                     return Json(new { success = false, message = "Quality rating must be between 1 and 5" });
                 }
 
-                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+                // Use client-supplied IP from ipify; fall back to connection IP
+                var ipAddress = !string.IsNullOrWhiteSpace(submission.IpAddress)
+                    ? submission.IpAddress
+                    : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
                 var userAgent = Request.Headers["User-Agent"].ToString();
 
                 _logger.LogInformation($"Submitting image quality rating - SessionId: {sessionId}, RawImageSetId: {submission.RawImageSetId}, LinkedImageId: {submission.SelectedLinkedImageId}, Rating: {submission.QualityRating}");

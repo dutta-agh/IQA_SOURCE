@@ -74,3 +74,4 @@ wwwroot\uploads\images\Rating\3+2.png
 wwwroot\uploads\images\Rating\3-1.png
 wwwroot\uploads\images\Rating\3-2.png
 wwwroot\uploads\images\Rating\3.png
+wwwroot\js\detectIncognito.js

@@ -156,59 +156,37 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // Check if content code already exists
                 var checkQuery = "SELECT COUNT(*) as cnt FROM content_mstr WHERE cm_code = @cmCode";
                 var checkParams = new[] { new MySqlParameter("@cmCode", content.CmCode) };
                 var checkResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
-                
+
                 if (checkResult.Rows.Count > 0 && Convert.ToInt32(checkResult.Rows[0]["cnt"]) > 0)
                 {
-                    return new ContentMasterResponse
-                    {
-                        OutputCode = 0,
-                        OutputMsg = "Content code already exists"
-                    };
+                    return new ContentMasterResponse { OutputCode = 0, OutputMsg = "Content code already exists" };
                 }
 
                 var query = @"
-                    INSERT INTO content_mstr (
-                        cm_code,
-                        cm_content,
-                        cm_created_user,
-                        cm_created_date,
-                        cm_active
-                    )
-                    VALUES (
-                        @cmCode,
-                        @cmContent,
-                        @userId,
-                        NOW(),
-                        @cmActive
-                    )";
+                    INSERT INTO content_mstr (cm_code, cm_content, cm_created_user, cm_created_date, cm_active)
+                    VALUES (@cmCode, @cmContent, @userId, UTC_TIMESTAMP(), @cmActive)";
 
                 var parameters = new[]
                 {
-                    new MySqlParameter("@cmCode", content.CmCode),
-                    new MySqlParameter("@cmContent", (object)content.CmContent ?? DBNull.Value),
-                    new MySqlParameter("@userId", userId),
-                    new MySqlParameter("@cmActive", content.CmActive ?? "Y")
+                    new MySqlParameter("@cmCode",    content.CmCode),
+                    new MySqlParameter("@cmContent", (object?)content.CmContent ?? DBNull.Value),
+                    new MySqlParameter("@userId",    userId),
+                    new MySqlParameter("@cmActive",  content.CmActive ?? "Y")
                 };
 
                 var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
-
                 return new ContentMasterResponse
                 {
                     OutputCode = rowsAffected > 0 ? 1 : 0,
-                    OutputMsg = rowsAffected > 0 ? "Content inserted successfully" : "Insert failed"
+                    OutputMsg  = rowsAffected > 0 ? "Content inserted successfully" : "Insert failed"
                 };
             }
             catch (Exception ex)
             {
-                return new ContentMasterResponse
-                {
-                    OutputCode = 0,
-                    OutputMsg = $"Error inserting content: {ex.Message}"
-                };
+                return new ContentMasterResponse { OutputCode = 0, OutputMsg = $"Error inserting content: {ex.Message}" };
             }
         }
 
@@ -216,52 +194,37 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // Check if content exists
-                var checkQuery = "SELECT COUNT(*) as cnt FROM content_mstr WHERE cm_code = @cmCode";
+                var checkQuery  = "SELECT COUNT(*) as cnt FROM content_mstr WHERE cm_code = @cmCode";
                 var checkParams = new[] { new MySqlParameter("@cmCode", content.CmCode) };
                 var checkResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
-                
+
                 if (checkResult.Rows.Count == 0 || Convert.ToInt32(checkResult.Rows[0]["cnt"]) == 0)
-                {
-                    return new ContentMasterResponse
-                    {
-                        OutputCode = 0,
-                        OutputMsg = "Content not found"
-                    };
-                }
+                    return new ContentMasterResponse { OutputCode = 0, OutputMsg = "Content not found" };
 
                 var query = @"
                     UPDATE content_mstr
-                    SET 
-                        cm_content = @cmContent,
-                        cm_modified_user = @userId,
-                        cm_modified_date = NOW(),
-                        cm_active = @cmActive
+                    SET cm_content = @cmContent, cm_modified_user = @userId,
+                        cm_modified_date = UTC_TIMESTAMP(), cm_active = @cmActive
                     WHERE cm_code = @cmCode";
 
                 var parameters = new[]
                 {
-                    new MySqlParameter("@cmCode", content.CmCode),
-                    new MySqlParameter("@cmContent", (object)content.CmContent ?? DBNull.Value),
-                    new MySqlParameter("@userId", userId),
-                    new MySqlParameter("@cmActive", content.CmActive ?? "Y")
+                    new MySqlParameter("@cmCode",    content.CmCode),
+                    new MySqlParameter("@cmContent", (object?)content.CmContent ?? DBNull.Value),
+                    new MySqlParameter("@userId",    userId),
+                    new MySqlParameter("@cmActive",  content.CmActive ?? "Y")
                 };
 
                 var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
-
                 return new ContentMasterResponse
                 {
                     OutputCode = rowsAffected > 0 ? 1 : 0,
-                    OutputMsg = rowsAffected > 0 ? "Content updated successfully" : "Update failed"
+                    OutputMsg  = rowsAffected > 0 ? "Content updated successfully" : "Update failed"
                 };
             }
             catch (Exception ex)
             {
-                return new ContentMasterResponse
-                {
-                    OutputCode = 0,
-                    OutputMsg = $"Error updating content: {ex.Message}"
-                };
+                return new ContentMasterResponse { OutputCode = 0, OutputMsg = $"Error updating content: {ex.Message}" };
             }
         }
 
@@ -269,50 +232,34 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // Check if content exists
-                var checkQuery = "SELECT COUNT(*) as cnt FROM content_mstr WHERE cm_code = @cmCode";
+                var checkQuery  = "SELECT COUNT(*) as cnt FROM content_mstr WHERE cm_code = @cmCode";
                 var checkParams = new[] { new MySqlParameter("@cmCode", cmCode) };
                 var checkResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
-                
-                if (checkResult.Rows.Count == 0 || Convert.ToInt32(checkResult.Rows[0]["cnt"]) == 0)
-                {
-                    return new ContentMasterResponse
-                    {
-                        OutputCode = 0,
-                        OutputMsg = "Content not found"
-                    };
-                }
 
-                // Soft delete - set active to 'N'
+                if (checkResult.Rows.Count == 0 || Convert.ToInt32(checkResult.Rows[0]["cnt"]) == 0)
+                    return new ContentMasterResponse { OutputCode = 0, OutputMsg = "Content not found" };
+
                 var query = @"
                     UPDATE content_mstr
-                    SET 
-                        cm_active = 'N',
-                        cm_modified_user = @userId,
-                        cm_modified_date = NOW()
+                    SET cm_active = 'N', cm_modified_user = @userId, cm_modified_date = UTC_TIMESTAMP()
                     WHERE cm_code = @cmCode";
 
                 var parameters = new[]
                 {
-                    new MySqlParameter("@cmCode", cmCode),
-                    new MySqlParameter("@userId", userId)
+                    new MySqlParameter("@cmCode",  cmCode),
+                    new MySqlParameter("@userId",  userId)
                 };
 
                 var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
-
                 return new ContentMasterResponse
                 {
                     OutputCode = rowsAffected > 0 ? 1 : 0,
-                    OutputMsg = rowsAffected > 0 ? "Content deleted successfully" : "Delete failed"
+                    OutputMsg  = rowsAffected > 0 ? "Content deleted successfully" : "Delete failed"
                 };
             }
             catch (Exception ex)
             {
-                return new ContentMasterResponse
-                {
-                    OutputCode = 0,
-                    OutputMsg = $"Error deleting content: {ex.Message}"
-                };
+                return new ContentMasterResponse { OutputCode = 0, OutputMsg = $"Error deleting content: {ex.Message}" };
             }
         }
 

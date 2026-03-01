@@ -258,49 +258,76 @@
 
         $(document).ready(function() {
             questionTable = $('#questionTable').DataTable({
+                data: [],
                 columns: [
-                    { data: 'qId' },
-                    { data: 'qsCode' },
-                    {
-                        data: 'qsText',
-                        render: function(data) {
-                            return data && data.length > 50 ? data.substring(0, 50) + '...' : data;
-                        }
+                    { 
+                        data: function(row) {
+                            return row.qId || row.QId || 0;
+                        },
+                        defaultContent: '0'
+                    },
+                    { 
+                        data: function(row) {
+                            return row.qsCode || row.QsCode || '';
+                        },
+                        defaultContent: ''
                     },
                     {
-                        data: 'qsType',
-                        render: function(data) {
-                            return data === 'SINGLE'
+                        data: function(row) {
+                            const text = row.qsText || row.QsText || '';
+                            return text && text.length > 50 ? text.substring(0, 50) + '...' : text;
+                        },
+                        defaultContent: ''
+                    },
+                    {
+                        data: function(row) {
+                            const type = row.qsType || row.QsType || 'SINGLE';
+                            return type === 'SINGLE'
                                 ? '<span class="badge type-single">SINGLE</span>'
                                 : '<span class="badge type-multiple">MULTIPLE</span>';
-                        }
+                        },
+                        defaultContent: ''
                     },
-                    { data: 'qsCategory' },
-                    { data: 'qsOrderNo' },
+                    { 
+                        data: function(row) {
+                            return row.qsCategory || row.QsCategory || '';
+                        },
+                        defaultContent: ''
+                    },
+                    { 
+                        data: function(row) {
+                            return row.qsOrderNo || row.QsOrderNo || '';
+                        },
+                        defaultContent: ''
+                    },
                     {
-                        data: 'qsActive',
-                        render: function(data) {
-                            return data == '1'
+                        data: function(row) {
+                            const active = row.qsActive || row.QsActive || 1;
+                            return active == '1' || active === 1
                                 ? '<span class="badge bg-success">Active</span>'
                                 : '<span class="badge bg-danger">Inactive</span>';
-                        }
+                        },
+                        defaultContent: ''
                     },
                     {
                         data: null,
                         orderable: false,
+                        defaultContent: '',
                         render: function(data, type, row) {
+                            if (!row) return '';
+                            const qId = row.qId || row.QId || 0;
                             return `
                                 <div class="action-buttons">
-                                    <button class="btn btn-sm btn-info" onclick="viewQuestion(${row.qId})" title="View">
+                                    <button class="btn btn-sm btn-info" onclick="viewQuestion(${qId})" title="View">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-success" onclick="manageOptions(${row.qId})" title="Manage Options">
+                                    <button class="btn btn-sm btn-success" onclick="manageOptions(${qId})" title="Manage Options">
                                         <i class="fas fa-list"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-warning" onclick="editQuestion(${row.qId})" title="Edit">
+                                    <button class="btn btn-sm btn-warning" onclick="editQuestion(${qId})" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="showDeleteQuestionConfirmation(${row.qId})" title="Delete">
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteQuestionConfirmation(${qId})" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -314,22 +341,30 @@
         });
 
         function loadQuestions() {
+            console.log('Loading questions...');
             showLoader();
             $.ajax({
                 url: buildApiUrl('/Admin/GetAllQuestions'),
                 type: 'GET',
                 success: function(response) {
                     hideLoader();
+                    console.log('Questions response:', response);
                     if (response.success) {
                         questionTable.clear();
-                        questionTable.rows.add(response.data || []);
+                        if (response.data && response.data.length > 0) {
+                            console.log('Sample question data:', response.data[0]);
+                            questionTable.rows.add(response.data);
+                        }
                         questionTable.draw();
                     } else {
+                        console.error('API Error:', response.message);
                         showAlert('Error: ' + response.message, 'danger');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     hideLoader();
+                    console.error('AJAX Error loading questions:', error);
+                    console.error('Response:', xhr.responseText);
                     showAlert('Error loading questions', 'danger');
                 }
             });

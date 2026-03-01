@@ -1,447 +1,434 @@
 @{
-    Layout = "_AdminLayout";
-    ViewData["Title"] = "Question Answers";
+Layout = "_AdminLayout";
+ViewData["Title"] = "User Responses";
 }
 
 @section Styles {
-    <style>
-        .results-card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .filter-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-        }
-
-        .response-details {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .answer-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            background: white;
-            border-left: 3px solid #667eea;
-            border-radius: 4px;
-        }
-
-        .question-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 5px;
-        }
-
-        .answer-text {
-            color: #667eea;
-            font-weight: 500;
-        }
-
-        .stats-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .stats-box h3 {
-            margin: 0;
-            font-size: 2.5rem;
-        }
-
-        .stats-box p {
-            margin: 5px 0 0 0;
-            opacity: 0.9;
-        }
-    </style>
+<style>
+    .results-card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .filter-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .stats-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+    .stats-box h3 { margin: 0; font-size: 2.5rem; }
+    .stats-box p { margin: 5px 0 0 0; opacity: 0.9; }
+    .answer-item { padding: 10px; margin-bottom: 8px; background: white; border-left: 3px solid #667eea; border-radius: 4px; }
+    .question-label { font-weight: 600; color: #495057; margin-bottom: 5px; }
+    .answer-text { color: #667eea; font-weight: 500; }
+    .img-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #dee2e6; }
+    .rating-badge-1 { background: #dc3545; }
+    .rating-badge-2 { background: #fd7e14; }
+    .rating-badge-3 { background: #ffc107; color: #000; }
+    .rating-badge-4 { background: #20c997; }
+    .rating-badge-5 { background: #198754; }
+    .nav-tabs .nav-link.active { border-bottom: 3px solid #667eea; color: #667eea; font-weight: 600; }
+    .exif-pre { font-size: 0.75rem; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+    .btn-excel { background-color: #1D6F42; color: white; border: none; }
+    .btn-excel:hover { background-color: #155230; color: white; }
+    .btn-excel:disabled { background-color: #6c757d; }
+</style>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-clipboard-check"></i> Question Answers</h2>
-    <button class="btn btn-success" onclick="showExportOptions()">
-        <i class="fas fa-file-excel"></i> Export to Excel
-    </button>
+<h2><i class="fas fa-clipboard-check"></i> User Responses</h2>
 </div>
 
-<!-- Statistics -->
+<!-- Stats -->
 <div class="row" id="statsSection">
-    <div class="col-md-4">
-        <div class="stats-box">
-            <h3 id="totalResponses">0</h3>
-            <p>Total Submissions</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stats-box">
-            <h3 id="completedResponses">0</h3>
-            <p>Completed</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stats-box">
-            <h3 id="inProgressResponses">0</h3>
-            <p>In Progress</p>
-        </div>
-    </div>
+<div class="col-md-3">
+    <div class="stats-box"><h3 id="totalQA">0</h3><p>Question Submissions</p></div>
+</div>
+<div class="col-md-3">
+    <div class="stats-box"><h3 id="completedQA">0</h3><p>Completed (Q&amp;A)</p></div>
+</div>
+<div class="col-md-3">
+    <div class="stats-box"><h3 id="totalIR">0</h3><p>Image Ratings</p></div>
+</div>
+<div class="col-md-3">
+    <div class="stats-box"><h3 id="uniqueSessions">0</h3><p>Unique Sessions</p></div>
+</div>
 </div>
 
-<!-- Filter Section -->
+<!-- Filter -->
 <div class="filter-section">
-    <div class="row">
-        <div class="col-md-4">
-            <label class="form-label">Filter by Assessment</label>
-            <select class="form-select" id="assessmentFilter" onchange="filterByAssessment()">
-                <option value="">All Assessments</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Filter by Status</label>
-            <select class="form-select" id="statusFilter" onchange="applyFilters()">
-                <option value="">All Status</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="IN_PROGRESS">In Progress</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">&nbsp;</label>
-            <button class="btn btn-primary w-100" onclick="loadResults()">
-                <i class="fas fa-sync"></i> Refresh
-            </button>
-        </div>
+<div class="row g-3 align-items-end">
+    <div class="col-md-3">
+        <label class="form-label fw-semibold">Assessment</label>
+        <select class="form-select" id="assessmentFilter" onchange="applyAssessmentFilter()">
+            <option value="">All Assessments</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label fw-semibold">Status (Q&amp;A only)</label>
+        <select class="form-select" id="statusFilter" onchange="applyQAStatusFilter()">
+            <option value="">All Status</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="IN_PROGRESS">In Progress</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary w-100" onclick="loadAll()">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-excel w-100" id="btnDownloadExcel" onclick="downloadFilteredExcel()" disabled
+                title="Select an assessment to enable download">
+            <i class="fas fa-file-excel"></i> Download Excel
+        </button>
+        <small class="text-muted d-block mt-1" id="downloadHint">Select an assessment to download</small>
     </div>
 </div>
-
-<!-- Results Table -->
-<div class="results-card">
-    <table id="resultsTable" class="table table-striped table-hover">
-        <thead>
-            <tr>
-                <th>Session ID</th>
-                <th>Assessment</th>
-                <th>IP Address</th>
-                <th>Start Time</th>
-                <th>Submit Time</th>
-                <th>Status</th>
-                <th>Questions</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
 </div>
 
-<!-- View Details Modal -->
-<div class="modal fade" id="detailsModal" tabindex="-1">
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="responseTabs">
+<li class="nav-item">
+    <a class="nav-link active" id="tab-qa" href="#" onclick="switchTab('qa'); return false;">
+        <i class="fas fa-question-circle"></i> Question Answers
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" id="tab-ir" href="#" onclick="switchTab('ir'); return false;">
+        <i class="fas fa-images"></i> Image Ratings
+    </a>
+</li>
+</ul>
+
+<!-- Q&A Table -->
+<div class="results-card" id="panel-qa">
+<table id="qaTable" class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Session ID</th>
+            <th>Assessment</th>
+            <th>IP Address</th>
+            <th>Start Time</th>
+            <th>Submit Time</th>
+            <th>Status</th>
+            <th>Questions</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+</div>
+
+<!-- Image Ratings Table -->
+<div class="results-card d-none" id="panel-ir">
+<table id="irTable" class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Session ID</th>
+            <th>Assessment</th>
+            <th>IP Address</th>
+            <th>Rated At</th>
+            <th>Ref Image</th>
+            <th>Ref Resolution</th>
+            <th>Ref DPI</th>
+            <th>Rated Image</th>
+            <th>Rated Resolution</th>
+            <th>Rated DPI</th>
+            <th>Quality Level</th>
+            <th>Rating</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+</div>
+
+<!-- Q&A Detail Modal -->
+<div class="modal fade" id="qaDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-list-alt"></i> Question Answer Details
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title"><i class="fas fa-list-alt"></i> Question Answer Details</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div class="row mb-3">
+                <div class="col-md-6"><strong>Session ID:</strong> <span id="detailSessionId"></span></div>
+                <div class="col-md-6"><strong>IP Address:</strong> <span id="detailIpAddress"></span></div>
             </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Session ID:</strong> <span id="detailSessionId"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>IP Address:</strong> <span id="detailIpAddress"></span>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Submit Time:</strong> <span id="detailSubmitTime"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong> <span id="detailStatus"></span>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <h6><i class="fas fa-question-circle"></i> User Answers</h6>
-                <div id="answersContainer"></div>
+            <div class="row mb-3">
+                <div class="col-md-6"><strong>Submit Time:</strong> <span id="detailSubmitTime"></span></div>
+                <div class="col-md-6"><strong>Status:</strong> <span id="detailStatus"></span></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+            <hr>
+            <h6><i class="fas fa-question-circle"></i> Answers</h6>
+            <div id="answersContainer"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
     </div>
 </div>
+</div>
 
-<!-- Export Options Modal -->
-<div class="modal fade" id="exportModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-file-excel"></i> Export to Excel
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Select Assessment</label>
-                    <select class="form-select" id="exportAssessmentCode">
-                        <option value="">-- Select Assessment --</option>
-                    </select>
-                    <small class="text-muted">Choose the assessment to export question answers</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="downloadExcel()">
-                    <i class="fas fa-download"></i> Download Excel
-                </button>
-            </div>
+<!-- Image Rating Detail Modal -->
+<div class="modal fade" id="irDetailModal" tabindex="-1">
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+            <h5 class="modal-title"><i class="fas fa-images"></i> Image Rating Details</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="irDetailBody"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
     </div>
+</div>
 </div>
 
 @section Scripts {
-    <script>
-        let resultsTable;
-        let allResults = [];
+<script>
+    let qaTable, irTable;
+    let allQA = [], allIR = [];
+    let currentTab = 'qa';
 
-        $(document).ready(function() {
-            resultsTable = $('#resultsTable').DataTable({
-                columns: [
-                    { 
-                        data: 'sessionId',
-                        render: function(data) {
-                            return data ? data.substring(0, 20) + '...' : 'N/A';
-                        }
-                    },
-                    { data: 'assessmentName' },
-                    { data: 'ipAddress' },
-                    {
-                        data: 'startTime',
-                        render: function(data) {
-                            return data ? new Date(data).toLocaleString() : 'N/A';
-                        }
-                    },
-                    {
-                        data: 'submitTime',
-                        render: function(data) {
-                            return data ? new Date(data).toLocaleString() : 'N/A';
-                        }
-                    },
-                    {
-                        data: 'status',
-                        render: function(data) {
-                            return data === 'COMPLETED'
-                                ? '<span class="badge bg-success">Completed</span>'
-                                : '<span class="badge bg-warning">In Progress</span>';
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function(data) {
-                            return `${data.answeredQuestions}`;
-                        }
-                    },
-                    {
-                        data: null,
-                        orderable: false,
-                        render: function(data) {
-                            return `
-                                <div class="action-buttons">
-                                    <button class="btn btn-sm btn-info" onclick="viewDetails('${escapeHtml(data.assessmentCode)}', '${escapeHtml(data.sessionId)}')" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            `;
-                        }
-                    }
-                ],
-                order: [[4, 'desc']]
-            });
+    const ratingLabels = { 1: 'Bad', 2: 'Poor', 3: 'Fair', 4: 'Good', 5: 'Excellent' };
 
-            loadResults();
-            loadAssessmentList();
+    $(document).ready(function () {
+        qaTable = $('#qaTable').DataTable({
+            columns: [
+                { data: 'sessionId',        render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                { data: 'assessmentName' },
+                { data: 'ipAddress' },
+                { data: 'startTime',         render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                { data: 'submitTime',        render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                { data: 'status',            render: d => d === 'COMPLETED'
+                    ? '<span class="badge bg-success">Completed</span>'
+                    : '<span class="badge bg-warning text-dark">In Progress</span>' },
+                { data: 'answeredQuestions' },
+                { data: null, orderable: false, render: (d, type, row, meta) =>
+                    `<button class="btn btn-sm btn-info" onclick="viewQADetails(${meta.row})" title="View"><i class="fas fa-eye"></i></button>` }
+            ],
+            order: [[4, 'desc']]
         });
 
-        async function loadResults() {
-            showLoader();
-            try {
-                const response = await fetch(buildApiUrl('/Admin/GetAllQuestionAnswers'));
-                const result = await response.json();
-                
-                hideLoader();
-                
-                if (result.success) {
-                    allResults = result.data || [];
-                    updateStats(allResults);
-                    resultsTable.clear();
-                    resultsTable.rows.add(allResults);
-                    resultsTable.draw();
-                } else {
-                    showAlert('Error: ' + result.message, 'danger');
-                }
-            } catch (error) {
-                hideLoader();
-                console.error('Error loading results:', error);
-                showAlert('Error loading results. Please try again.', 'danger');
-            }
-        }
+        irTable = $('#irTable').DataTable({
+            columns: [
+                { data: 'sessionId',          render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                { data: 'assessmentCode' },
+                { data: 'ipAddress' },
+                { data: 'ratedAt',            render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                { data: null, render: d => d.masterImageUrl
+                    ? `<a href="${escapeHtml(d.masterImageUrl)}" target="_blank"><img src="${escapeHtml(d.masterImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.masterImageName ?? '')}"></a>`
+                    : escapeHtml(d.masterImageName ?? '') },
+                { data: null, render: d => (d.masterWidth && d.masterHeight) ? `${d.masterWidth} × ${d.masterHeight}` : 'N/A' },
+                { data: null, render: d => (d.masterDpiX && d.masterDpiY) ? `${Math.round(d.masterDpiX)} × ${Math.round(d.masterDpiY)}` : 'N/A' },
+                { data: null, render: d => d.linkedImageUrl
+                    ? `<a href="${escapeHtml(d.linkedImageUrl)}" target="_blank"><img src="${escapeHtml(d.linkedImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.linkedImageName ?? '')}"></a>`
+                    : escapeHtml(d.linkedImageName ?? '') },
+                { data: null, render: d => (d.linkedWidth && d.linkedHeight) ? `${d.linkedWidth} × ${d.linkedHeight}` : 'N/A' },
+                { data: null, render: d => (d.linkedDpiX && d.linkedDpiY) ? `${Math.round(d.linkedDpiX)} × ${Math.round(d.linkedDpiY)}` : 'N/A' },
+                { data: null, render: d => {
+                    const lvl = escapeHtml(d.linkedQualityLevel ?? '');
+                    const typ = escapeHtml(d.linkedQualityType  ?? '');
+                    return lvl ? `${lvl} <small class="text-muted">(${typ})</small>` : 'N/A';
+                }},
+                { data: 'qualityRating', render: d => {
+                    const label = ratingLabels[d] ?? 'N/A';
+                    return `<span class="badge rating-badge-${d}">${d} — ${label}</span>`;
+                }},
+                { data: null, orderable: false, render: (d, type, row, meta) =>
+                    `<button class="btn btn-sm btn-info" onclick="viewIRDetails(${meta.row})" title="Details"><i class="fas fa-eye"></i></button>` }
+            ],
+            order: [[3, 'desc']]
+        });
 
-        async function loadAssessmentList() {
-            try {
-                const response = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
-                const result = await response.json();
-                
-                if (result.success && result.data) {
-                    const assessmentFilter = document.getElementById('assessmentFilter');
-                    const exportAssessmentCode = document.getElementById('exportAssessmentCode');
-                    
-                    result.data.forEach(assessment => {
-                        const option1 = new Option(assessment.atmName, assessment.atmCode);
-                        const option2 = new Option(assessment.atmName, assessment.atmCode);
-                        assessmentFilter.add(option1);
-                        exportAssessmentCode.add(option2);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading assessments:', error);
-            }
-        }
+        loadAll();
+        loadAssessmentList();
+    });
 
-        function updateStats(data) {
-            const total = data.length;
-            const completed = data.filter(r => r.status === 'COMPLETED').length;
-            const inProgress = data.filter(r => r.status === 'IN_PROGRESS').length;
-            
-            document.getElementById('totalResponses').textContent = total;
-            document.getElementById('completedResponses').textContent = completed;
-            document.getElementById('inProgressResponses').textContent = inProgress;
+    function getBootstrapModal(elementId) {
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap JS is not loaded. Check CDN connectivity.');
+            showAlert('UI library failed to load. Please refresh the page.', 'danger');
+            return null;
         }
+        return new bootstrap.Modal(document.getElementById(elementId));
+    }
 
-        async function filterByAssessment() {
-            const assessmentCode = document.getElementById('assessmentFilter').value;
-            
-            if (!assessmentCode) {
-                loadResults();
-                return;
-            }
-            
-            showLoader();
-            try {
-                const response = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${assessmentCode}`));
-                const result = await response.json();
-                
-                hideLoader();
-                
-                if (result.success) {
-                    allResults = result.data || [];
-                    updateStats(allResults);
-                    resultsTable.clear();
-                    resultsTable.rows.add(allResults);
-                    resultsTable.draw();
-                } else {
-                    showAlert('Error: ' + result.message, 'danger');
-                }
-            } catch (error) {
-                hideLoader();
-                console.error('Error filtering results:', error);
-                showAlert('Error filtering results. Please try again.', 'danger');
-            }
-        }
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('panel-qa').classList.toggle('d-none', tab !== 'qa');
+        document.getElementById('panel-ir').classList.toggle('d-none', tab !== 'ir');
+        document.getElementById('tab-qa').classList.toggle('active', tab === 'qa');
+        document.getElementById('tab-ir').classList.toggle('active', tab === 'ir');
+        if (tab === 'qa') qaTable.columns.adjust().draw(false);
+        else              irTable.columns.adjust().draw(false);
+    }
 
-        function applyFilters() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            let filtered = [...allResults];
-            
-            if (statusFilter) {
-                filtered = filtered.filter(r => r.status === statusFilter);
-            }
-            
-            resultsTable.clear();
-            resultsTable.rows.add(filtered);
-            resultsTable.draw();
-            updateStats(filtered);
-        }
+    async function loadAll() {
+        showLoader();
+        const ac    = document.getElementById('assessmentFilter').value;
+        const qaUrl = ac
+            ? buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`)
+            : buildApiUrl('/Admin/GetAllQuestionAnswers');
+        const irUrl = ac
+            ? buildApiUrl(`/Admin/GetAllImageRatings?assessmentCode=${encodeURIComponent(ac)}`)
+            : buildApiUrl('/Admin/GetAllImageRatings');
 
-        async function viewDetails(assessmentCode, sessionId) {
-            showLoader();
-            try {
-                const response = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${assessmentCode}`));
-                const result = await response.json();
-                
-                hideLoader();
-                
-                if (result.success && result.data && result.data.length > 0) {
-                    // Find the specific session data
-                    const data = result.data.find(r => r.sessionId === sessionId) || result.data[0];
-                    
-                    document.getElementById('detailSessionId').textContent = data.sessionId || 'N/A';
-                    document.getElementById('detailIpAddress').textContent = data.ipAddress || 'N/A';
-                    document.getElementById('detailSubmitTime').textContent = data.submitTime ? new Date(data.submitTime).toLocaleString() : 'N/A';
-                    document.getElementById('detailStatus').innerHTML = data.status === 'COMPLETED'
-                        ? '<span class="badge bg-success">Completed</span>'
-                        : '<span class="badge bg-warning">In Progress</span>';
-                    
-                    const answersContainer = document.getElementById('answersContainer');
-                    answersContainer.innerHTML = '';
-                    
-                    if (data.answers && data.answers.length > 0) {
-                        data.answers.forEach(answer => {
-                            const answerHtml = `
-                                <div class="answer-item">
-                                    <div class="question-label">${escapeHtml(answer.questionCode)}: ${escapeHtml(answer.questionText)}</div>
-                                    <div class="answer-text">
-                                        <i class="fas fa-check-circle"></i> ${escapeHtml(answer.selectedOptionsText || 'No answer')}
-                                    </div>
-                                </div>
-                            `;
-                            answersContainer.insertAdjacentHTML('beforeend', answerHtml);
-                        });
-                    } else {
-                        answersContainer.innerHTML = '<p class="text-muted">No answers recorded</p>';
-                    }
-                    
-                    new bootstrap.Modal(document.getElementById('detailsModal')).show();
-                } else {
-                    showAlert('Error loading details', 'danger');
-                }
-            } catch (error) {
-                hideLoader();
-                console.error('Error loading details:', error);
-                showAlert('Error loading details. Please try again.', 'danger');
-            }
-        }
+        const [qaRes, irRes] = await Promise.all([fetch(qaUrl), fetch(irUrl)]);
+        const qaJson = await qaRes.json();
+        const irJson = await irRes.json();
+        hideLoader();
 
-        function showExportOptions() {
-            new bootstrap.Modal(document.getElementById('exportModal')).show();
-        }
+        allQA = qaJson.success ? (qaJson.data || []) : [];
+        allIR = irJson.success ? (irJson.data || []) : [];
 
-        function downloadExcel() {
-            const assessmentCode = document.getElementById('exportAssessmentCode').value;
-            
-            if (!assessmentCode) {
-                showAlert('Please select an assessment to export', 'warning');
-                return;
-            }
-            
-            window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(assessmentCode)}`);
-            bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+        qaTable.clear().rows.add(allQA).draw();
+        irTable.clear().rows.add(allIR).draw();
+        updateStats();
+    }
+
+    function applyAssessmentFilter() {
+        const ac   = document.getElementById('assessmentFilter').value;
+        const btn  = document.getElementById('btnDownloadExcel');
+        const hint = document.getElementById('downloadHint');
+        if (ac) {
+            btn.disabled     = false;
+            btn.title        = 'Download consolidated Excel for selected assessment';
+            hint.textContent = '';
+        } else {
+            btn.disabled     = true;
+            btn.title        = 'Select an assessment to enable download';
+            hint.textContent = 'Select an assessment to download';
         }
-    </script>
+        loadAll();
+    }
+
+    function applyQAStatusFilter() {
+        const status   = document.getElementById('statusFilter').value;
+        const filtered = status ? allQA.filter(r => r.status === status) : allQA;
+        qaTable.clear().rows.add(filtered).draw();
+    }
+
+    function updateStats() {
+        const sessions = new Set([
+            ...allQA.map(r => r.sessionId),
+            ...allIR.map(r => r.sessionId)
+        ]);
+        document.getElementById('totalQA').textContent        = allQA.length;
+        document.getElementById('completedQA').textContent    = allQA.filter(r => r.status === 'COMPLETED').length;
+        document.getElementById('totalIR').textContent        = allIR.length;
+        document.getElementById('uniqueSessions').textContent = sessions.size;
+    }
+
+    async function loadAssessmentList() {
+        const res  = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+        const json = await res.json();
+        if (!json.success) return;
+        json.data.forEach(a => {
+            document.getElementById('assessmentFilter').add(new Option(a.atmName, a.atmCode));
+        });
+    }
+
+    function downloadFilteredExcel() {
+        const code = document.getElementById('assessmentFilter').value;
+        if (!code) { showAlert('Please select an assessment first.', 'warning'); return; }
+        const btn = document.getElementById('btnDownloadExcel');
+        btn.disabled  = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+        window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(code)}`);
+        setTimeout(() => {
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel';
+        }, 3000);
+    }
+
+    async function viewQADetails(rowIdx) {
+        const data = qaTable.row(rowIdx).data();
+        if (!data) { showAlert('Could not find record', 'danger'); return; }
+
+        showLoader();
+        const res  = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(data.assessmentCode)}`));
+        const json = await res.json();
+        hideLoader();
+
+        if (!json.success || !json.data?.length) { showAlert('Error loading details', 'danger'); return; }
+
+        const detail = json.data.find(r => r.sessionId === data.sessionId) || json.data[0];
+
+        document.getElementById('detailSessionId').textContent  = detail.sessionId  ?? 'N/A';
+        document.getElementById('detailIpAddress').textContent  = detail.ipAddress  ?? 'N/A';
+        document.getElementById('detailSubmitTime').textContent = detail.submitTime ? new Date(detail.submitTime).toLocaleString() : 'N/A';
+        document.getElementById('detailStatus').innerHTML = detail.status === 'COMPLETED'
+            ? '<span class="badge bg-success">Completed</span>'
+            : '<span class="badge bg-warning text-dark">In Progress</span>';
+
+        const container = document.getElementById('answersContainer');
+        container.innerHTML = detail.answers?.length
+            ? detail.answers.map(a => `
+                <div class="answer-item">
+                    <div class="question-label">${escapeHtml(a.questionCode ?? '')}: ${escapeHtml(a.questionText ?? '')}</div>
+                    <div class="answer-text"><i class="fas fa-check-circle"></i> ${escapeHtml(a.selectedOptionsText || 'No answer')}</div>
+                </div>`).join('')
+            : '<p class="text-muted">No answers recorded</p>';
+
+        const modal = getBootstrapModal('qaDetailModal');
+        if (modal) modal.show();
+    }
+
+    function viewIRDetails(rowIdx) {
+        const r = irTable.row(rowIdx).data();
+        if (!r) return;
+
+        let exifHtml = '';
+        try {
+            const ex = JSON.parse(r.linkedExifData || '{}');
+            exifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
+        } catch { exifHtml = ''; }
+
+        let masterExifHtml = '';
+        try {
+            const ex = JSON.parse(r.masterExifData || '{}');
+            masterExifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
+        } catch { masterExifHtml = ''; }
+
+        document.getElementById('irDetailBody').innerHTML = `
+            <div class="row mb-3">
+                <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(r.sessionId ?? '')}</div>
+                <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(r.assessmentCode ?? '')}</div>
+                <div class="col-md-4"><strong>IP:</strong> ${escapeHtml(r.ipAddress ?? '')}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4"><strong>Rated At:</strong> ${r.ratedAt ? new Date(r.ratedAt).toLocaleString() : 'N/A'}</div>
+                <div class="col-md-4"><strong>Rating:</strong>
+                    <span class="badge rating-badge-${r.qualityRating}">${r.qualityRating} — ${ratingLabels[r.qualityRating] ?? 'N/A'}</span>
+                </div>
+                <div class="col-md-4"><strong>Quality Level:</strong> ${escapeHtml(r.linkedQualityLevel ?? 'N/A')} (${escapeHtml(r.linkedQualityType ?? '')})</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-image"></i> Reference Image</h6>
+                    ${r.masterImageUrl ? `<a href="${escapeHtml(r.masterImageUrl)}" target="_blank">
+                        <img src="${escapeHtml(r.masterImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                    </a>` : ''}
+                    <p class="mt-2 mb-1"><a href="${escapeHtml(r.masterImageUrl ?? '')}" target="_blank">${escapeHtml(r.masterImageName ?? '')}</a></p>
+                    <p class="mb-1"><strong>Resolution:</strong> ${r.masterWidth ?? '?'} × ${r.masterHeight ?? '?'} px</p>
+                    <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.masterFormat ?? 'N/A')}</p>
+                    <p class="mb-1"><strong>DPI:</strong> ${r.masterDpiX ? Math.round(r.masterDpiX) : '?'} × ${r.masterDpiY ? Math.round(r.masterDpiY) : '?'}</p>
+                    ${masterExifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
+                        <table class="table table-sm mt-2">${masterExifHtml}</table></details>` : ''}
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-star"></i> Rated Image</h6>
+                    ${r.linkedImageUrl ? `<a href="${escapeHtml(r.linkedImageUrl)}" target="_blank">
+                        <img src="${escapeHtml(r.linkedImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                    </a>` : ''}
+                    <p class="mt-2 mb-1"><a href="${escapeHtml(r.linkedImageUrl ?? '')}" target="_blank">${escapeHtml(r.linkedImageName ?? '')}</a></p>
+                    <p class="mb-1"><strong>Resolution:</strong> ${r.linkedWidth ?? '?'} × ${r.linkedHeight ?? '?'} px</p>
+                    <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.linkedFormat ?? 'N/A')}</p>
+                    <p class="mb-1"><strong>DPI:</strong> ${r.linkedDpiX ? Math.round(r.linkedDpiX) : '?'} × ${r.linkedDpiY ? Math.round(r.linkedDpiY) : '?'}</p>
+                    ${exifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
+                        <table class="table table-sm mt-2">${exifHtml}</table></details>` : ''}
+                </div>
+            </div>`;
+
+        const modal = getBootstrapModal('irDetailModal');
+        if (modal) modal.show();
+    }
+</script>
 }

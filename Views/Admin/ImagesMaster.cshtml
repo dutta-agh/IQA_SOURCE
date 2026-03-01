@@ -4,6 +4,7 @@
 }
 
 @section Styles {
+    <!-- All styles remain the same -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet" />
     <style>
         .images-card {
@@ -440,22 +441,38 @@
         });
 
         function loadAssessmentTypes() {
+            console.log('Loading assessment types for dropdown...');
             showLoader();
             $.ajax({
                 url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
                 type: 'GET',
                 success: function(response) {
                     hideLoader();
+                    console.log('Assessment types response:', response);
                     if (response.success && response.data) {
                         const select = $('#assessmentTypeSelect');
                         select.empty().append('<option value="">-- Select Assessment Type --</option>');
+                        
                         response.data.forEach(type => {
-                            select.append(`<option value="${type.atmCode}">${type.atmName}</option>`);
+                            // Handle both camelCase and PascalCase
+                            const code = type.atmCode || type.AtmCode || '';
+                            const name = type.atmName || type.AtmName || '';
+                    
+                            if (code && name) {
+                                select.append(`<option value="${escapeHtml(code)}">${escapeHtml(name)}</option>`);
+                            }
                         });
+                        
+                        console.log('Loaded ' + response.data.length + ' assessment types');
+                    } else {
+                        console.error('Failed to load assessment types:', response.message);
+                        showAlert('Error: ' + (response.message || 'Failed to load assessment types'), 'danger');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     hideLoader();
+                    console.error('AJAX Error loading assessment types:', error);
+                    console.error('Response:', xhr.responseText);
                     showAlert('Error loading assessment types', 'danger');
                 }
             });
@@ -560,7 +577,7 @@
         }
 
         function isMasterImage(fileName) {
-            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
             return /^\d+$/.test(nameWithoutExt);
         }
 
@@ -653,7 +670,7 @@
                 
                 // Update file statuses
                 selectedFiles.forEach(file => {
-                    const fileItem = $(`.file-preview-item[data-filename="${file.name}"]`);
+                    const fileItem = $(`.file-preview-item[data-filename="${escapeHtml(file.name)}"]`);
                     fileItem.find('.file-status').html('<i class="fas fa-check text-success"></i>').addClass('success');
                 });
                 
