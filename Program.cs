@@ -1,4 +1,4 @@
-using IQA_SOURCE.Data;
+﻿using IQA_SOURCE.Data;
 using IQA_SOURCE.Services;
 using IQA_SOURCE.Models.Admin;
 using YourApp.Data;
@@ -67,6 +67,17 @@ builder.Services.AddScoped<ISystemCheckParamRepository, SystemCheckParamReposito
 builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.ValueCountLimit          = 100000;
+    options.MultipartBodyLengthLimit = 2147483648; // 2 GB
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 2147483648; // 2 GB
+});
+
 var app = builder.Build();
 
 // Configure for Linux reverse proxy (nginx/apache)
@@ -75,7 +86,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-// MUST come before UseRouting � tells ASP.NET Core about the /IQA/ sub-path
+// MUST come before UseRouting — tells ASP.NET Core about the /IQA/ sub-path
 var subAppPath = builder.Configuration.GetValue<string>("AppSettings:SubApplicationPath")?.TrimEnd('/') ?? "";
 if (!string.IsNullOrWhiteSpace(subAppPath))
 {
@@ -92,7 +103,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles(); // Default wwwroot
-    
+
 // Serve images from Linux server path
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -150,7 +161,7 @@ app.MapControllerRoute(
     pattern: "Assessment/GetAssessmentSettings",
     defaults: new { controller = "Assessment", action = "GetAssessmentSettings" });
 
-// Image Assessment routes - specific patterns before generic ones
+// Image Assessment routes
 app.MapControllerRoute(
     name: "assessmentImageAssessmentWithCode",
     pattern: "Assessment/{assessmentCode}/ImageAssessment",
@@ -171,13 +182,29 @@ app.MapControllerRoute(
     pattern: "Assessment/GetImageAssessmentProgress",
     defaults: new { controller = "Assessment", action = "GetImageAssessmentProgress" });
 
-// Questions route - supports /Assessment/{assessmentCode}/Questions pattern
+// ── Sort Assessment routes ─────────────────────────────────────────────────
+app.MapControllerRoute(
+    name: "assessmentSortAssessmentWithCode",
+    pattern: "Assessment/{assessmentCode}/SortAssessment",
+    defaults: new { controller = "Assessment", action = "SortAssessment" });
+
+app.MapControllerRoute(
+    name: "assessmentSortAssessment",
+    pattern: "Assessment/SortAssessment/{assessmentCode?}",
+    defaults: new { controller = "Assessment", action = "SortAssessment" });
+
+app.MapControllerRoute(
+    name: "assessmentSubmitSortRatings",
+    pattern: "Assessment/SubmitSortRatings",
+    defaults: new { controller = "Assessment", action = "SubmitSortRatings" });
+// ──────────────────────────────────────────────────────────────────────────
+
+// Questions routes
 app.MapControllerRoute(
     name: "assessmentQuestionsWithCode",
     pattern: "Assessment/{assessmentCode}/Questions",
     defaults: new { controller = "Assessment", action = "Questions" });
 
-// Alternative Questions route - supports /Assessment/Questions/{assessmentCode} pattern
 app.MapControllerRoute(
     name: "assessmentQuestions",
     pattern: "Assessment/Questions/{assessmentCode}",
@@ -200,19 +227,28 @@ app.MapControllerRoute(
     defaults: new { controller = "Assessment", action = "ImageAssessment", assessmentCode = "" },
     constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
 
-// Short URL format
+// Short URL format - Sort Assessment
+app.MapControllerRoute(
+    name: "assessmentShortSortAssessment",
+    pattern: "{assessmentType}/SortAssessment",
+    defaults: new { controller = "Assessment", action = "SortAssessment", assessmentCode = "" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+// Short URL format - SpeedTest
 app.MapControllerRoute(
     name: "assessmentShortSpeedTest",
     pattern: "{assessmentType}/SpeedTest",
     defaults: new { controller = "Assessment", action = "SpeedTest" },
     constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
 
+// Short URL format - Questions
 app.MapControllerRoute(
     name: "assessmentShortQuestions",
     pattern: "{assessmentType}/Questions",
     defaults: new { controller = "Assessment", action = "Questions", assessmentCode = "" },
     constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
 
+// Short URL format - Index (catch-all, must be last)
 app.MapControllerRoute(
     name: "assessmentShortIndex",
     pattern: "{assessmentType}",

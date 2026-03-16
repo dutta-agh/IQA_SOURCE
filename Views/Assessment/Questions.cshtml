@@ -34,7 +34,7 @@
         }
 
         .question-number {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255,255,255,0.2);
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.95rem;
@@ -49,17 +49,17 @@
         }
 
         .badge-single {
-            background: rgba(72, 187, 120, 0.9);
+            background: rgba(72,187,120,0.9);
             color: white;
         }
 
         .badge-multiple {
-            background: rgba(66, 153, 225, 0.9);
+            background: rgba(66,153,225,0.9);
             color: white;
         }
 
         .badge-dropdown {
-            background: rgba(237, 137, 54, 0.9);
+            background: rgba(237,137,54,0.9);
             color: white;
         }
 
@@ -67,10 +67,9 @@
             padding: 25px;
         }
 
-        /* Highlight unanswered questions on failed submit */
         .question-container.unanswered {
             border: 2px solid #fc8181;
-            box-shadow: 0 0 0 3px rgba(252, 129, 129, 0.25);
+            box-shadow: 0 0 0 3px rgba(252,129,129,0.25);
         }
 
         .question-text {
@@ -92,17 +91,12 @@
             cursor: pointer;
             transition: all 0.3s;
             appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 20px;
-            padding-right: 40px;
         }
 
             .dropdown-select:focus {
                 outline: none;
                 border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
             }
 
         .options-table {
@@ -121,7 +115,7 @@
                     text-align: left;
                     font-weight: 600;
                     font-size: 0.95rem;
-                    border-right: 1px solid rgba(255, 255, 255, 0.2);
+                    border-right: 1px solid rgba(255,255,255,0.2);
                 }
 
                     .options-table thead th:first-child {
@@ -211,7 +205,7 @@
 
             .submit-btn:hover:not(:disabled) {
                 transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+                box-shadow: 0 5px 15px rgba(102,126,234,0.4);
             }
 
             .submit-btn:disabled {
@@ -237,7 +231,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.3);
             z-index: 9999;
         }
 
@@ -245,7 +239,7 @@
             height: 100%;
             background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
             transition: width 0.3s;
-            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+            box-shadow: 0 0 10px rgba(72,187,120,0.5);
         }
 
         .main-container {
@@ -271,7 +265,6 @@
                 color: #718096;
             }
 
-        /* Success Modal Styles */
         .success-modal-custom {
             display: none;
             position: fixed;
@@ -279,7 +272,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgb(146 68 217 / 60%);
+            backdrop-filter: blur(12px);
             z-index: 10000;
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -293,7 +287,7 @@
         .success-modal-content {
             background: white;
             border-radius: 10px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 90%;
             max-height: 90vh;
@@ -351,10 +345,9 @@
 
             .success-modal-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(49, 130, 206, 0.4);
+                box-shadow: 0 5px 15px rgba(49,130,206,0.4);
             }
 
-        /* Validation banner */
         .validation-banner {
             display: none;
             background: #fff5f5;
@@ -367,20 +360,32 @@
             font-size: 0.95rem;
         }
 
-        .validation-banner.show {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+            .validation-banner.show {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
 
         @@keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @@keyframes slideInDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to   { transform: translateY(0);     opacity: 1; }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         @@media (max-width: 768px) {
@@ -411,9 +416,11 @@
             }
         }
 
-        .success-modal-custom { 
-            background: rgb(146 68 217 / 60%);
-            backdrop-filter: blur(12px);
+        .main-container {
+            max-width: 100%;
+            margin: 0 auto;
+            width: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
         }
     </style>
 }
@@ -424,7 +431,7 @@
 </div>
 
 <div class="main-container">
-    <div class="content-card">
+    <div class="content-card" style="    width: 80%;">
         <div class="page-header">
             <p>Please answer all questions below. Select your answers carefully.</p>
         </div>
@@ -434,13 +441,16 @@
             {
                 var questionWithOptions = questions[i];
                 var question = questionWithOptions.Question;
-                var options = questionWithOptions.Options;
 
+                // Sort options alphabetically for country questions; keep original order otherwise
                 var isCountryQuestion = question.QsText?.ToLower().Contains("country") ?? false;
+                var options = isCountryQuestion
+                ? questionWithOptions.Options.OrderBy(o => o.QoText).ToList()
+                : questionWithOptions.Options;
 
-                var isSingleChoice   = !isCountryQuestion && question.QsType?.ToUpper() == "SINGLE";
+                var isSingleChoice = !isCountryQuestion && question.QsType?.ToUpper() == "SINGLE";
                 var isMultipleChoice = !isCountryQuestion && question.QsType?.ToUpper() == "MULTIPLE";
-                var isDropdown       = isCountryQuestion  || question.QsType?.ToUpper() == "DROPDOWN";
+                var isDropdown = isCountryQuestion || question.QsType?.ToUpper() == "DROPDOWN";
 
                 var inputType = isSingleChoice ? "radio" : "checkbox";
                 var inputName = $"question_{question.QId}";
@@ -451,33 +461,11 @@
                             <span class="question-number">
                                 <i class="fas fa-question-circle"></i> Question @(i + 1) / @questions.Count
                             </span>
-                          @*   @if (isSingleChoice)
-                            {
-                                <span class="question-type-badge badge-single">
-                                    <i class="fas fa-dot-circle"></i> Single Choice
-                                </span>
-                            }
-                            else if (isMultipleChoice)
-                            {
-                                <span class="question-type-badge badge-multiple">
-                                    <i class="fas fa-check-square"></i> Multiple Choice
-                                    @if (question.QsMaxSelections.HasValue)
-                                    {
-                                        <span>(Max @question.QsMaxSelections)</span>
-                                    }
-                                </span>
-                            }
-                            else if (isDropdown)
-                            {
-                               
-                            } *@
                         </div>
                     </div>
 
                     <div class="question-body">
-                        <div class="question-text">
-                            @Html.Raw(question.QsText)
-                        </div>
+                        <div class="question-text">@Html.Raw(question.QsText)</div>
 
                         @if (isMultipleChoice && question.QsMaxSelections.HasValue)
                         {
@@ -492,8 +480,7 @@
                             <select class="dropdown-select"
                                     id="dropdown_@question.QId"
                                     data-question-id="@question.QId"
-                                    data-question-type="DROPDOWN"
-                                    onchange="handleDropdownChange(this)">
+                                    data-question-type="DROPDOWN">
                                 <option value="">-- Please Select --</option>
                                 @foreach (var option in options)
                                 {
@@ -587,20 +574,23 @@
 
 @section Scripts {
     <script>
-        const assessmentCode = '@Model.AssessmentCode';
-        const sessionId = '@sessionId';
-        const totalQuestions = @questions.Count;
+        const assessmentCode     = '@Model.AssessmentCode';
+        const sessionId          = '@sessionId';
+        const totalQuestions     = @questions.Count;
+        const postQuestionAction = '@(ViewBag.PostQuestionAction ?? "ImageAssessment")';
 
-        function handleDropdownChange(dropdown) {
-            clearValidation(dropdown.closest('.question-container'));
-            updateProgress();
-        }
+        // ── Select2: listen for changes on dropdown questions ─────────────────────
+        $(document).ready(function () {
+            $('.dropdown-select').on('change', function () {
+                clearValidation($(this).closest('.question-container')[0]);
+                updateProgress();
+            });
+        });
 
         function handleOptionChange(input) {
-            const questionId   = input.dataset.questionId;
-            const questionType = input.dataset.questionType;
+            const questionId    = input.dataset.questionId;
             const maxSelections = parseInt(input.dataset.maxSelections) || null;
-            const row = input.closest('tr');
+            const row           = input.closest('tr');
 
             if (input.type === 'radio') {
                 document.querySelectorAll(`input[name="${input.name}"]`).forEach(opt => {
@@ -610,7 +600,6 @@
 
             if (input.checked) {
                 row.classList.add('selected');
-
                 if (input.type === 'checkbox' && maxSelections) {
                     const checked = document.querySelectorAll(`input[name="${input.name}"]:checked`).length;
                     if (checked > maxSelections) {
@@ -628,150 +617,107 @@
             updateProgress();
         }
 
-        function clearValidation(container) {
-            if (container) container.classList.remove('unanswered');
-        }
+        function clearValidation(container) { if (container) container.classList.remove('unanswered'); }
 
         function updateProgress() {
             const containers = document.querySelectorAll('.question-container');
             let answeredCount = 0;
-
-            containers.forEach(q => {
-                if (isQuestionAnswered(q)) answeredCount++;
-            });
-
+            containers.forEach(q => { if (isQuestionAnswered(q)) answeredCount++; });
             document.getElementById('answeredCount').textContent = answeredCount;
-            const progressPercent = (answeredCount / totalQuestions) * 100;
-            document.getElementById('progressFill').style.width = progressPercent + '%';
-
-            // Hide validation banner once all are answered
-            if (answeredCount === totalQuestions) {
+            document.getElementById('progressFill').style.width  = (answeredCount / totalQuestions * 100) + '%';
+            if (answeredCount === totalQuestions)
                 document.getElementById('validationBanner').classList.remove('show');
-            }
         }
 
         function isQuestionAnswered(container) {
-            const questionType = container.dataset.questionType?.toUpperCase();
-            if (questionType === 'DROPDOWN') {
+            if ((container.dataset.questionType || '').toUpperCase() === 'DROPDOWN') {
                 const dropdown = container.querySelector('select');
                 return dropdown && dropdown.value !== '';
             }
-            const inputs = container.querySelectorAll('input[type="radio"], input[type="checkbox"]');
-            return Array.from(inputs).some(inp => inp.checked);
+            return Array.from(container.querySelectorAll('input[type="radio"], input[type="checkbox"]')).some(i => i.checked);
         }
 
         function submitResponses() {
-            // --- Validate: every question must have at least one answer ---
             const containers = document.querySelectorAll('.question-container');
             const unanswered = [];
-
             containers.forEach((q, idx) => {
-                if (!isQuestionAnswered(q)) {
-                    q.classList.add('unanswered');
-                    unanswered.push(idx + 1);
-                } else {
-                    q.classList.remove('unanswered');
-                }
+                if (!isQuestionAnswered(q)) { q.classList.add('unanswered'); unanswered.push(idx + 1); }
+                else                         { q.classList.remove('unanswered'); }
             });
 
             if (unanswered.length > 0) {
                 const banner = document.getElementById('validationBanner');
-                const msg    = document.getElementById('validationMsg');
-                msg.textContent = unanswered.length === 1
+                document.getElementById('validationMsg').textContent = unanswered.length === 1
                     ? `Question ${unanswered[0]} has not been answered. Please answer all questions before submitting.`
                     : `Questions ${unanswered.join(', ')} have not been answered. Please answer all questions before submitting.`;
                 banner.classList.add('show');
-
-                // Scroll to the first unanswered question
                 containers[unanswered[0] - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
 
-            // --- Build payload ---
             const answers = [];
             containers.forEach(function (q) {
                 const questionId   = parseInt(q.dataset.questionId);
                 const questionType = (q.dataset.questionType || '').toUpperCase();
-
                 if (questionType === 'DROPDOWN') {
-                    const dropdown = q.querySelector('select');
+                    const dropdown       = q.querySelector('select');
                     const selectedOption = dropdown.options[dropdown.selectedIndex];
                     answers.push({
-                        questionId:           questionId,
-                        questionType:         questionType,
+                        questionId,
+                        questionType,
                         selectedOptionIds:    [parseInt(dropdown.value)],
                         selectedOptionValues: [selectedOption.dataset.optionText || selectedOption.text]
                     });
                 } else {
-                    const checkedInputs = Array.from(
-                        q.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked')
-                    );
+                    const checkedInputs = Array.from(q.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked'));
                     answers.push({
-                        questionId:           questionId,
-                        questionType:         questionType,
-                        selectedOptionIds:    checkedInputs.map(inp => parseInt(inp.value)),
-                        selectedOptionValues: checkedInputs.map(inp => inp.dataset.optionText || inp.dataset.optionValue || '')
+                        questionId,
+                        questionType,
+                        selectedOptionIds:    checkedInputs.map(i => parseInt(i.value)),
+                        selectedOptionValues: checkedInputs.map(i => i.dataset.optionText || i.dataset.optionValue || '')
                     });
                 }
             });
 
             const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
+            submitBtn.disabled  = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-            const payload = {
-                assessmentCode: assessmentCode,
-                sessionId:      sessionId,
-                answers:        answers,
-                ipAddress:      window.clientIpAddress || ''
-            };
-
-            console.log('Submitting payload:', payload);
 
             fetch(buildApiUrl('/Assessment/SubmitResponses'), {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(payload)
+                body:    JSON.stringify({ assessmentCode, sessionId, answers, ipAddress: window.clientIpAddress || '' })
             })
-            .then(function (response) {
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return response.json();
-            })
-            .then(function (data) {
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
                 if (data.success) {
                     document.getElementById('successModal').classList.add('show');
                 } else {
                     alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
-                    submitBtn.disabled = false;
+                    submitBtn.disabled  = false;
                     submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit All Responses';
                 }
             })
-            .catch(function (error) {
-                console.error('Error:', error);
+            .catch(err => {
+                console.error('Error:', err);
                 alert('❌ Network Error\n\nAn error occurred while submitting. Please check your connection and try again.');
-                submitBtn.disabled = false;
+                submitBtn.disabled  = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit All Responses';
             });
         }
 
         function startImageSequences() {
-            const url = assessmentCode
-                ? buildApiUrl(`/Assessment/${assessmentCode}/ImageAssessment`)
-                : buildApiUrl('/Assessment/ImageAssessment');
-            navigateTo(url);
+            navigateTo(buildApiUrl(`/Assessment/${assessmentCode}/${postQuestionAction}`));
         }
 
         document.addEventListener('DOMContentLoaded', function () {
             updateProgress();
-
             document.querySelectorAll('.option-row').forEach(row => {
                 row.addEventListener('click', function (e) {
-                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL')
                         this.querySelector('input').click();
-                    }
                 });
             });
-
             document.getElementById('successModal').addEventListener('click', function (e) {
                 if (e.target === this) startImageSequences();
             });

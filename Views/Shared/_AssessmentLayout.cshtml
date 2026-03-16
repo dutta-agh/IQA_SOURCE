@@ -6,166 +6,83 @@
     <title>@ViewData["Title"] - IQA Assessment</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await Html.PartialAsync("_AppConfigScript")
 
-    <!--
-        detect-incognito v1.3.2 — actively maintained fork by Joe Bell.
-        Source: https://github.com/Joe12387/detectIncognito
-        NOTE: No SRI integrity hash — the hash varies per build and an incorrect hash
-              silently blocks the script, causing everyone to be falsely blocked.
-    -->
     <script src="~/js/detectincognito.js"
             onerror="window._incognitoLibFailed = true;"></script>
 
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #C9D6FF; /* fallback for old browsers */
+            background: -webkit-linear-gradient(to right, #E2E2E2, #C9D6FF); /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to right, #E2E2E2, #C9D6FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-
-        .header {
-            background: white;
-            padding: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .header { background: white; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo-container { display: flex; align-items: center; justify-content: center; }
 
         .content-card {
             background-color: white !important;
-            padding: 2% 4% !important;
+            padding: 1% 1% !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
         }
-
-        .logo {
-            max-height: 80px;
-            margin-right: 20px;
-        }
-
-        .company-name {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-            margin: 0;
-        }
-
+        .logo { max-height: 80px; margin-right: 20px; }
+        .company-name { font-size: 1.2rem; font-weight: bold; color: #667eea; margin: 0; }
         .assessment-badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-left: 10px;
+            display: inline-block; background: #667eea; color: white;
+            padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 10px;
         }
-
         .main-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
+            flex: 1; display: flex; align-items: center;
+            justify-content: center; padding: 40px 20px;
         }
+        .footer { background: rgba(255,255,255,0.1); color: white; text-align: center; padding: 20px; margin-top: auto; }
 
-        .footer {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: auto;
-        }
-
-        /* Blocked overlay — shared for both back-nav and refresh attempts */
+        /* Blocked overlay */
         .nav-blocked-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 99999;
+            justify-content: center; align-items: center;
         }
-
-        .nav-blocked-overlay.show {
-            display: flex;
-        }
-
+        .nav-blocked-overlay.show { display: flex; }
         .nav-blocked-box {
-            background: white;
-            border-radius: 12px;
-            padding: 40px 50px;
-            text-align: center;
-            max-width: 480px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            background: white; border-radius: 12px; padding: 40px 50px;
+            text-align: center; max-width: 480px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
         }
-
-        .nav-blocked-box .blocked-icon {
-            font-size: 3.5rem;
-            color: #e53e3e;
-            margin-bottom: 16px;
-        }
-
-        .nav-blocked-box h3 {
-            color: #2d3748;
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .nav-blocked-box p {
-            color: #718096;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 24px;
-        }
-
+        .nav-blocked-box .blocked-icon { font-size: 3.5rem; color: #e53e3e; margin-bottom: 16px; }
+        .nav-blocked-box h3 { color: #2d3748; font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+        .nav-blocked-box p { color: #718096; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
         .nav-blocked-box .btn-restart {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            color: white; border: none; padding: 12px 32px;
+            border-radius: 8px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: opacity 0.2s;
         }
+        .nav-blocked-box .btn-restart:hover { opacity: 0.9; }
 
-        .nav-blocked-box .btn-restart:hover {
-            opacity: 0.9;
-        }
-
-        .main-container {
-            zoom: 0.65 !important;
-        }
+        .main-container { zoom: 0.65 !important; }
 
         @RenderSection("Styles", required: false)
-
-       
     </style>
 
     <script type="text/javascript">
-        // Push a synthetic history entry immediately so popstate fires on back-press
         window.history.pushState(null, "", window.location.href);
-        window.onpopstate = function () {
-            window.history.pushState(null, "", window.location.href);
-        };
+        window.onpopstate = function () { window.history.pushState(null, "", window.location.href); };
     </script>
 </head>
 <body>
-    <!-- Blocked overlay: shown for back-nav AND refresh attempts -->
+    <!-- Blocked overlay -->
     <div class="nav-blocked-overlay" id="navBlockedOverlay">
         <div class="nav-blocked-box">
-            <div class="blocked-icon" id="blockedIcon">
-                <i class="fas fa-ban"></i>
-            </div>
+            <div class="blocked-icon" id="blockedIcon"><i class="fas fa-ban"></i></div>
             <h3 id="blockedTitle">Navigation Not Allowed</h3>
             <p id="blockedMessage">
                 Going back during the assessment is not permitted.<br>
@@ -189,26 +106,21 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     @RenderBody()
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p class="mb-0">&copy; @DateTime.Now.Year IQA Assessment Platform. All rights reserved.</p>
-        </div>
-    </footer>
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         // ── Global client IP ──────────────────────────────────────────────────────
         window.clientIpAddress = '';
         fetch('https://api.ipify.org?format=json')
-            .then(function (r) { return r.json(); })
-            .then(function (d) { window.clientIpAddress = d.ip || ''; })
-            .catch(function ()  { window.clientIpAddress = ''; });
+            .then(r => r.json()).then(d => { window.clientIpAddress = d.ip || ''; })
+            .catch(() => { window.clientIpAddress = ''; });
 
         // ── Global incognito detection promise ────────────────────────────────────
         window._incognitoPromise = (function () {
@@ -217,109 +129,87 @@
                 return Promise.resolve({ isPrivate: true, browserName: 'Unknown', libLoaded: false });
             }
             return detectIncognito()
-                .then(function (result) {
-                    result.libLoaded = true;
-                    return result;
-                })
-                .catch(function (err) {
-                    console.error('detect-incognito runtime error — failing open:', err);
-                    return { isPrivate: true, browserName: 'Unknown', libLoaded: false };
-                });
+                .then(result => { result.libLoaded = true; return result; })
+                .catch(err => { console.error('detect-incognito runtime error:', err); return { isPrivate: true, browserName: 'Unknown', libLoaded: false }; });
         })();
 
-        window.checkIncognito = function () {
-            return window._incognitoPromise;
-        };
-
-        // ── Global flag: set to true before any programmatic redirect ────────────
+        window.checkIncognito = function () { return window._incognitoPromise; };
         window._allowNavigation = false;
 
-        function navigateTo(url) {
-            window._allowNavigation = true;
-            window.location.href = url;
-        }
+        function navigateTo(url) { window._allowNavigation = true; window.location.href = url; }
 
-        // ── beforeunload handler — named so it can be removed later ──────────────
-        function _beforeUnloadHandler(e) {
-            if (window._allowNavigation) return;
-            e.preventDefault();
-            e.returnValue = '';
-        }
+        function _beforeUnloadHandler(e) { if (window._allowNavigation) return; e.preventDefault(); e.returnValue = ''; }
         window.addEventListener('beforeunload', _beforeUnloadHandler);
 
-        // ── Exposed helper so any page can fully disable the leave prompt ─────────
         window.disableLeavePrompt = function () {
             window._allowNavigation = true;
             window.removeEventListener('beforeunload', _beforeUnloadHandler);
         };
 
-        // ── Back-button: intercept popstate ───────────────────────────────────────
         (function () {
             history.pushState(null, '', window.location.href);
             window.addEventListener('popstate', function () {
                 history.pushState(null, '', window.location.href);
-                showBlockedOverlay(
-                    'fa-ban', '#e53e3e',
-                    'Navigation Not Allowed',
+                showBlockedOverlay('fa-ban', '#e53e3e', 'Navigation Not Allowed',
                     'Going back during the assessment is not permitted.<br>Please complete the assessment in order, or restart from the beginning.'
                 );
             });
         })();
 
-        // ── Disable right-click context menu ─────────────────────────────────────
-        document.addEventListener('contextmenu', function (e) {
-            e.preventDefault();
-        });
+        document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // ── Page refresh / DevTools key blocking ──────────────────────────────────
         document.addEventListener('keydown', function (e) {
-            const isF5     = e.key === 'F5';
-            const isCtrlR  = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
-            const isCtrlF5 = (e.ctrlKey || e.metaKey) && e.key === 'F5';
-
-            // Block F12 (DevTools)
-            const isF12 = e.key === 'F12';
-
-            // Block Ctrl+Shift+I / Cmd+Shift+I (DevTools)
+            const isF5         = e.key === 'F5';
+            const isCtrlR      = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
+            const isCtrlF5     = (e.ctrlKey || e.metaKey) && e.key === 'F5';
+            const isF12        = e.key === 'F12';
             const isCtrlShiftI = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i';
-
-            // Block Ctrl+Shift+J / Cmd+Shift+J (Console)
             const isCtrlShiftJ = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'j';
-
-            // Block Ctrl+Shift+C / Cmd+Shift+C (Inspect Element)
             const isCtrlShiftC = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c';
-
-            // Block Ctrl+U / Cmd+U (View Source)
-            const isCtrlU = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u';
-
+            const isCtrlU      = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u';
             if (isF5 || isCtrlR || isCtrlF5) {
                 e.preventDefault();
-                showBlockedOverlay(
-                    'fa-sync-alt', '#dd6b20',
-                    'Refresh Not Allowed',
+                showBlockedOverlay('fa-sync-alt', '#dd6b20', 'Refresh Not Allowed',
                     'Refreshing the page during the assessment is not permitted.<br>Please continue and complete your current image set.'
                 );
             }
-
-            if (isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlU) {
-                e.preventDefault();
-            }
+            if (isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlU) e.preventDefault();
         });
 
-        // ── Helpers ───────────────────────────────────────────────────────────────
         function showBlockedOverlay(iconClass, iconColor, title, message) {
-            document.getElementById('blockedIcon').innerHTML =
-                `<i class="fas ${iconClass}" style="color:${iconColor}"></i>`;
+            document.getElementById('blockedIcon').innerHTML = `<i class="fas ${iconClass}" style="color:${iconColor}"></i>`;
             document.getElementById('blockedTitle').textContent = title;
             document.getElementById('blockedMessage').innerHTML = message;
             document.getElementById('navBlockedOverlay').classList.add('show');
         }
 
-        function restartAssessment() {
-            navigateTo(buildApiUrl('/'));
+        function restartAssessment() { navigateTo(buildApiUrl('/')); }
+
+        // ── Global Select2 initialiser (assessment pages) ─────────────────────────
+        function initSelect2(context) {
+            var scope = context || document;
+            $(scope).find('select').not('.no-select2').not('.select2-hidden-accessible').each(function () {
+                var $el     = $(this);
+                var isAssmt = $el.hasClass('dropdown-select');
+                $el.select2({
+                    theme:             'material',
+                    width:             '100%',
+                    allowClear:        false,
+                    placeholder:       $el.find('option[value=""]').text() || 'Select...',
+                    containerCssClass: isAssmt ? 'assessment-select' : '',
+                    dropdownParent:    $(document.body)
+                });
+            });
         }
+
+        $(document).ready(function () { initSelect2(); });
     </script>
 
     @RenderSection("Scripts", required: false)
+
+    <script>
+        // Re-run after page scripts (handles dynamically added selects)
+        $(document).ready(function () { initSelect2(); });
+    </script>
 </body>
 </html>

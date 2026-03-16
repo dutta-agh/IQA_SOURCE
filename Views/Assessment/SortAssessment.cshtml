@@ -1,0 +1,845 @@
+﻿@model IQA_SOURCE.Models.SortAssessmentViewModel
+@{
+    ViewData["Title"] = $"{Model.AssessmentName} - Sort Assessment";
+    Layout = "_AssessmentLayout";
+    var stepLabels = new[] { "Bad", "Poor", "Fair", "Good", "Excellent" };
+}
+
+@section Styles {
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sort-container {
+            display: flex;
+            flex-direction: column;
+            /* height: calc(100vh - 130px); */
+            margin: 0 2%;
+            padding: 6px 0 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ── Image grid — 3-col 2-row, fully centered ───────────────── */
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(5, auto);
+            grid-template-rows: repeat(1, auto);
+            /* gap: 14px 28px; */
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 4px 2px;
+            justify-content: center; /* ← centers columns horizontally */
+            align-content: center; /* ← centers rows vertically */
+        }
+
+        /* ── Individual card ────────────────────────────────────────── */
+        .sort-image-card {
+            border: 3px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f7fafc;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            width: fit-content; /* ← shrinks to image width */
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+        }
+
+        .images-grid > :nth-child(4) {
+            grid-column: 1 / 2;
+            justify-self: end;
+        }
+
+        .images-grid > :nth-child(5) {
+            grid-column: 2 / 3;
+            justify-self: start;
+        }
+
+        .sort-image-card.rated {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+        }
+
+        .sort-image-card.needs-rating {
+            border-color: #fc8181;
+            box-shadow: 0 0 0 3px rgba(252,129,129,0.25);
+        }
+
+        .sort-image-card img {
+            width: 256px;
+            height: 256px;
+            object-fit: contain;
+            border-radius: 5px;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        /* ── Rating buttons ─────────────────────────────────────────── */
+        .rating-section {
+            width: 100%;
+            padding: 7px 6px 6px;
+            background: #f0f4f8;
+            border-radius: 6px;
+            border: 2px solid #cbd5e0;
+            margin-top: 7px;
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .rating-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .reset-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+            .reset-btn:hover {
+                background: #f56565;
+            }
+
+        .rating-steps {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .step-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .step-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e0;
+            background: white;
+            color: #4a5568;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+            .step-btn:hover:not(:disabled) {
+                border-color: #667eea;
+                color: #667eea;
+                background: #edf2f7;
+            }
+
+            /* Disabled = taken by another card */
+            .step-btn:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+            }
+
+            /* Active colours per score */
+            .step-btn.active[data-score="1"] {
+                background: #fc8181;
+                border-color: #fc8181;
+                color: white;
+            }
+
+            .step-btn.active[data-score="2"] {
+                background: #f6ad55;
+                border-color: #f6ad55;
+                color: white;
+            }
+
+            .step-btn.active[data-score="3"] {
+                background: #ecc94b;
+                border-color: #ecc94b;
+                color: #2d3748;
+            }
+
+            .step-btn.active[data-score="4"] {
+                background: #68d391;
+                border-color: #68d391;
+                color: #2d3748;
+            }
+
+            .step-btn.active[data-score="5"] {
+                background: #48bb78;
+                border-color: #48bb78;
+                color: white;
+            }
+
+        .step-label {
+            font-size: 0.58rem;
+            font-weight: 600;
+            color: #718096;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* ── Fixed submit bar ───────────────────────────────────────── */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 5px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 6px 24px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(72,187,120,0.25);
+        }
+
+            .submit-button:hover:not(:disabled) {
+                box-shadow: 0 4px 14px rgba(72,187,120,0.4);
+                transform: translateY(-1px);
+            }
+
+            .submit-button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .submit-info {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+            .submit-info.ready {
+                color: #38a169;
+                font-weight: 600;
+            }
+
+            .submit-info.error {
+                color: #e53e3e;
+                font-weight: 600;
+            }
+
+        .validation-banner {
+            display: none;
+            background: #fff5f5;
+            border: 1px solid #fc8181;
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: #742a2a;
+            font-weight: 600;
+            font-size: 0.76rem;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .validation-banner.show {
+                display: flex;
+            }
+
+        body {
+            padding-bottom: 48px;
+        }
+
+        /* ── Fullscreen prompt ──────────────────────────────────────── */
+        .fullscreen-prompt {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            background: rgba(0,0,0,0.88);
+            justify-content: center;
+            align-items: center;
+        }
+
+            .fullscreen-prompt.show {
+                display: flex;
+            }
+
+        .fullscreen-prompt-box {
+            background: white;
+            border-radius: 14px;
+            padding: 40px 50px;
+            text-align: center;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+            .fullscreen-prompt-box .fs-icon {
+                font-size: 3rem;
+                color: #667eea;
+                margin-bottom: 14px;
+            }
+
+            .fullscreen-prompt-box h3 {
+                color: #2d3748;
+                font-size: 1.3rem;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            .fullscreen-prompt-box p {
+                color: #718096;
+                font-size: 0.9rem;
+                margin-bottom: 22px;
+                line-height: 1.6;
+            }
+
+        .fs-enter-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+            .fs-enter-btn:hover {
+                opacity: 0.9;
+            }
+
+        .fs-toast {
+            position: fixed;
+            top: 12px;
+            right: 14px;
+            z-index: 19000;
+            background: #2d3748;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+            .fs-toast.show {
+                display: flex;
+            }
+
+        /* ── Thank-you modal ────────────────────────────────────────── */
+        .thankyou-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .thankyou-modal.show {
+                display: flex;
+            }
+
+        .thankyou-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 80px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(102,126,234,0.5);
+        }
+
+        .thankyou-icon {
+            font-size: 5rem;
+            color: #48bb78;
+            margin-bottom: 20px;
+        }
+
+        .thankyou-content h2 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .thankyou-content p {
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .redirect-message {
+            color: #c7d2fe;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .redirect-timer {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-left: 5px;
+        }
+
+
+
+        @@media (max-width: 768px) {
+            .images-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: none;
+                overflow-y: auto;
+            }
+
+            .sort-image-card img {
+                max-height: 140px;
+            }
+
+            .sort-container {
+                height: auto;
+                overflow: visible;
+            }
+
+            .fullscreen-prompt-box {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+}
+
+<!-- Fullscreen prompt -->
+<div class="fullscreen-prompt" id="fullscreenPrompt">
+    <div class="fullscreen-prompt-box">
+        <div class="fs-icon"><i class="fas fa-expand"></i></div>
+        <h3>Enter Full Screen</h3>
+        <p>For the best assessment experience, this session will run in full-screen mode.</p>
+        <button class="fs-enter-btn" onclick="enterFullscreenAndStart()">
+            <i class="fas fa-expand-arrows-alt"></i> Enter Full Screen &amp; Start
+        </button>
+    </div>
+</div>
+
+<div class="fs-toast" id="fsToast" onclick="reEnterFullscreen()" title="Click to re-enter full screen">
+    <i class="fas fa-expand-arrows-alt"></i> Click to re-enter full screen
+</div>
+
+<div class="sort-container">
+    <div class="sort-header">
+        <div class="card">
+            <div class="card-body">
+                <span class="sort-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Rate each image <strong>1–5</strong>. Each rating value can only be used <strong>once</strong> across all images.
+                    After rating all <strong>@Model.AllImages.Count</strong> images, click the <strong>Submit</strong> button below.
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="images-grid" style="    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px" id="imagesGrid">
+        @foreach (var img in Model.AllImages)
+        {
+            <div class="sort-image-card"
+                 id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()"
+                 data-image-id="@img.ImageId"
+                 data-is-raw="@img.IsRawImage.ToString().ToLower()">
+
+                <img src="@img.ImagePath"
+                     alt="Image @img.ImageId"
+                     loading="eager">
+
+                <div class="rating-section">
+                    <div class="rating-header">
+                        <span class="rating-title"><i class="fas fa-star"></i> Quality Rating</span>
+                        <span class="rating-title">@img.ImageLabel</span>
+                        <button type="button"
+                                class="reset-btn"
+                                onclick="resetRating(@img.ImageId, @img.IsRawImage.ToString().ToLower())">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                    <div class="rating-steps">
+                        @for (int s = 1; s <= 5; s++)
+                        {
+                            <div class="step-wrap">
+                                <button type="button"
+                                        class="step-btn"
+                                        id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s"
+                                        data-image-id="@img.ImageId"
+                                        data-is-raw="@img.IsRawImage.ToString().ToLower()"
+                                        data-score="@s"
+                                        onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)">
+                                    @s
+                                </button>
+                                <span class="step-label">@stepLabels[s - 1]</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Submit bar -->
+<div class="submit-bar">
+    <div class="validation-banner" id="validationBanner">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="validationMsg"></span>
+    </div>
+    <div class="submit-info" id="submitInfo">Rate all @Model.AllImages.Count images to submit.</div>
+    <button type="button" class="submit-button" id="submitButton" onclick="submitAll()">
+        <i class="fas fa-paper-plane"></i> Submit
+    </button>
+</div>
+
+<!-- Thank-you modal -->
+<div class="thankyou-modal" id="thankyouModal">
+    <div class="thankyou-content">
+        <div class="thankyou-icon"><i class="fas fa-check-circle"></i></div>
+        <h2>Thank You!</h2>
+        <p>Your ratings have been recorded. We appreciate your valuable input.</p>
+        <div class="redirect-message">
+            Closing in <span class="redirect-timer" id="redirectTimer">5</span> seconds...
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const sessionId      = '@Model.SessionId';
+        const assessmentCode = '@Model.AssessmentCode';
+        const rawImageSetId  = @Model.RawImage.RisId;
+        const totalImages    = @Model.AllImages.Count;
+        const FS_KEY         = 'iqa_fs_granted';
+
+        // Map: "imageId|isRaw" → chosen rating (null = unrated)
+        const ratings = new Map();
+
+        // Set of currently "taken" rating values (1–5)
+        const takenRatings = new Set();
+
+        let clientIpAddress = '';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('https://api.ipify.org?format=json')
+                .then(r => r.json())
+                .then(d => { clientIpAddress = d.ip || ''; })
+                .catch(() => { clientIpAddress = ''; });
+
+            // Initialise rating state for each card
+            document.querySelectorAll('.sort-image-card').forEach(card => {
+                const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
+                ratings.set(key, null);
+            });
+
+            initFullscreen();
+            updateSubmitInfo();
+        });
+
+        function makeKey(imageId, isRaw) {
+            return `${imageId}|${isRaw}`;
+        }
+
+        // ── Rating logic ──────────────────────────────────────────────
+        function setRating(imageId, isRaw, score) {
+            const key  = makeKey(imageId, isRaw);
+            const prev = ratings.get(key);
+
+            // If the button clicked is already active → deselect (toggle off)
+            if (prev === score) {
+                ratings.set(key, null);
+                takenRatings.delete(score);
+                clearCardButtons(imageId, isRaw);
+                updateCardState(imageId, isRaw);
+                refreshAllDisabledStates();
+                updateSubmitInfo();
+                return;
+            }
+
+            // Release the previously held rating for this card
+            if (prev !== null) {
+                takenRatings.delete(prev);
+            }
+
+            ratings.set(key, score);
+            takenRatings.add(score);
+
+            // Highlight chosen button on this card
+            clearCardButtons(imageId, isRaw);
+            const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
+            if (btn) btn.classList.add('active');
+
+            updateCardState(imageId, isRaw);
+            refreshAllDisabledStates();
+            updateSubmitInfo();
+
+            // Hide validation banner once user acts
+            document.getElementById('validationBanner').classList.remove('show');
+        }
+
+        function resetRating(imageId, isRaw) {
+            const key  = makeKey(imageId, isRaw);
+            const prev = ratings.get(key);
+            if (prev !== null) {
+                takenRatings.delete(prev);
+                ratings.set(key, null);
+                clearCardButtons(imageId, isRaw);
+                updateCardState(imageId, isRaw);
+                refreshAllDisabledStates();
+                updateSubmitInfo();
+            }
+        }
+
+        function clearCardButtons(imageId, isRaw) {
+            for (let s = 1; s <= 5; s++) {
+                const btn = document.getElementById(`btn-${imageId}-${isRaw}-${s}`);
+                if (btn) btn.classList.remove('active');
+            }
+        }
+
+        function updateCardState(imageId, isRaw) {
+            const card = document.getElementById(`card-${imageId}-${isRaw}`);
+            if (!card) return;
+            const key   = makeKey(imageId, isRaw);
+            const rated = ratings.get(key) !== null;
+            card.classList.toggle('rated',        rated);
+            card.classList.toggle('needs-rating', false); // cleared on action
+        }
+
+        /// Disable rating buttons whose value is already taken by another card.
+        function refreshAllDisabledStates() {
+            document.querySelectorAll('.sort-image-card').forEach(card => {
+                const imgId = card.dataset.imageId;
+                const isRaw = card.dataset.isRaw;
+                const key   = makeKey(imgId, isRaw);
+                const mine  = ratings.get(key);
+
+                for (let s = 1; s <= 5; s++) {
+                    const btn = document.getElementById(`btn-${imgId}-${isRaw}-${s}`);
+                    if (!btn) continue;
+                    // Disable if taken by a DIFFERENT card (not by this card's own selection)
+                    btn.disabled = takenRatings.has(s) && mine !== s;
+                }
+            });
+        }
+
+        function updateSubmitInfo() {
+            const ratedCount   = [...ratings.values()].filter(v => v !== null).length;
+            const remaining    = totalImages - ratedCount;
+            const submitInfo   = document.getElementById('submitInfo');
+            const submitButton = document.getElementById('submitButton');
+
+            if (remaining === 0) {
+                submitInfo.textContent = `All ${totalImages} images rated — ready to submit!`;
+                submitInfo.className   = 'submit-info ready';
+                submitButton.disabled  = false;
+            } else {
+                submitInfo.textContent = `${ratedCount} of ${totalImages} rated — ${remaining} remaining.`;
+                submitInfo.className   = 'submit-info';
+                submitButton.disabled  = true;
+            }
+        }
+
+        // ── Submit ────────────────────────────────────────────────────
+        async function submitAll() {
+            // Final validation
+            const unrated = [];
+            ratings.forEach((val, key) => { if (val === null) unrated.push(key); });
+
+            if (unrated.length > 0) {
+                document.querySelectorAll('.sort-image-card').forEach(card => {
+                    const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
+                    if (ratings.get(key) === null) card.classList.add('needs-rating');
+                });
+                const banner = document.getElementById('validationBanner');
+                document.getElementById('validationMsg').textContent =
+                    `Please rate all ${totalImages} images before submitting.`;
+                banner.classList.add('show');
+                return;
+            }
+
+            const submitButton = document.getElementById('submitButton');
+            const submitInfo   = document.getElementById('submitInfo');
+            submitButton.disabled  = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitInfo.textContent = 'Saving your ratings...';
+            submitInfo.className   = 'submit-info';
+
+            // Build payload
+            const ratingList = [];
+            ratings.forEach((score, key) => {
+                const [imageId, isRawStr] = key.split('|');
+                ratingList.push({
+                    imageId:    parseInt(imageId),
+                    isRawImage: isRawStr === 'true',
+                    rating:     score
+                });
+            });
+
+            const payload = {
+                sessionId:      sessionId,
+                assessmentCode: assessmentCode,
+                rawImageSetId:  rawImageSetId,
+                ratings:        ratingList,
+                ipAddress:      clientIpAddress
+            };
+
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
+                    submitButton.disabled  = false;
+                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                    submitInfo.textContent = 'Submission failed. Please try again.';
+                    submitInfo.className   = 'submit-info error';
+                    return;
+                }
+
+                if (data.data.isCompleted) {
+                    showThankYouModal();
+                } else {
+                    navigateTo(buildApiUrl('/Assessment/SortAssessment?assessmentCode=' + assessmentCode));
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('❌ Network Error\n\nPlease check your connection and try again.');
+                submitButton.disabled  = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                submitInfo.textContent = 'Network error. Please try again.';
+                submitInfo.className   = 'submit-info error';
+            }
+        }
+
+        // ── Thank-you modal ───────────────────────────────────────────
+        function showThankYouModal() {
+            window.disableLeavePrompt();
+
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+                document.webkitExitFullscreen();
+            }
+
+            sessionStorage.removeItem(FS_KEY);
+
+            const modal   = document.getElementById('thankyouModal');
+            const timerEl = document.getElementById('redirectTimer');
+            modal.classList.add('show');
+
+            let countdown = 5;
+            timerEl.textContent = countdown;
+
+            const interval = setInterval(() => {
+                countdown--;
+                timerEl.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    try {
+                        window.close();
+                        setTimeout(() => {
+                            window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
+                        }, 500);
+                    } catch (e) {
+                        window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
+                    }
+                }
+            }, 1000);
+        }
+
+        // ── Fullscreen logic ──────────────────────────────────────────
+        function isInFullscreen() {
+            return !!(document.fullscreenElement
+                   || document.webkitFullscreenElement
+                   || document.mozFullScreenElement
+                   || document.msFullscreenElement);
+        }
+
+        function initFullscreen() {
+            const alreadyGranted = sessionStorage.getItem(FS_KEY) === '1';
+            if (isInFullscreen()) { sessionStorage.setItem(FS_KEY, '1'); return; }
+            if (alreadyGranted) { requestFullscreenSilently(); }
+            else { document.getElementById('fullscreenPrompt').classList.add('show'); }
+
+            document.addEventListener('fullscreenchange',       onFsChange);
+            document.addEventListener('webkitfullscreenchange', onFsChange);
+            document.addEventListener('mozfullscreenchange',    onFsChange);
+            document.addEventListener('MSFullscreenChange',     onFsChange);
+        }
+
+        function requestFullscreenSilently() {
+            const el  = document.documentElement;
+            const req = el.requestFullscreen || el.webkitRequestFullscreen
+                     || el.mozRequestFullScreen || el.msRequestFullscreen;
+            if (req) req.call(el).catch(() => {});
+        }
+
+        function enterFullscreenAndStart() {
+            requestFullscreenSilently();
+            sessionStorage.setItem(FS_KEY, '1');
+            document.getElementById('fullscreenPrompt').classList.remove('show');
+        }
+
+        function reEnterFullscreen() {
+            requestFullscreenSilently();
+            document.getElementById('fsToast').classList.remove('show');
+        }
+
+        function onFsChange() {
+            const toast = document.getElementById('fsToast');
+            if (isInFullscreen()) { toast.classList.remove('show'); }
+            else if (sessionStorage.getItem(FS_KEY) === '1') { toast.classList.add('show'); }
+        }
+    </script>
+}

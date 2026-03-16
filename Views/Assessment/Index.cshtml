@@ -14,6 +14,7 @@
             max-width: 900px;
             width: 100%;
             animation: fadeInUp 0.6s ease-out;
+           
         }
 
         @@keyframes fadeInUp {
@@ -24,8 +25,9 @@
         .intro-content {
             min-height: 300px;
             margin-bottom: 30px;
-            line-height: 1.8;
+            line-height: 1.5;
             color: #333;
+            font-size: 1.2rem;
         }
 
         .start-btn {
@@ -152,6 +154,24 @@
             display: block;
             margin-bottom: 5px;
         }
+
+        /* ── Failure overlay ─────────────────────────────────────────────── */
+        .failure-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88); z-index: 10000;
+            justify-content: center; align-items: center;
+        }
+        .failure-overlay.show { display: flex; }
+        .failure-content {
+            background: white; border-radius: 20px;
+            padding: 50px 60px; text-align: center;
+            max-width: 560px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: popIn 0.3s ease-out forwards;
+        }
+        .failure-icon { font-size: 4rem; color: #dc3545; margin-bottom: 20px; }
+        .failure-content h2 { color: #2d3748; font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
+        .failure-content p  { color: #718096; font-size: 1rem; line-height: 1.7; margin-bottom: 0; }
     </style>
 }
 
@@ -206,9 +226,10 @@
 <!-- Alert Container -->
 <div class="alert-container" id="alertContainer"></div>
 
+
 <!-- Main Content — hidden by default until incognito is confirmed -->
 <div class="main-container" id="mainContainer" style="display:none;">
-    <div class="content-card" style="max-width:95%;">
+    <div class="content-card" style="max-width:76%;">
         <div class="intro-content" id="introContent">
             <div class="text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -337,5 +358,20 @@
                 : buildApiUrl('/Assessment/SpeedTest');
             navigateTo(url);
         }
+
+        // Global error handler for demonstration (logs and shows a friendly message)
+        window.onerror = function (message, source, lineno, colno, error) {
+            console.error('Global error caught:', { message, source, lineno, colno, error });
+            document.getElementById('failureMessage').innerText = message || 'Unknown error occurred';
+            document.getElementById('failureOverlay').classList.add('show');
+            // Optionally, navigate to a dedicated error page or take other actions
+        };
+
+        // Close failure overlay on background click
+        document.getElementById('failureOverlay').onclick = function (event) {
+            if (event.target === this) {
+                this.classList.remove('show');
+            }
+        };
     </script>
 }

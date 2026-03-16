@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.Text.Json;
 using MySqlConnector;
 using IQA_SOURCE.Models.Admin;
@@ -264,9 +264,8 @@ namespace IQA_SOURCE.Data
             {
                 int masterCount = 0;
                 int linkedCount = 0;
-                var processedLinkedImages = new HashSet<string>(); // Track processed linked images
+                var processedLinkedImages = new HashSet<string>();
 
-                // Insert master images with EXIF data
                 foreach (var master in masterImages)
                 {
                     var insertMasterQuery = @"
@@ -330,17 +329,16 @@ namespace IQA_SOURCE.Data
                         int masterId = Convert.ToInt32(masterIdResult.Rows[0][0]);
                         masterCount++;
 
-                        // Insert linked images for this NEW master (those with IlMasterId = 0)
-                        var relatedLinked = linkedImages.Where(l => 
-                            l.IlMasterId == 0 && 
+                        var relatedLinked = linkedImages.Where(l =>
+                            l.IlMasterId == 0 &&
                             l.IlFileName.StartsWith(master.ImFileName.Split('.')[0])
                         ).ToList();
                         
                         foreach (var linked in relatedLinked)
                         {
-                            // Update the master ID for this linked image
                             linked.IlMasterId = masterId;
-                            
+
+                            // ✅ FIXED: VALUES now includes @qualityLevel, @qualityType
                             var insertLinkedQuery = @"
                                 INSERT INTO image_linked (
                                     il_master_id, il_file_name, il_file_path, 
@@ -362,7 +360,8 @@ namespace IQA_SOURCE.Data
                                     @shutterSpeed, @iso, @flash,
                                     @exposureMode, @whiteBalance, @dateTaken,
                                     @orientation, @compressionQuality,
-                                    @uploadBatch, @userId, NOW(), 1
+                                    @qualityLevel, @qualityType, @uploadBatch,
+                                    @userId, NOW(), 1
                                 )";
 
                             var linkedParams = new[]
@@ -408,9 +407,9 @@ namespace IQA_SOURCE.Data
                     }
                 }
 
-                // Insert linked images that already have a master ID (for existing masters)
-                var linkedImagesForExistingMasters = linkedImages.Where(l => 
-                    l.IlMasterId > 0 && 
+                // Insert linked images for existing masters (IlMasterId > 0)
+                var linkedImagesForExistingMasters = linkedImages.Where(l =>
+                    l.IlMasterId > 0 &&
                     !processedLinkedImages.Contains(l.IlFileName)
                 ).ToList();
 
@@ -437,7 +436,8 @@ namespace IQA_SOURCE.Data
                             @shutterSpeed, @iso, @flash,
                             @exposureMode, @whiteBalance, @dateTaken,
                             @orientation, @compressionQuality,
-                            @uploadBatch, @userId, NOW(), 1
+                            @qualityLevel, @qualityType, @uploadBatch,
+                            @userId, NOW(), 1
                         )";
 
                     var linkedParams = new[]
@@ -480,14 +480,14 @@ namespace IQA_SOURCE.Data
                 return new ImageUploadResponse
                 {
                     OutputCode = 1,
-                    OutputMsg = "Images with EXIF data uploaded successfully",
+                    OutputMsg = "Images uploaded successfully",
                     Data = new ImageUploadResult
                     {
-                        TotalFiles = masterImages.Count + linkedImages.Count,
+                        TotalFiles           = masterImages.Count + linkedImages.Count,
                         MasterImagesUploaded = masterCount,
                         LinkedImagesUploaded = linkedCount,
-                        FailedUploads = 0,
-                        ErrorMessages = new List<string>()
+                        FailedUploads        = 0,
+                        ErrorMessages        = new List<string>()
                     }
                 };
             }
@@ -496,8 +496,8 @@ namespace IQA_SOURCE.Data
                 return new ImageUploadResponse
                 {
                     OutputCode = 0,
-                    OutputMsg = $"Error: {ex.Message}",
-                    Data = new ImageUploadResult
+                    OutputMsg  = $"Error: {ex.Message}",
+                    Data       = new ImageUploadResult
                     {
                         ErrorMessages = new List<string> { ex.Message }
                     }

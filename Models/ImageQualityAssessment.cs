@@ -65,6 +65,18 @@ namespace IQA_SOURCE.Models
         public double? MasterDpiY { get; set; }
         public string? MasterExifData { get; set; }
 
+        /// <summary>Rating given to the main (master) image in Sort assessments. Null for non-Sort assessments.</summary>
+        public int? MasterImageRating { get; set; }
+        public string MasterImageRatingLabel => MasterImageRating switch
+        {
+            1 => "Bad",
+            2 => "Poor",
+            3 => "Fair",
+            4 => "Good",
+            5 => "Excellent",
+            _ => "N/A"
+        };
+
         // Rated (linked) image
         public int LinkedImageId { get; set; }
         public string LinkedImageName { get; set; } = string.Empty;
@@ -102,6 +114,51 @@ namespace IQA_SOURCE.Models
         public int CurrentSetNumber { get; set; }
         public int TotalSets { get; set; }
         public bool IsCompleted { get; set; }
+    }
+
+    // Sort assessment: all images (raw + linked) shown together, each rated 1-5 uniquely
+    public class SortAssessmentViewModel
+    {
+        public string SessionId { get; set; } = string.Empty;
+        public string AssessmentCode { get; set; } = string.Empty;
+        public string AssessmentName { get; set; } = string.Empty;
+        public RawImageSet RawImage { get; set; } = new();
+
+        /// <summary>All images shuffled together (raw image is embedded anonymously among these).</summary>
+        public List<SortImageItem> AllImages { get; set; } = new();
+
+        public int CurrentSetNumber { get; set; }
+        public int TotalSets { get; set; }
+        public bool IsCompleted { get; set; }
+    }
+
+    /// <summary>Represents one image card in the Sort assessment grid (raw or linked).</summary>
+    public class SortImageItem
+    {
+        /// <summary>For linked images: il_id. For the raw image: 0.</summary>
+        public int ImageId { get; set; }
+        public bool IsRawImage { get; set; }
+        public string ImagePath { get; set; } = string.Empty;
+        public string ImageLabel { get; set; } = string.Empty;
+    }
+
+    /// <summary>Per-image rating sent from the Sort page.</summary>
+    public class SortImageRatingEntry
+    {
+        /// <summary>il_id for a linked image, 0 for the raw/reference image.</summary>
+        public int ImageId { get; set; }
+        public bool IsRawImage { get; set; }
+        public int Rating { get; set; }
+    }
+
+    /// <summary>Full Sort assessment submission payload.</summary>
+    public class SortRatingSubmission
+    {
+        public string SessionId { get; set; } = string.Empty;
+        public string AssessmentCode { get; set; } = string.Empty;
+        public int RawImageSetId { get; set; }
+        public List<SortImageRatingEntry> Ratings { get; set; } = new();
+        public string? IpAddress { get; set; }
     }
 
     public class ImageQualitySubmission

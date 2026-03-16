@@ -206,80 +206,109 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                var checkQuery = @"
-                    SELECT iqr_id
-                    FROM tbl_image_quality_ratings
-                    WHERE iqr_session_id = @sessionId
-                    AND iqr_assessment_code = @assessmentCode
-                    AND iqr_im_id = @rawImageSetId
-                    LIMIT 1";
+                // Single atomic upsert — eliminates race condition between check and insert
+                var upsertQuery = @"
+                    INSERT INTO tbl_image_quality_ratings
+                        (iqr_session_id, iqr_assessment_code, iqr_im_id, iqr_il_id,
+                         iqr_quality_rating, iqr_ip_address, iqr_user_agent, iqr_created_date)
+                    VALUES
+                        (@sessionId, @assessmentCode, @rawImageSetId, @linkedImageId,
+                         @qualityRating, @ipAddress, @userAgent, UTC_TIMESTAMP())
+                    ON DUPLICATE KEY UPDATE
+                        iqr_il_id          = VALUES(iqr_il_id),
+                        iqr_quality_rating = VALUES(iqr_quality_rating),
+                        iqr_ip_address     = VALUES(iqr_ip_address),
+                        iqr_user_agent     = VALUES(iqr_user_agent),
+                        iqr_created_date   = UTC_TIMESTAMP()";
 
-                var checkParams = new[]
+                var parameters = new[]
+                {
+                    new MySqlParameter("@sessionId",      submission.SessionId),
+                    new MySqlParameter("@assessmentCode", submission.AssessmentCode),
+                    new MySqlParameter("@rawImageSetId",  submission.RawImageSetId),
+                    new MySqlParameter("@linkedImageId",  submission.SelectedLinkedImageId),
+                    new MySqlParameter("@qualityRating",  submission.QualityRating),
+                    new MySqlParameter("@ipAddress",      ipAddress),
+                    new MySqlParameter("@userAgent",      userAgent)
+                };
+
+                await Task.Run(() => _dbHelper.ExecuteNonQuery(upsertQuery, parameters));
+                _logger.LogInformation("Upserted rating: Session={SessionId}, Master={RawImageSetId}, Linked={LinkedImageId}, Rating={Rating}",
+                    submission.SessionId, submission.RawImageSetId, submission.SelectedLinkedImageId, submission.QualityRating);
+
+                return (1, "Rating saved successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SaveImageQualityRating");
+                return (-1, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Save Sort assessment ratings — one row per image in tbl_image_quality_ratings.
+        /// The raw image is stored with iqr_il_id = 0 to distinguish it from linked images.
+        /// Uses UPSERT logic: deletes any prior rows for this session+assessment+master first,
+        /// then inserts one row per rated image so re-submissions are clean.
+        /// </summary>
+        public async Task<(int OutputCode, string OutputMsg)> SaveSortRatings(
+            SortRatingSubmission submission, string ipAddress, string userAgent, string userCode)
+        {
+            try
+            {
+                // Delete existing ratings for this session + master image set to allow clean resubmission
+                var deleteQuery = @"
+                    DELETE FROM tbl_image_quality_ratings
+                    WHERE iqr_session_id      = @sessionId
+                    AND   iqr_assessment_code = @assessmentCode
+                    AND   iqr_im_id           = @rawImageSetId";
+
+                var deleteParams = new[]
                 {
                     new MySqlParameter("@sessionId",      submission.SessionId),
                     new MySqlParameter("@assessmentCode", submission.AssessmentCode),
                     new MySqlParameter("@rawImageSetId",  submission.RawImageSetId)
                 };
 
-                var existingResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
+                await Task.Run(() => _dbHelper.ExecuteNonQuery(deleteQuery, deleteParams));
 
-                if (existingResult.Rows.Count > 0)
+                // Insert one row per rated image
+                var insertQuery = @"
+                    INSERT INTO tbl_image_quality_ratings
+                    (iqr_session_id, iqr_assessment_code, iqr_im_id, iqr_il_id,
+                     iqr_quality_rating, iqr_ip_address, iqr_user_agent, iqr_created_date)
+                    VALUES
+                    (@sessionId, @assessmentCode, @rawImageSetId, @linkedImageId,
+                     @qualityRating, @ipAddress, @userAgent, UTC_TIMESTAMP())";
+
+                foreach (var entry in submission.Ratings)
                 {
-                    var updateQuery = @"
-                        UPDATE tbl_image_quality_ratings
-                        SET iqr_il_id = @linkedImageId,
-                            iqr_quality_rating = @qualityRating,
-                            iqr_ip_address = @ipAddress,
-                            iqr_user_agent = @userAgent,
-                            iqr_created_date = UTC_TIMESTAMP()
-                        WHERE iqr_session_id = @sessionId
-                        AND iqr_assessment_code = @assessmentCode
-                        AND iqr_im_id = @rawImageSetId";
-
-                    var updateParams = new[]
-                    {
-                        new MySqlParameter("@linkedImageId", submission.SelectedLinkedImageId),
-                        new MySqlParameter("@qualityRating", submission.QualityRating),
-                        new MySqlParameter("@ipAddress",      ipAddress),
-                        new MySqlParameter("@userAgent",      userAgent),
-                        new MySqlParameter("@sessionId",      submission.SessionId),
-                        new MySqlParameter("@assessmentCode", submission.AssessmentCode),
-                        new MySqlParameter("@rawImageSetId",  submission.RawImageSetId)
-                    };
-
-                    await Task.Run(() => _dbHelper.ExecuteNonQuery(updateQuery, updateParams));
-                    _logger.LogInformation($"Updated rating: Session={submission.SessionId}, Master={submission.RawImageSetId}, Linked={submission.SelectedLinkedImageId}, Rating={submission.QualityRating}");
-                    return (1, "Rating updated successfully");
-                }
-                else
-                {
-                    var insertQuery = @"
-                        INSERT INTO tbl_image_quality_ratings
-                        (iqr_session_id, iqr_assessment_code, iqr_im_id, iqr_il_id, 
-                         iqr_quality_rating, iqr_ip_address, iqr_user_agent, iqr_created_date)
-                        VALUES
-                        (@sessionId, @assessmentCode, @rawImageSetId, @linkedImageId,
-                         @qualityRating, @ipAddress, @userAgent, UTC_TIMESTAMP())";
+                    // Raw image is stored with il_id = 0
+                    var linkedImageId = entry.IsRawImage ? 0 : entry.ImageId;
 
                     var insertParams = new[]
                     {
                         new MySqlParameter("@sessionId",      submission.SessionId),
                         new MySqlParameter("@assessmentCode", submission.AssessmentCode),
                         new MySqlParameter("@rawImageSetId",  submission.RawImageSetId),
-                        new MySqlParameter("@linkedImageId",  submission.SelectedLinkedImageId),
-                        new MySqlParameter("@qualityRating",  submission.QualityRating),
+                        new MySqlParameter("@linkedImageId",  linkedImageId),
+                        new MySqlParameter("@qualityRating",  entry.Rating),
                         new MySqlParameter("@ipAddress",      ipAddress),
                         new MySqlParameter("@userAgent",      userAgent)
                     };
 
                     await Task.Run(() => _dbHelper.ExecuteNonQuery(insertQuery, insertParams));
-                    _logger.LogInformation($"Saved new rating: Session={submission.SessionId}, Master={submission.RawImageSetId}, Linked={submission.SelectedLinkedImageId}, Rating={submission.QualityRating}");
-                    return (1, "Rating saved successfully");
                 }
+
+                _logger.LogInformation(
+                    "Saved {Count} sort ratings: Session={Session}, Master={Master}",
+                    submission.Ratings.Count, submission.SessionId, submission.RawImageSetId);
+
+                return (1, "Sort ratings saved successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in SaveImageQualityRating");
+                _logger.LogError(ex, "Error in SaveSortRatings");
                 return (-1, ex.Message);
             }
         }
@@ -343,9 +372,11 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                var whereClause = string.IsNullOrWhiteSpace(assessmentCode)
-                    ? string.Empty
-                    : "WHERE iqr.iqr_assessment_code = @assessmentCode";
+                var filters = new List<string> { "iqr.iqr_il_id <> 0" };
+                if (!string.IsNullOrWhiteSpace(assessmentCode))
+                    filters.Add("iqr.iqr_assessment_code = @assessmentCode");
+
+                var whereClause = $"WHERE {string.Join(" AND ", filters)}";
 
                 var query = $@"
                     SELECT
@@ -355,6 +386,7 @@ namespace IQA_SOURCE.Data
                         iqr.iqr_ip_address,
                         iqr.iqr_created_date,
                         iqr.iqr_quality_rating,
+                        iqr.iqr_il_id,
                         im.im_id,
                         im.im_file_name        AS master_file_name,
                         im.im_file_path        AS master_file_path,
@@ -374,10 +406,19 @@ namespace IQA_SOURCE.Data
                         il.il_dpi_y            AS linked_dpi_y,
                         il.il_exif_data        AS linked_exif_data,
                         il.il_quality_level    AS linked_quality_level,
-                        il.il_quality_type     AS linked_quality_type
+                        il.il_quality_type     AS linked_quality_type,
+                        (
+                            SELECT iqr2.iqr_quality_rating
+                            FROM   tbl_image_quality_ratings iqr2
+                            WHERE  iqr2.iqr_session_id      = iqr.iqr_session_id
+                            AND    iqr2.iqr_assessment_code = iqr.iqr_assessment_code
+                            AND    iqr2.iqr_im_id           = iqr.iqr_im_id
+                            AND    iqr2.iqr_il_id           = 0
+                            LIMIT  1
+                        )                      AS master_image_rating
                     FROM tbl_image_quality_ratings iqr
                     INNER JOIN image_master  im ON im.im_id  = iqr.iqr_im_id
-                    INNER JOIN image_linked  il ON il.il_id  = iqr.iqr_il_id
+                    LEFT  JOIN image_linked  il ON il.il_id  = iqr.iqr_il_id
                     {whereClause}
                     ORDER BY iqr.iqr_created_date DESC";
 
@@ -407,7 +448,8 @@ namespace IQA_SOURCE.Data
                         MasterDpiX         = row["master_dpi_x"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_x"])  : null,
                         MasterDpiY         = row["master_dpi_y"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_y"])  : null,
                         MasterExifData     = row["master_exif_data"]?.ToString(),
-                        LinkedImageId      = Convert.ToInt32(row["il_id"]),
+                        MasterImageRating  = row["master_image_rating"] != DBNull.Value ? Convert.ToInt32(row["master_image_rating"]) : null,
+                        LinkedImageId      = row["il_id"]        != DBNull.Value ? Convert.ToInt32(row["il_id"])          : 0,
                         LinkedImageName    = row["linked_file_name"]?.ToString()    ?? string.Empty,
                         LinkedImageUrl     = ImageUrlHelper.BuildImageUrl(row["linked_file_path"]?.ToString()),
                         LinkedWidth        = row["linked_width"]  != DBNull.Value ? Convert.ToInt32(row["linked_width"])  : null,

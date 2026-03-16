@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using IQA_SOURCE.Models;
 using IQA_SOURCE.Models.Admin;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +17,7 @@ namespace IQA_SOURCE.Controllers
         private readonly IDbHelper _db;
         private readonly IAdminRepository _adminRepository;
         private readonly IAssessmentTypeRepository _assessmentTypeRepository;
-        private readonly ISessionService _sessionService;   
+        private readonly ISessionService _sessionService;
         private readonly IConfiguration _configuration;
         private readonly ISpeedTestRepository _speedTestRepository;
         private readonly ILogger<AssessmentController> _logger;
@@ -26,9 +26,9 @@ namespace IQA_SOURCE.Controllers
         private readonly ISystemCheckParamRepository _systemCheckParamRepository;
 
         public AssessmentController(
-            ILogger<AssessmentController> logger, 
-            IDbHelper db, 
-            IAdminRepository adminRepository, 
+            ILogger<AssessmentController> logger,
+            IDbHelper db,
+            IAdminRepository adminRepository,
             IAssessmentTypeRepository assessmentTypeRepository,
             ISessionService sessionService,
             IConfiguration configuration,
@@ -341,17 +341,11 @@ namespace IQA_SOURCE.Controllers
         [HttpGet]
         public async Task<IActionResult> Questions(string assessmentCode)
         {
-            // Handle both route parameter names
             if (string.IsNullOrEmpty(assessmentCode))
-            {
-                // Try to get from route value with alternate name
                 assessmentCode = RouteData.Values["assessmentType"]?.ToString();
-            }
 
             if (string.IsNullOrEmpty(assessmentCode))
-            {
                 return BadRequest("Assessment code is required");
-            }
 
             try
             {
@@ -359,11 +353,20 @@ namespace IQA_SOURCE.Controllers
                 var viewModel = await _responseRepository.GetQuestionsForAssessment(assessmentCode, sessionId);
 
                 if (viewModel == null)
-                {
                     return NotFound($"Assessment '{assessmentCode}' not found or inactive");
-                }
 
-                ViewBag.SessionId = sessionId;
+                // Switch on the assessment code to determine which view to navigate to
+                // after the questions form is submitted.
+                ViewBag.PostQuestionAction = assessmentCode.ToUpperInvariant() switch
+                {
+                    "SORT" => "SortAssessment",
+                    "IQA"  => "ImageAssessment",
+                    _      => assessmentCode.Contains("SORT", StringComparison.OrdinalIgnoreCase)
+                                  ? "SortAssessment"
+                                  : "ImageAssessment"
+                };
+
+                ViewBag.SessionId      = sessionId;
                 ViewBag.AssessmentCode = assessmentCode;
                 return View(viewModel);
             }
@@ -631,11 +634,11 @@ namespace IQA_SOURCE.Controllers
                         success = true,
                         data = new
                         {
-                            cmCode = content.CmCode,
-                            cmContent = content.CmContent,
-                            cmActive = content.CmActive,
+                            cmCode         = content.CmCode,
+                            cmContent      = content.CmContent,
+                            cmActive       = content.CmActive,
                             assessmentType = assessmentType,
-                            sessionId = sessionId
+                            sessionId      = sessionId
                         }
                     });
                 }
@@ -646,11 +649,11 @@ namespace IQA_SOURCE.Controllers
                     success = true,
                     data = new
                     {
-                        cmCode = "IQA_Intro",
-                        cmContent = "<h3>IQA (Image Quality Assessment)</h3><p>You will be shown a series of image sets. For each set, select the image you believe has the best quality and rate it.</p>",
-                        cmActive = "Y",
+                        cmCode         = "IQA_Intro",
+                        cmContent      = "<h3>IQA (Image Quality Assessment)</h3><p>You will be shown a series of image sets. For each set, select the image you believe has the best quality and rate it.</p>",
+                        cmActive       = "Y",
                         assessmentType = assessmentType,
-                        sessionId = sessionId
+                        sessionId      = sessionId
                     }
                 });
             }
@@ -663,6 +666,169 @@ namespace IQA_SOURCE.Controllers
                     message = "Error loading content",
                     error = ex.Message
                 });
+            }
+        }
+
+        // ── Sort Assessment ────────────────────────────────────────────────────────
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> SortAssessment(string assessmentCode)
+        {
+            try
+            {
+                var sessionId = _sessionService.GetOrCreateSessionId();
+
+                if (string.IsNullOrEmpty(assessmentCode))
+                {
+                    assessmentCode = _sessionService.GetAssessmentType() ?? string.Empty;
+                }
+
+                if (string.IsNullOrEmpty(assessmentCode))
+                {
+                    TempData["ErrorMessage"] = "No assessment code specified.";
+                    return RedirectToAction("Index");
+                }
+
+                _logger.LogInformation("Sort assessment started - SessionId: {SessionId}, AssessmentCode: {Code}", sessionId, assessmentCode);
+
+                var assessmentTypeResult = await _assessmentTypeRepository.GetAssessmentTypeByCode(assessmentCode, "Anonymous");
+                if (assessmentTypeResult.OutputCode != 1 || !assessmentTypeResult.Data.Any())
+                {
+                    TempData["ErrorMessage"] = $"Assessment '{assessmentCode}' not found.";
+                    return RedirectToAction("Index");
+                }
+
+                var assessmentName = assessmentTypeResult.Data.First().AtmName;
+
+                // Reuse existing method — picks a random master image not yet rated in this session
+                var imageSetResult = await _imageQualityRepository.GetNextRandomRawImageSet(sessionId, assessmentCode, "Anonymous");
+
+                if (imageSetResult.OutputCode == 0 || imageSetResult.Data == null)
+                {
+                    _logger.LogInformation("All sort sets completed for session: {SessionId}, assessment: {Code}", sessionId, assessmentCode);
+                    TempData["SuccessMessage"] = "You have completed all image sets. Thank you!";
+                    return RedirectToAction("Index", new { assessmentType = assessmentCode });
+                }
+
+                var linkedImagesResult = await _imageQualityRepository.GetLinkedImagesByRawImageSetId(imageSetResult.Data.RisId, "Anonymous");
+
+                if (linkedImagesResult.OutputCode != 1 || !linkedImagesResult.Data.Any())
+                {
+                    _logger.LogWarning("No linked images found for RawImageSetId: {RisId}", imageSetResult.Data.RisId);
+                    TempData["ErrorMessage"] = "No linked images available for this image set.";
+                    return RedirectToAction("Index", new { assessmentType = assessmentCode });
+                }
+
+                var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, assessmentCode, "Anonymous");
+
+                // Build the shuffled pool: raw image + all linked images, identity hidden
+                var rawItem = new SortImageItem
+                {
+                    ImageId    = 0,
+                    IsRawImage = true,
+                    ImagePath  = imageSetResult.Data.RisRawImagePath,
+                    ImageLabel = imageSetResult.Data.RisName
+                };
+
+                var linkedItems = linkedImagesResult.Data.Select(li => new SortImageItem
+                {
+                    ImageId    = li.LiId,
+                    IsRawImage = false,
+                    ImagePath  = li.LiImagePath,
+                    ImageLabel = li.LiImageLabel
+                }).ToList();
+
+                // Combine then shuffle — user cannot tell which is raw
+                var allImages = linkedItems.Append(rawItem)
+                                           .OrderBy(_ => Random.Shared.Next())
+                                           .ToList();
+
+                var viewModel = new SortAssessmentViewModel
+                {
+                    SessionId        = sessionId,
+                    AssessmentCode   = assessmentCode,
+                    AssessmentName   = assessmentName,
+                    RawImage         = imageSetResult.Data,
+                    AllImages        = allImages,
+                    CurrentSetNumber = progressResult.Data.CompletedSets + 1,
+                    TotalSets        = progressResult.Data.TotalSets,
+                    IsCompleted      = progressResult.Data.IsCompleted
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading sort assessment");
+                TempData["ErrorMessage"] = "An error occurred while loading the assessment.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> SubmitSortRatings([FromBody] SortRatingSubmission submission)
+        {
+            try
+            {
+                var sessionId = _sessionService.GetOrCreateSessionId();
+                submission.SessionId = sessionId;
+
+                if (submission.RawImageSetId <= 0)
+                    return Json(new { success = false, message = "Invalid image set" });
+
+                if (submission.Ratings == null || submission.Ratings.Count == 0)
+                    return Json(new { success = false, message = "No ratings provided" });
+
+                if (submission.Ratings.Any(r => r.Rating < 1 || r.Rating > 5))
+                    return Json(new { success = false, message = "All ratings must be between 1 and 5" });
+
+                // Enforce uniqueness — no two images may share the same rating
+                var duplicates = submission.Ratings
+                    .GroupBy(r => r.Rating)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (duplicates.Count > 0)
+                    return Json(new { success = false, message = $"Rating value(s) {string.Join(", ", duplicates)} assigned to more than one image. Each rating must be unique." });
+
+                var ipAddress = !string.IsNullOrWhiteSpace(submission.IpAddress)
+                    ? submission.IpAddress
+                    : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                _logger.LogInformation(
+                    "Submitting {Count} sort ratings - SessionId: {SessionId}, RawImageSetId: {RisId}",
+                    submission.Ratings.Count, sessionId, submission.RawImageSetId);
+
+                var result = await _imageQualityRepository.SaveSortRatings(submission, ipAddress, userAgent, "Anonymous");
+
+                if (result.OutputCode == 1)
+                {
+                    var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, submission.AssessmentCode, "Anonymous");
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.OutputMsg,
+                        data = new
+                        {
+                            completedSets = progressResult.Data.CompletedSets,
+                            totalSets     = progressResult.Data.TotalSets,
+                            isCompleted   = progressResult.Data.IsCompleted
+                        }
+                    });
+                }
+
+                return Json(new { success = false, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting sort ratings");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
     }

@@ -52,8 +52,9 @@ ViewData["Title"] = "User Responses";
 <div class="row g-3 align-items-end">
     <div class="col-md-3">
         <label class="form-label fw-semibold">Assessment</label>
-        <select class="form-select" id="assessmentFilter" onchange="applyAssessmentFilter()">
-            <option value="">All Assessments</option>
+        
+        <select class="form-select no-select2" id="assessmentFilter">
+            <option value="">Select Assessment…</option>    
         </select>
     </div>
     <div class="col-md-3">
@@ -124,6 +125,7 @@ ViewData["Title"] = "User Responses";
             <th>Ref Image</th>
             <th>Ref Resolution</th>
             <th>Ref DPI</th>
+            <th>Main Image Rating</th>
             <th>Rated Image</th>
             <th>Rated Resolution</th>
             <th>Rated DPI</th>
@@ -217,6 +219,9 @@ ViewData["Title"] = "User Responses";
                     : escapeHtml(d.masterImageName ?? '') },
                 { data: null, render: d => (d.masterWidth && d.masterHeight) ? `${d.masterWidth} × ${d.masterHeight}` : 'N/A' },
                 { data: null, render: d => (d.masterDpiX && d.masterDpiY) ? `${Math.round(d.masterDpiX)} × ${Math.round(d.masterDpiY)}` : 'N/A' },
+                { data: null, render: d => d.masterImageRating != null
+                    ? `<span class="badge rating-badge-${d.masterImageRating}">${d.masterImageRating} – ${ratingLabels[d.masterImageRating] ?? 'N/A'}</span>`
+                    : '<span class="text-muted">N/A</span>' },
                 { data: null, render: d => d.linkedImageUrl
                     ? `<a href="${escapeHtml(d.linkedImageUrl)}" target="_blank"><img src="${escapeHtml(d.linkedImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.linkedImageName ?? '')}"></a>`
                     : escapeHtml(d.linkedImageName ?? '') },
@@ -229,7 +234,7 @@ ViewData["Title"] = "User Responses";
                 }},
                 { data: 'qualityRating', render: d => {
                     const label = ratingLabels[d] ?? 'N/A';
-                    return `<span class="badge rating-badge-${d}">${d} — ${label}</span>`;
+                    return `<span class="badge rating-badge-${d}">${d} – ${label}</span>`;
                 }},
                 { data: null, orderable: false, render: (d, type, row, meta) =>
                     `<button class="btn btn-sm btn-info" onclick="viewIRDetails(${meta.row})" title="Details"><i class="fas fa-eye"></i></button>` }
@@ -237,7 +242,6 @@ ViewData["Title"] = "User Responses";
             order: [[3, 'desc']]
         });
 
-        loadAll();
         loadAssessmentList();
     });
 
@@ -261,14 +265,12 @@ ViewData["Title"] = "User Responses";
     }
 
     async function loadAll() {
+        const ac = $('#assessmentFilter').val();
+        if (!ac) return;
+
         showLoader();
-        const ac    = document.getElementById('assessmentFilter').value;
-        const qaUrl = ac
-            ? buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`)
-            : buildApiUrl('/Admin/GetAllQuestionAnswers');
-        const irUrl = ac
-            ? buildApiUrl(`/Admin/GetAllImageRatings?assessmentCode=${encodeURIComponent(ac)}`)
-            : buildApiUrl('/Admin/GetAllImageRatings');
+        const qaUrl = buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`);
+        const irUrl = buildApiUrl(`/Admin/GetAllImageRatings?assessmentCode=${encodeURIComponent(ac)}`);
 
         const [qaRes, irRes] = await Promise.all([fetch(qaUrl), fetch(irUrl)]);
         const qaJson = await qaRes.json();
@@ -284,7 +286,7 @@ ViewData["Title"] = "User Responses";
     }
 
     function applyAssessmentFilter() {
-        const ac   = document.getElementById('assessmentFilter').value;
+        const ac   = $('#assessmentFilter').val();
         const btn  = document.getElementById('btnDownloadExcel');
         const hint = document.getElementById('downloadHint');
         if (ac) {
@@ -295,6 +297,10 @@ ViewData["Title"] = "User Responses";
             btn.disabled     = true;
             btn.title        = 'Select an assessment to enable download';
             hint.textContent = 'Select an assessment to download';
+            qaTable.clear().draw();
+            irTable.clear().draw();
+            allQA = []; allIR = [];
+            updateStats();
         }
         loadAll();
     }
@@ -320,13 +326,31 @@ ViewData["Title"] = "User Responses";
         const res  = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
         const json = await res.json();
         if (!json.success) return;
+
+        const $sel = $('#assessmentFilter');
+
+        // Populate options (placeholder already in HTML)
         json.data.forEach(a => {
-            document.getElementById('assessmentFilter').add(new Option(a.atmName, a.atmCode));
+            $sel.append(new Option(a.atmName, a.atmCode));
+        });
+
+        // Init Select2 now that options are ready — use the material+assessment-select theme
+        $sel.select2({
+            theme:          'material',
+            width:          '100%',
+            allowClear:     true,
+            placeholder:    'Select Assessment…',
+            dropdownParent: $(document.body)
+        });
+
+        // Wire change event via Select2 API (replaces the removed onchange attribute)
+        $sel.on('select2:select select2:clear', function () {
+            applyAssessmentFilter();
         });
     }
 
     function downloadFilteredExcel() {
-        const code = document.getElementById('assessmentFilter').value;
+        const code = $('#assessmentFilter').val();
         if (!code) { showAlert('Please select an assessment first.', 'warning'); return; }
         const btn = document.getElementById('btnDownloadExcel');
         btn.disabled  = true;
@@ -387,6 +411,10 @@ ViewData["Title"] = "User Responses";
             masterExifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
         } catch { masterExifHtml = ''; }
 
+        const mainRatingHtml = r.masterImageRating != null
+            ? `<span class="badge rating-badge-${r.masterImageRating}">${r.masterImageRating} – ${ratingLabels[r.masterImageRating] ?? 'N/A'}</span>`
+            : '<span class="text-muted">N/A</span>';
+
         document.getElementById('irDetailBody').innerHTML = `
             <div class="row mb-3">
                 <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(r.sessionId ?? '')}</div>
@@ -395,10 +423,13 @@ ViewData["Title"] = "User Responses";
             </div>
             <div class="row mb-3">
                 <div class="col-md-4"><strong>Rated At:</strong> ${r.ratedAt ? new Date(r.ratedAt).toLocaleString() : 'N/A'}</div>
-                <div class="col-md-4"><strong>Rating:</strong>
-                    <span class="badge rating-badge-${r.qualityRating}">${r.qualityRating} — ${ratingLabels[r.qualityRating] ?? 'N/A'}</span>
+                <div class="col-md-4"><strong>Linked Image Rating:</strong>
+                    <span class="badge rating-badge-${r.qualityRating}">${r.qualityRating} – ${ratingLabels[r.qualityRating] ?? 'N/A'}</span>
                 </div>
                 <div class="col-md-4"><strong>Quality Level:</strong> ${escapeHtml(r.linkedQualityLevel ?? 'N/A')} (${escapeHtml(r.linkedQualityType ?? '')})</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4"><strong>Main Image Rating:</strong> ${mainRatingHtml}</div>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -410,6 +441,7 @@ ViewData["Title"] = "User Responses";
                     <p class="mb-1"><strong>Resolution:</strong> ${r.masterWidth ?? '?'} × ${r.masterHeight ?? '?'} px</p>
                     <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.masterFormat ?? 'N/A')}</p>
                     <p class="mb-1"><strong>DPI:</strong> ${r.masterDpiX ? Math.round(r.masterDpiX) : '?'} × ${r.masterDpiY ? Math.round(r.masterDpiY) : '?'}</p>
+                    <p class="mb-1"><strong>Main Image Rating:</strong> ${mainRatingHtml}</p>
                     ${masterExifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
                         <table class="table table-sm mt-2">${masterExifHtml}</table></details>` : ''}
                 </div>

@@ -17,9 +17,9 @@ namespace IQA_SOURCE.Services
                 using var image = await Image.LoadAsync(filePath);
                 var metadata = new ImageMetadata
                 {
-                    Width = image.Width,
-                    Height = image.Height,
-                    Format = image.Metadata.DecodedImageFormat?.Name ?? "Unknown",
+                    Width    = image.Width,
+                    Height   = image.Height,
+                    Format   = image.Metadata.DecodedImageFormat?.Name ?? "Unknown",
                     ExifData = new Dictionary<string, object>()
                 };
 
@@ -29,21 +29,27 @@ namespace IQA_SOURCE.Services
                 if (image.Metadata.VerticalResolution > 0)
                     metadata.DpiY = (decimal)image.Metadata.VerticalResolution;
 
-                // Extract EXIF data
+                // Extract pixel format info first (provides ColorSpace + BitDepth fallbacks)
+                ExtractPixelFormatInfo(image, metadata);
+
+                // Extract EXIF data (may override ColorSpace if EXIF tag is present)
                 var exifProfile = image.Metadata.ExifProfile;
                 if (exifProfile != null)
                 {
                     ExtractExifData(exifProfile, metadata);
-                }
 
-                // Extract pixel format information
-                ExtractPixelFormatInfo(image, metadata);
+                    // Override DpiX/DpiY from EXIF XResolution/YResolution if ImageSharp
+                    // reported 0 or 96 (default), since EXIF values are more accurate
+                    if (exifProfile.TryGetValue(ExifTag.XResolution, out var xRes) && xRes?.Value is Rational xRat && xRat.ToDouble() > 0)
+                        metadata.DpiX = (decimal)xRat.ToDouble();
+                    if (exifProfile.TryGetValue(ExifTag.YResolution, out var yRes) && yRes?.Value is Rational yRat && yRat.ToDouble() > 0)
+                        metadata.DpiY = (decimal)yRat.ToDouble();
+                }
 
                 return metadata;
             }
             catch (Exception ex)
             {
-                // Return basic metadata even if EXIF extraction fails
                 return new ImageMetadata
                 {
                     ExifData = new Dictionary<string, object>
@@ -123,8 +129,8 @@ namespace IQA_SOURCE.Services
                     if (exposureTime.Value is Rational expRational)
                     {
                         var seconds = expRational.ToDouble();
-                        metadata.ShutterSpeed = seconds >= 1 
-                            ? $"{seconds}s" 
+                        metadata.ShutterSpeed = seconds >= 1
+                            ? $"{seconds}s"
                             : $"1/{(int)(1 / seconds)}s";
                         metadata.ExifData["ShutterSpeed"] = metadata.ShutterSpeed;
                     }
@@ -224,11 +230,32 @@ namespace IQA_SOURCE.Services
                 }
             }
 
-            // Color Space
+            // Color Space — EXIF tag 0xA001: 1 = sRGB, 0xFFFF = uncalibrated
+            // Only override if a recognised value; pixel-format fallback is already set
             if (exifProfile.TryGetValue(ExifTag.ColorSpace, out var colorSpace) && colorSpace?.Value != null)
             {
-                metadata.ColorSpace = Convert.ToString(colorSpace.Value);
+                var csLabel = colorSpace.Value is ushort csVal
+                    ? csVal switch { 1 => "sRGB", 65535 => "Uncalibrated", _ => $"ColorSpace({csVal})" }
+                    : Convert.ToString(colorSpace.Value);
+                metadata.ColorSpace = csLabel;
                 metadata.ExifData["ColorSpace"] = metadata.ColorSpace;
+            }
+
+            // Bits Per Sample — per-channel depth (more accurate than BitsPerPixel / channels)
+            if (exifProfile.TryGetValue(ExifTag.BitsPerSample, out var bitsPerSample) && bitsPerSample?.Value != null)
+            {
+                try
+                {
+                    if (bitsPerSample.Value is ushort[] bpsArray && bpsArray.Length > 0)
+                    {
+                        metadata.BitDepth = bpsArray[0]; // e.g. 8 per channel
+                        metadata.ExifData["BitsPerSample"] = string.Join(",", bpsArray);
+                    }
+                }
+                catch
+                {
+                    metadata.ExifData["BitsPerSample"] = Convert.ToString(bitsPerSample.Value);
+                }
             }
 
             // Compression (JPEG Quality)
@@ -254,21 +281,15 @@ namespace IQA_SOURCE.Services
 
             // Software
             if (exifProfile.TryGetValue(ExifTag.Software, out var software) && software?.Value != null)
-            {
                 metadata.ExifData["Software"] = Convert.ToString(software.Value);
-            }
 
             // Copyright
             if (exifProfile.TryGetValue(ExifTag.Copyright, out var copyright) && copyright?.Value != null)
-            {
                 metadata.ExifData["Copyright"] = Convert.ToString(copyright.Value);
-            }
 
             // Artist
             if (exifProfile.TryGetValue(ExifTag.Artist, out var artist) && artist?.Value != null)
-            {
                 metadata.ExifData["Artist"] = Convert.ToString(artist.Value);
-            }
 
             // GPS Info
             ExtractGpsData(exifProfile, metadata);
@@ -296,14 +317,10 @@ namespace IQA_SOURCE.Services
                 }
 
                 if (exifProfile.TryGetValue(ExifTag.GPSAltitude, out var altitude) && altitude?.Value != null)
-                {
                     gpsData["Altitude"] = Convert.ToString(altitude.Value);
-                }
 
                 if (gpsData.Count > 0)
-                {
                     metadata.ExifData["GPS"] = gpsData;
-                }
             }
             catch
             {
@@ -313,229 +330,123 @@ namespace IQA_SOURCE.Services
 
         private void ExtractAdditionalExifData(ExifProfile exifProfile, ImageMetadata metadata)
         {
-            // Exposure Program
             if (exifProfile.TryGetValue(ExifTag.ExposureProgram, out var exposureProgram) && exposureProgram?.Value != null)
-            {
                 metadata.ExifData["ExposureProgram"] = Convert.ToString(exposureProgram.Value);
-            }
 
-            // Metering Mode
             if (exifProfile.TryGetValue(ExifTag.MeteringMode, out var meteringMode) && meteringMode?.Value != null)
-            {
                 metadata.ExifData["MeteringMode"] = Convert.ToString(meteringMode.Value);
-            }
 
-            // Scene Capture Type
             if (exifProfile.TryGetValue(ExifTag.SceneCaptureType, out var sceneType) && sceneType?.Value != null)
-            {
                 metadata.ExifData["SceneCaptureType"] = Convert.ToString(sceneType.Value);
-            }
 
-            // Contrast
             if (exifProfile.TryGetValue(ExifTag.Contrast, out var contrast) && contrast?.Value != null)
-            {
                 metadata.ExifData["Contrast"] = Convert.ToString(contrast.Value);
-            }
 
-            // Saturation
             if (exifProfile.TryGetValue(ExifTag.Saturation, out var saturation) && saturation?.Value != null)
-            {
                 metadata.ExifData["Saturation"] = Convert.ToString(saturation.Value);
-            }
 
-            // Sharpness
             if (exifProfile.TryGetValue(ExifTag.Sharpness, out var sharpness) && sharpness?.Value != null)
-            {
                 metadata.ExifData["Sharpness"] = Convert.ToString(sharpness.Value);
-            }
 
-            // Digital Zoom Ratio
             if (exifProfile.TryGetValue(ExifTag.DigitalZoomRatio, out var digitalZoom) && digitalZoom?.Value != null)
             {
                 try
                 {
-                    if (digitalZoom.Value is Rational dzRational)
-                    {
-                        metadata.ExifData["DigitalZoomRatio"] = Convert.ToString(dzRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["DigitalZoomRatio"] = Convert.ToString(digitalZoom.Value);
-                    }
+                    metadata.ExifData["DigitalZoomRatio"] = digitalZoom.Value is Rational dzRational
+                        ? Convert.ToString(dzRational.ToDouble())
+                        : Convert.ToString(digitalZoom.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["DigitalZoomRatio"] = Convert.ToString(digitalZoom.Value);
-                }
+                catch { metadata.ExifData["DigitalZoomRatio"] = Convert.ToString(digitalZoom.Value); }
             }
 
-            // Exposure Bias
             if (exifProfile.TryGetValue(ExifTag.ExposureBiasValue, out var exposureBias) && exposureBias?.Value != null)
             {
                 try
                 {
-                    // Fix: Handle both Rational and SignedRational
-                    if (exposureBias.Value is SignedRational ebSignedRational)
-                    {
-                        metadata.ExifData["ExposureBias"] = Convert.ToString(ebSignedRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["ExposureBias"] = Convert.ToString(exposureBias.Value);
-                    }
+                    metadata.ExifData["ExposureBias"] = exposureBias.Value is SignedRational ebSigned
+                        ? Convert.ToString(ebSigned.ToDouble())
+                        : Convert.ToString(exposureBias.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["ExposureBias"] = Convert.ToString(exposureBias.Value);
-                }
+                catch { metadata.ExifData["ExposureBias"] = Convert.ToString(exposureBias.Value); }
             }
 
-            // Max Aperture
             if (exifProfile.TryGetValue(ExifTag.MaxApertureValue, out var maxAperture) && maxAperture?.Value != null)
             {
                 try
                 {
-                    if (maxAperture.Value is Rational maRational)
-                    {
-                        metadata.ExifData["MaxAperture"] = Convert.ToString(maRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["MaxAperture"] = Convert.ToString(maxAperture.Value);
-                    }
+                    metadata.ExifData["MaxAperture"] = maxAperture.Value is Rational maRational
+                        ? Convert.ToString(maRational.ToDouble())
+                        : Convert.ToString(maxAperture.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["MaxAperture"] = Convert.ToString(maxAperture.Value);
-                }
+                catch { metadata.ExifData["MaxAperture"] = Convert.ToString(maxAperture.Value); }
             }
 
-            // Subject Distance
             if (exifProfile.TryGetValue(ExifTag.SubjectDistance, out var subjectDistance) && subjectDistance?.Value != null)
             {
                 try
                 {
-                    if (subjectDistance.Value is Rational sdRational)
-                    {
-                        metadata.ExifData["SubjectDistance"] = Convert.ToString(sdRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["SubjectDistance"] = Convert.ToString(subjectDistance.Value);
-                    }
+                    metadata.ExifData["SubjectDistance"] = subjectDistance.Value is Rational sdRational
+                        ? Convert.ToString(sdRational.ToDouble())
+                        : Convert.ToString(subjectDistance.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["SubjectDistance"] = Convert.ToString(subjectDistance.Value);
-                }
+                catch { metadata.ExifData["SubjectDistance"] = Convert.ToString(subjectDistance.Value); }
             }
 
-            // Light Source
             if (exifProfile.TryGetValue(ExifTag.LightSource, out var lightSource) && lightSource?.Value != null)
-            {
                 metadata.ExifData["LightSource"] = Convert.ToString(lightSource.Value);
-            }
 
-            // Brightness Value
             if (exifProfile.TryGetValue(ExifTag.BrightnessValue, out var brightness) && brightness?.Value != null)
             {
                 try
                 {
-                    if (brightness.Value is SignedRational bRational)
-                    {
-                        metadata.ExifData["BrightnessValue"] = Convert.ToString(bRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["BrightnessValue"] = Convert.ToString(brightness.Value);
-                    }
+                    metadata.ExifData["BrightnessValue"] = brightness.Value is SignedRational bRational
+                        ? Convert.ToString(bRational.ToDouble())
+                        : Convert.ToString(brightness.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["BrightnessValue"] = Convert.ToString(brightness.Value);
-                }
+                catch { metadata.ExifData["BrightnessValue"] = Convert.ToString(brightness.Value); }
             }
 
-            // Image Description
             if (exifProfile.TryGetValue(ExifTag.ImageDescription, out var imageDesc) && imageDesc?.Value != null)
-            {
                 metadata.ExifData["ImageDescription"] = Convert.ToString(imageDesc.Value);
-            }
 
-            // User Comment
             if (exifProfile.TryGetValue(ExifTag.UserComment, out var userComment) && userComment?.Value != null)
-            {
                 metadata.ExifData["UserComment"] = Convert.ToString(userComment.Value);
-            }
 
-            // Sensitivity Type
             if (exifProfile.TryGetValue(ExifTag.SensitivityType, out var sensitivityType) && sensitivityType?.Value != null)
-            {
                 metadata.ExifData["SensitivityType"] = Convert.ToString(sensitivityType.Value);
-            }
 
-            // Lens Make
             if (exifProfile.TryGetValue(ExifTag.LensMake, out var lensMake) && lensMake?.Value != null)
-            {
                 metadata.ExifData["LensMake"] = Convert.ToString(lensMake.Value);
-            }
 
-            // Lens Serial Number
             if (exifProfile.TryGetValue(ExifTag.LensSerialNumber, out var lensSerial) && lensSerial?.Value != null)
-            {
                 metadata.ExifData["LensSerialNumber"] = Convert.ToString(lensSerial.Value);
-            }
 
-            // Body Serial Number
             if (exifProfile.TryGetValue(ExifTag.SerialNumber, out var bodySerial) && bodySerial?.Value != null)
-            {
                 metadata.ExifData["BodySerialNumber"] = Convert.ToString(bodySerial.Value);
-            }
 
-            // Resolution Unit
             if (exifProfile.TryGetValue(ExifTag.ResolutionUnit, out var resUnit) && resUnit?.Value != null)
-            {
                 metadata.ExifData["ResolutionUnit"] = Convert.ToString(resUnit.Value);
-            }
 
-            // X Resolution
             if (exifProfile.TryGetValue(ExifTag.XResolution, out var xRes) && xRes?.Value != null)
             {
                 try
                 {
-                    if (xRes.Value is Rational xRational)
-                    {
-                        metadata.ExifData["XResolution"] = Convert.ToString(xRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["XResolution"] = Convert.ToString(xRes.Value);
-                    }
+                    metadata.ExifData["XResolution"] = xRes.Value is Rational xRational
+                        ? Convert.ToString(xRational.ToDouble())
+                        : Convert.ToString(xRes.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["XResolution"] = Convert.ToString(xRes.Value);
-                }
+                catch { metadata.ExifData["XResolution"] = Convert.ToString(xRes.Value); }
             }
 
-            // Y Resolution
             if (exifProfile.TryGetValue(ExifTag.YResolution, out var yRes) && yRes?.Value != null)
             {
                 try
                 {
-                    if (yRes.Value is Rational yRational)
-                    {
-                        metadata.ExifData["YResolution"] = Convert.ToString(yRational.ToDouble());
-                    }
-                    else
-                    {
-                        metadata.ExifData["YResolution"] = Convert.ToString(yRes.Value);
-                    }
+                    metadata.ExifData["YResolution"] = yRes.Value is Rational yRational
+                        ? Convert.ToString(yRational.ToDouble())
+                        : Convert.ToString(yRes.Value);
                 }
-                catch
-                {
-                    metadata.ExifData["YResolution"] = Convert.ToString(yRes.Value);
-                }
+                catch { metadata.ExifData["YResolution"] = Convert.ToString(yRes.Value); }
             }
         }
 
@@ -543,21 +454,57 @@ namespace IQA_SOURCE.Services
         {
             try
             {
-                // Try to determine bit depth from pixel format
                 var pixelType = image.PixelType;
-                
+
                 if (pixelType.BitsPerPixel > 0)
                 {
-                    metadata.BitDepth = pixelType.BitsPerPixel;
-                    metadata.ExifData["BitsPerPixel"] = Convert.ToString(metadata.BitDepth);
+                    // Derive per-channel bit depth by dividing total bits by channel count.
+                    // Common cases: RGB=3, RGBA=4, L=1, LA=2
+                    var formatName = pixelType.ToString() ?? string.Empty;
+                    var channels   = DeriveChannelCount(formatName, pixelType.BitsPerPixel);
+                    metadata.BitDepth = channels > 0
+                        ? pixelType.BitsPerPixel / channels
+                        : pixelType.BitsPerPixel;
+
+                    metadata.ExifData["BitsPerPixel"] = Convert.ToString(pixelType.BitsPerPixel);
                 }
 
-                metadata.ExifData["PixelFormat"] = Convert.ToString(pixelType);
+                // Derive a human-readable ColorSpace from the pixel format name as a baseline.
+                // This will be overridden later by the EXIF ColorSpace tag if present.
+                if (string.IsNullOrEmpty(metadata.ColorSpace))
+                {
+                    var formatName = pixelType.ToString() ?? string.Empty;
+                    metadata.ColorSpace = DeriveColorSpace(formatName);
+                    metadata.ExifData["PixelFormat"] = formatName;
+                }
             }
             catch
             {
                 // Pixel format extraction failed, continue without it
             }
         }
+
+        /// <summary>Estimates the channel count from the pixel format name.</summary>
+        private static int DeriveChannelCount(string formatName, int bitsPerPixel) =>
+            formatName.ToUpperInvariant() switch
+            {
+                var n when n.Contains("RGBA") || n.Contains("BGRA") || n.Contains("ARGB") || n.Contains("ABGR") => 4,
+                var n when n.Contains("RGB")  || n.Contains("BGR")                                               => 3,
+                var n when n.Contains("LA")   || n.Contains("AL")                                                => 2,
+                var n when n.Contains("L8")   || n.Contains("L16") || n.Contains("GRAY")                        => 1,
+                _ => bitsPerPixel >= 24 ? 3 : 1   // safe fallback
+            };
+
+        /// <summary>Maps pixel format name to a human-readable color space label.</summary>
+        private static string DeriveColorSpace(string formatName) =>
+            formatName.ToUpperInvariant() switch
+            {
+                var n when n.Contains("RGBA") || n.Contains("BGRA") || n.Contains("ARGB") || n.Contains("ABGR") => "sRGB (Alpha)",
+                var n when n.Contains("RGB")  || n.Contains("BGR")                                               => "sRGB",
+                var n when n.Contains("CMYK")                                                                    => "CMYK",
+                var n when n.Contains("GRAY") || n.Contains("L8") || n.Contains("L16")                          => "Grayscale",
+                var n when n.Contains("LA")   || n.Contains("AL")                                                => "Grayscale (Alpha)",
+                _ => "Unknown"
+            };
     }
 }

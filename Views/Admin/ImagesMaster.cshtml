@@ -1,4 +1,4 @@
-@{
+Ôªø@{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Images Master";
 }
@@ -319,10 +319,10 @@
     <div class="naming-convention">
         <strong><i class="fas fa-info-circle"></i> Image Naming Convention:</strong><br>
         <small>
-            ï Master images: <code>1.jpg</code>, <code>2.png</code>, <code>3.jpg</code> (pure numbers)<br>
-            ï Enhanced quality: <code>1+1.jpg</code>, <code>1+2.jpg</code> (+ indicates enhancement level)<br>
-            ï Degraded quality: <code>1-1.jpg</code>, <code>1-2.jpg</code> (- indicates degradation level)<br>
-            ï Supported formats: JPG, JPEG, PNG, BMP, TIFF, GIF
+            üñº Master images: <code>261_center.png</code>, <code>100_0.png</code> (no + or - in name)<br>
+            ‚úÖ Enhanced quality: <code>261_center+1.png</code>, <code>100_0+2.png</code> (+ indicates enhancement level)<br>
+            ‚ùå Degraded quality: <code>261_center-1.png</code>, <code>100_0-2.png</code> (- indicates degradation level)<br>
+            üìÅ Supported formats: JPG, JPEG, PNG, BMP, TIFF, GIF
         </small>
     </div>
 
@@ -578,7 +578,8 @@
 
         function isMasterImage(fileName) {
             const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
-            return /^\d+$/.test(nameWithoutExt);
+            // Master: no + or - in the name, e.g. "261_center", "100_0"
+            return nameWithoutExt.indexOf('+') < 0 && nameWithoutExt.indexOf('-') < 0;
         }
 
         async function startFolderUpload() {
@@ -793,7 +794,7 @@
                             <div class="image-meta">
                                 <div class="meta-item">
                                     <i class="fas fa-expand-arrows-alt"></i>
-                                    ${image.imWidth || 0} ◊ ${image.imHeight || 0}
+                                    ${image.imWidth || 0} √ó ${image.imHeight || 0}
                                 </div>
                                 <div class="meta-item">
                                     <i class="fas fa-file-image"></i>
@@ -850,7 +851,7 @@
                     </tr>
                     <tr>
                         <td class="label">Dimensions:</td>
-                        <td>${image.imWidth || 0} ◊ ${image.imHeight || 0}</td>
+                        <td>${image.imWidth || 0} √ó ${image.imHeight || 0}</td>
                     </tr>
                     <tr>
                         <td class="label">Format:</td>

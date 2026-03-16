@@ -339,8 +339,8 @@ namespace IQA_SOURCE.Controllers
         }
 
         [HttpPost]
-        [RequestSizeLimit(524288000)]
-        [RequestFormLimits(MultipartBodyLengthLimit = 524288000)]
+        [RequestSizeLimit(2147483648)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 2147483648, ValueCountLimit = 100000)]
         public async Task<IActionResult> UploadImages([FromForm] string assessmentType, [FromForm] IFormFile[] files)
         {
             var userId = HttpContext.Session.GetString("UserId");
@@ -894,6 +894,7 @@ namespace IQA_SOURCE.Controllers
                 string[] irHeaders = {
                     "Session ID", "Assessment", "IP Address", "Rated At",
                     "Ref Image", "Ref Resolution", "Ref DPI", "Ref Format",
+                    "Main Image Rating", "Main Image Rating Label",
                     "Rated Image", "Rated Resolution", "Rated DPI", "Rated Format",
                     "Quality Level", "Quality Type", "Rating (1–5)", "Rating Label"
                 };
@@ -919,14 +920,18 @@ namespace IQA_SOURCE.Controllers
                     r.CreateCell(5).SetCellValue(row.MasterWidth.HasValue && row.MasterHeight.HasValue ? $"{row.MasterWidth} x {row.MasterHeight}" : ""); r.GetCell(5).CellStyle = style;
                     r.CreateCell(6).SetCellValue(row.MasterDpiX.HasValue ? $"{Math.Round(row.MasterDpiX.Value)} x {Math.Round(row.MasterDpiY ?? 0)}" : ""); r.GetCell(6).CellStyle = style;
                     r.CreateCell(7).SetCellValue(row.MasterFormat ?? "");      r.GetCell(7).CellStyle  = style;
-                    r.CreateCell(8).SetCellValue(row.LinkedImageName ?? "");   r.GetCell(8).CellStyle  = style;
-                    r.CreateCell(9).SetCellValue(row.LinkedWidth.HasValue && row.LinkedHeight.HasValue ? $"{row.LinkedWidth} x {row.LinkedHeight}" : ""); r.GetCell(9).CellStyle = style;
-                    r.CreateCell(10).SetCellValue(row.LinkedDpiX.HasValue ? $"{Math.Round(row.LinkedDpiX.Value)} x {Math.Round(row.LinkedDpiY ?? 0)}" : ""); r.GetCell(10).CellStyle = style;
-                    r.CreateCell(11).SetCellValue(row.LinkedFormat ?? "");       r.GetCell(11).CellStyle = style;
-                    r.CreateCell(12).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(12).CellStyle = style;
-                    r.CreateCell(13).SetCellValue(row.LinkedQualityType  ?? ""); r.GetCell(13).CellStyle = style;
-                    r.CreateCell(14).SetCellValue(row.QualityRating);            r.GetCell(14).CellStyle = style;
-                    r.CreateCell(15).SetCellValue(row.QualityRatingLabel);       r.GetCell(15).CellStyle = style;
+                    // Main image (Sort) rating columns
+                    r.CreateCell(8).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRating.Value.ToString() : ""); r.GetCell(8).CellStyle = style;
+                    r.CreateCell(9).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRatingLabel : "");              r.GetCell(9).CellStyle = style;
+                    // Linked image columns
+                    r.CreateCell(10).SetCellValue(row.LinkedImageName ?? "");   r.GetCell(10).CellStyle = style;
+                    r.CreateCell(11).SetCellValue(row.LinkedWidth.HasValue && row.LinkedHeight.HasValue ? $"{row.LinkedWidth} x {row.LinkedHeight}" : ""); r.GetCell(11).CellStyle = style;
+                    r.CreateCell(12).SetCellValue(row.LinkedDpiX.HasValue ? $"{Math.Round(row.LinkedDpiX.Value)} x {Math.Round(row.LinkedDpiY ?? 0)}" : ""); r.GetCell(12).CellStyle = style;
+                    r.CreateCell(13).SetCellValue(row.LinkedFormat ?? "");       r.GetCell(13).CellStyle = style;
+                    r.CreateCell(14).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(14).CellStyle = style;
+                    r.CreateCell(15).SetCellValue(row.LinkedQualityType  ?? ""); r.GetCell(15).CellStyle = style;
+                    r.CreateCell(16).SetCellValue(row.QualityRating);            r.GetCell(16).CellStyle = style;
+                    r.CreateCell(17).SetCellValue(row.QualityRatingLabel);       r.GetCell(17).CellStyle = style;
                     irRowIdx++;
                 }
 
@@ -982,19 +987,25 @@ namespace IQA_SOURCE.Controllers
         private string GetBaseName(string fileName)
         {
             var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-            var match = System.Text.RegularExpressions.Regex.Match(nameWithoutExt, @"^(\d+)");
-            return match.Success ? match.Groups[1].Value : nameWithoutExt;
+            // Extract everything before the first + or -, e.g. "261_center" from "261_center+1" or "261_center-2"
+            var idx = nameWithoutExt.IndexOfAny(['+', '-']);
+            return idx >= 0 ? nameWithoutExt[..idx] : nameWithoutExt;
         }
 
-        private bool IsMasterImage(string fileName) =>
-            System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileNameWithoutExtension(fileName), @"^\d+$");
+        private bool IsMasterImage(string fileName)
+        {
+            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            // Master: no + or - anywhere in the name, e.g. "261_center"
+            return nameWithoutExt.IndexOfAny(['+', '-']) < 0;
+        }
 
         private (string level, string type) ParseQualityInfo(string fileName)
         {
             var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-            var match = System.Text.RegularExpressions.Regex.Match(nameWithoutExt, @"^(\d+)([-+])(\d+)");
+            // Match sign and trailing digits at end, e.g. "261_center+1" → "+1" / "261_center-2" → "-2"
+            var match = System.Text.RegularExpressions.Regex.Match(nameWithoutExt, @"([+\-])(\d+)$");
             if (match.Success)
-                return ($"{match.Groups[2].Value}{match.Groups[3].Value}", match.Groups[2].Value == "+" ? "enhanced" : "degraded");
+                return ($"{match.Groups[1].Value}{match.Groups[2].Value}", match.Groups[1].Value == "+" ? "enhanced" : "degraded");
             return ("pair", "pair");
         }
 
