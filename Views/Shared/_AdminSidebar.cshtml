@@ -1,0 +1,109 @@
+@* Dynamic Admin Menu Sidebar *@
+@{
+    var currentPage = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h4><i class="fas fa-cogs"></i> <span>IQA Admin</span></h4>
+    </div>
+    <ul class="sidebar-menu" id="sidebarMenu">
+        <!-- Menus will be loaded dynamically here -->
+        <li class="menu-item">
+            <div style="padding: 15px 20px; color: rgba(255,255,255,0.6); font-size: 0.85rem;">
+                <i class="fas fa-spinner fa-spin"></i> Loading menus...
+            </div>
+        </li>
+    </ul>
+</div>
+
+<script>
+    // Load menus based on user role
+    function loadUserMenus() {
+        $.ajax({
+            url: buildApiUrl('/Admin/GetUserMenus'),
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                if (response.success && response.data && Array.isArray(response.data)) {
+                    renderMenus(response.data);
+                } else {
+                    console.error('Failed to load menus:', response.message);
+                    renderErrorMenu();
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error loading menus:', error);
+                renderErrorMenu();
+            }
+        });
+    }
+
+    // Render menus in the sidebar
+    function renderMenus(menus) {
+        const menuContainer = $('#sidebarMenu');
+        menuContainer.empty();
+
+        if (!menus || menus.length === 0) {
+            menuContainer.html('<li class="menu-item" style="padding: 15px 20px; color: rgba(255,255,255,0.6);">No menus available</li>');
+            return;
+        }
+
+        menus.forEach(function (menu) {
+            if (menu.amMenuType === 'divider') {
+                // Render divider
+                menuContainer.append(`
+                    <li>
+                        <div class="menu-divider"></div>
+                    </li>
+                `);
+            } else if (menu.amMenuType === 'page' || menu.amMenuType === 'external') {
+                // Render menu link
+                const menuUrl = menu.amAction 
+                    ? buildApiUrl('/Admin/' + menu.amAction)
+                    : '#';
+                const isActive = window.location.pathname.includes(menu.amAction) ? 'active' : '';
+
+                menuContainer.append(`
+                    <li class="menu-item">
+                        <a href="${menuUrl}" class="menu-link ${isActive}" title="${menu.amName}">
+                            <i class="${menu.amIcon} menu-icon"></i>
+                            <span class="menu-text">${escapeHtml(menu.amName)}</span>
+                        </a>
+                    </li>
+                `);
+            }
+        });
+    }
+
+    // Render error message
+    function renderErrorMenu() {
+        const menuContainer = $('#sidebarMenu');
+        menuContainer.html(`
+            <li class="menu-item">
+                <a href="javascript:location.reload();" class="menu-link" style="color: rgba(255,255,255,0.8);">
+                    <i class="fas fa-refresh menu-icon"></i>
+                    <span class="menu-text">Reload Menus</span>
+                </a>
+            </li>
+        `);
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Load menus when DOM is ready
+    $(document).ready(function () {
+        loadUserMenus();
+    });
+</script>

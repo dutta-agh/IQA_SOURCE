@@ -1,5 +1,5 @@
-@{
-Layout = "_AdminLayout";
+ï»¿@{
+Layout = "_AdminLayoutDynamic";
 ViewData["Title"] = "User Responses";
 }
 
@@ -24,6 +24,7 @@ ViewData["Title"] = "User Responses";
     .btn-excel { background-color: #1D6F42; color: white; border: none; }
     .btn-excel:hover { background-color: #155230; color: white; }
     .btn-excel:disabled { background-color: #6c757d; }
+    .group-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; background: #e7f3ff; color: #0066cc; font-size: 0.85rem; font-weight: 500; }
 </style>
 }
 
@@ -50,32 +51,38 @@ ViewData["Title"] = "User Responses";
 <!-- Filter -->
 <div class="filter-section">
 <div class="row g-3 align-items-end">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label class="form-label fw-semibold">Assessment</label>
-        
         <select class="form-select no-select2" id="assessmentFilter">
-            <option value="">Select Assessment…</option>    
+            <option value="">Select Assessmentâ€¦</option>    
         </select>
     </div>
-    <div class="col-md-3">
-        <label class="form-label fw-semibold">Status (Q&amp;A only)</label>
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">Image Group</label>
+        <select class="form-select no-select2" id="groupFilter" disabled>
+            <option value="">Select Groupâ€¦</option>    
+        </select>
+        <small class="text-muted d-block mt-1">Select assessment first</small>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">Status (Q&amp;A)</label>
         <select class="form-select" id="statusFilter" onchange="applyQAStatusFilter()">
             <option value="">All Status</option>
             <option value="COMPLETED">Completed</option>
             <option value="IN_PROGRESS">In Progress</option>
         </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <button class="btn btn-primary w-100" onclick="loadAll()">
             <i class="fas fa-sync"></i> Refresh
         </button>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <button class="btn btn-excel w-100" id="btnDownloadExcel" onclick="downloadFilteredExcel()" disabled
                 title="Select an assessment to enable download">
             <i class="fas fa-file-excel"></i> Download Excel
         </button>
-        <small class="text-muted d-block mt-1" id="downloadHint">Select an assessment to download</small>
+        <small class="text-muted d-block mt-1" id="downloadHint">Select assessment</small>
     </div>
 </div>
 </div>
@@ -119,6 +126,7 @@ ViewData["Title"] = "User Responses";
     <thead>
         <tr>
             <th>Session ID</th>
+            <th>Group Name</th>
             <th>Assessment</th>
             <th>IP Address</th>
             <th>Rated At</th>
@@ -187,13 +195,14 @@ ViewData["Title"] = "User Responses";
     let qaTable, irTable;
     let allQA = [], allIR = [];
     let currentTab = 'qa';
+    let assessmentGroups = {}; // Map of assessment code to groups array
 
     const ratingLabels = { 1: 'Bad', 2: 'Poor', 3: 'Fair', 4: 'Good', 5: 'Excellent' };
 
     $(document).ready(function () {
         qaTable = $('#qaTable').DataTable({
             columns: [
-                { data: 'sessionId',        render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                { data: 'sessionId',        render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}â€¦</span>` : 'N/A' },
                 { data: 'assessmentName' },
                 { data: 'ipAddress' },
                 { data: 'startTime',         render: d => d ? new Date(d).toLocaleString() : 'N/A' },
@@ -210,23 +219,24 @@ ViewData["Title"] = "User Responses";
 
         irTable = $('#irTable').DataTable({
             columns: [
-                { data: 'sessionId',          render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                { data: 'sessionId',          render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}â€¦</span>` : 'N/A' },
+                { data: 'groupName',          render: d => d ? `<span class="group-badge">${escapeHtml(d)}</span>` : '<span class="text-muted">N/A</span>' },
                 { data: 'assessmentCode' },
                 { data: 'ipAddress' },
                 { data: 'ratedAt',            render: d => d ? new Date(d).toLocaleString() : 'N/A' },
                 { data: null, render: d => d.masterImageUrl
                     ? `<a href="${escapeHtml(d.masterImageUrl)}" target="_blank"><img src="${escapeHtml(d.masterImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.masterImageName ?? '')}"></a>`
                     : escapeHtml(d.masterImageName ?? '') },
-                { data: null, render: d => (d.masterWidth && d.masterHeight) ? `${d.masterWidth} × ${d.masterHeight}` : 'N/A' },
-                { data: null, render: d => (d.masterDpiX && d.masterDpiY) ? `${Math.round(d.masterDpiX)} × ${Math.round(d.masterDpiY)}` : 'N/A' },
+                { data: null, render: d => (d.masterWidth && d.masterHeight) ? `${d.masterWidth} Ã— ${d.masterHeight}` : 'N/A' },
+                { data: null, render: d => (d.masterDpiX && d.masterDpiY) ? `${Math.round(d.masterDpiX)} Ã— ${Math.round(d.masterDpiY)}` : 'N/A' },
                 { data: null, render: d => d.masterImageRating != null
-                    ? `<span class="badge rating-badge-${d.masterImageRating}">${d.masterImageRating} – ${ratingLabels[d.masterImageRating] ?? 'N/A'}</span>`
+                    ? `<span class="badge rating-badge-${d.masterImageRating}">${d.masterImageRating} â€“ ${ratingLabels[d.masterImageRating] ?? 'N/A'}</span>`
                     : '<span class="text-muted">N/A</span>' },
                 { data: null, render: d => d.linkedImageUrl
                     ? `<a href="${escapeHtml(d.linkedImageUrl)}" target="_blank"><img src="${escapeHtml(d.linkedImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.linkedImageName ?? '')}"></a>`
                     : escapeHtml(d.linkedImageName ?? '') },
-                { data: null, render: d => (d.linkedWidth && d.linkedHeight) ? `${d.linkedWidth} × ${d.linkedHeight}` : 'N/A' },
-                { data: null, render: d => (d.linkedDpiX && d.linkedDpiY) ? `${Math.round(d.linkedDpiX)} × ${Math.round(d.linkedDpiY)}` : 'N/A' },
+                { data: null, render: d => (d.linkedWidth && d.linkedHeight) ? `${d.linkedWidth} Ã— ${d.linkedHeight}` : 'N/A' },
+                { data: null, render: d => (d.linkedDpiX && d.linkedDpiY) ? `${Math.round(d.linkedDpiX)} Ã— ${Math.round(d.linkedDpiY)}` : 'N/A' },
                 { data: null, render: d => {
                     const lvl = escapeHtml(d.linkedQualityLevel ?? '');
                     const typ = escapeHtml(d.linkedQualityType  ?? '');
@@ -234,12 +244,12 @@ ViewData["Title"] = "User Responses";
                 }},
                 { data: 'qualityRating', render: d => {
                     const label = ratingLabels[d] ?? 'N/A';
-                    return `<span class="badge rating-badge-${d}">${d} – ${label}</span>`;
+                    return `<span class="badge rating-badge-${d}">${d} â€“ ${label}</span>`;
                 }},
                 { data: null, orderable: false, render: (d, type, row, meta) =>
                     `<button class="btn btn-sm btn-info" onclick="viewIRDetails(${meta.row})" title="Details"><i class="fas fa-eye"></i></button>` }
             ],
-            order: [[3, 'desc']]
+            order: [[4, 'desc']]
         });
 
         loadAssessmentList();
@@ -280,8 +290,15 @@ ViewData["Title"] = "User Responses";
         allQA = qaJson.success ? (qaJson.data || []) : [];
         allIR = irJson.success ? (irJson.data || []) : [];
 
+        // Filter by selected group if one is selected
+        const selectedGroup = $('#groupFilter').val();
+        let filteredIR = allIR;
+        if (selectedGroup) {
+            filteredIR = allIR.filter(r => r.groupName === selectedGroup);
+        }
+
         qaTable.clear().rows.add(allQA).draw();
-        irTable.clear().rows.add(allIR).draw();
+        irTable.clear().rows.add(filteredIR).draw();
         updateStats();
     }
 
@@ -289,21 +306,61 @@ ViewData["Title"] = "User Responses";
         const ac   = $('#assessmentFilter').val();
         const btn  = document.getElementById('btnDownloadExcel');
         const hint = document.getElementById('downloadHint');
+        const $groupFilter = $('#groupFilter');
+
         if (ac) {
             btn.disabled     = false;
             btn.title        = 'Download consolidated Excel for selected assessment';
             hint.textContent = '';
+
+            // Load groups for this assessment
+            loadGroupsForAssessment(ac);
         } else {
             btn.disabled     = true;
             btn.title        = 'Select an assessment to enable download';
-            hint.textContent = 'Select an assessment to download';
+            hint.textContent = 'Select assessment';
             qaTable.clear().draw();
             irTable.clear().draw();
             allQA = []; allIR = [];
             updateStats();
+
+            // Reset group filter
+            $groupFilter.empty().append(new Option('Select Groupâ€¦', '')).prop('disabled', true);
+            $groupFilter.closest('.col-md-2').find('small').text('Select assessment first');
         }
-        loadAll();
     }
+
+           async function loadGroupsForAssessment(assessmentCode) {
+            try {
+                // Fetch all image groups (including inactive)
+                const res = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
+                const json = await res.json();
+
+                if (json.success && json.data) {
+                    assessmentGroups[assessmentCode] = json.data;
+
+                    // Populate group dropdown
+                    const $groupFilter = $('#groupFilter');
+                    $groupFilter.empty().append(new Option('Select Groupâ€¦', ''));
+
+                    json.data.forEach(g => {
+                        // âœ… Add status indicator for inactive groups
+                        const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
+                        $groupFilter.append(new Option(g.igName + status, g.igName));
+                    });
+
+                    $groupFilter.prop('disabled', false);
+                    $groupFilter.closest('.col-md-2').find('small').text('(Optional) Filter by group');
+
+                    // Wire change event
+                    $groupFilter.off('change').on('change', function () {
+                        loadAll();
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
 
     function applyQAStatusFilter() {
         const status   = document.getElementById('statusFilter').value;
@@ -334,16 +391,16 @@ ViewData["Title"] = "User Responses";
             $sel.append(new Option(a.atmName, a.atmCode));
         });
 
-        // Init Select2 now that options are ready — use the material+assessment-select theme
+        // Init Select2 now that options are ready
         $sel.select2({
             theme:          'material',
             width:          '100%',
             allowClear:     true,
-            placeholder:    'Select Assessment…',
+            placeholder:    'Select Assessmentâ€¦',
             dropdownParent: $(document.body)
         });
 
-        // Wire change event via Select2 API (replaces the removed onchange attribute)
+        // Wire change event via Select2 API
         $sel.on('select2:select select2:clear', function () {
             applyAssessmentFilter();
         });
@@ -354,7 +411,7 @@ ViewData["Title"] = "User Responses";
         if (!code) { showAlert('Please select an assessment first.', 'warning'); return; }
         const btn = document.getElementById('btnDownloadExcel');
         btn.disabled  = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparingâ€¦';
         window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(code)}`);
         setTimeout(() => {
             btn.disabled  = false;
@@ -412,24 +469,27 @@ ViewData["Title"] = "User Responses";
         } catch { masterExifHtml = ''; }
 
         const mainRatingHtml = r.masterImageRating != null
-            ? `<span class="badge rating-badge-${r.masterImageRating}">${r.masterImageRating} – ${ratingLabels[r.masterImageRating] ?? 'N/A'}</span>`
+            ? `<span class="badge rating-badge-${r.masterImageRating}">${r.masterImageRating} â€“ ${ratingLabels[r.masterImageRating] ?? 'N/A'}</span>`
             : '<span class="text-muted">N/A</span>';
+
+        const groupBadge = r.groupName ? `<span class="group-badge">${escapeHtml(r.groupName)}</span>` : '<span class="text-muted">N/A</span>';
 
         document.getElementById('irDetailBody').innerHTML = `
             <div class="row mb-3">
                 <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(r.sessionId ?? '')}</div>
-                <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(r.assessmentCode ?? '')}</div>
+                <div class="col-md-4"><strong>Image Group:</strong> ${groupBadge}</div>
                 <div class="col-md-4"><strong>IP:</strong> ${escapeHtml(r.ipAddress ?? '')}</div>
             </div>
             <div class="row mb-3">
+                <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(r.assessmentCode ?? '')}</div>
                 <div class="col-md-4"><strong>Rated At:</strong> ${r.ratedAt ? new Date(r.ratedAt).toLocaleString() : 'N/A'}</div>
                 <div class="col-md-4"><strong>Linked Image Rating:</strong>
-                    <span class="badge rating-badge-${r.qualityRating}">${r.qualityRating} – ${ratingLabels[r.qualityRating] ?? 'N/A'}</span>
+                    <span class="badge rating-badge-${r.qualityRating}">${r.qualityRating} â€“ ${ratingLabels[r.qualityRating] ?? 'N/A'}</span>
                 </div>
-                <div class="col-md-4"><strong>Quality Level:</strong> ${escapeHtml(r.linkedQualityLevel ?? 'N/A')} (${escapeHtml(r.linkedQualityType ?? '')})</div>
             </div>
             <div class="row mb-3">
-                <div class="col-md-4"><strong>Main Image Rating:</strong> ${mainRatingHtml}</div>
+                <div class="col-md-4"><strong>Quality Level:</strong> ${escapeHtml(r.linkedQualityLevel ?? 'N/A')} (${escapeHtml(r.linkedQualityType ?? '')})</div>
+                <div class="col-md-8"><strong>Main Image Rating:</strong> ${mainRatingHtml}</div>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -438,9 +498,9 @@ ViewData["Title"] = "User Responses";
                         <img src="${escapeHtml(r.masterImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
                     </a>` : ''}
                     <p class="mt-2 mb-1"><a href="${escapeHtml(r.masterImageUrl ?? '')}" target="_blank">${escapeHtml(r.masterImageName ?? '')}</a></p>
-                    <p class="mb-1"><strong>Resolution:</strong> ${r.masterWidth ?? '?'} × ${r.masterHeight ?? '?'} px</p>
+                    <p class="mb-1"><strong>Resolution:</strong> ${r.masterWidth ?? '?'} Ã— ${r.masterHeight ?? '?'} px</p>
                     <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.masterFormat ?? 'N/A')}</p>
-                    <p class="mb-1"><strong>DPI:</strong> ${r.masterDpiX ? Math.round(r.masterDpiX) : '?'} × ${r.masterDpiY ? Math.round(r.masterDpiY) : '?'}</p>
+                    <p class="mb-1"><strong>DPI:</strong> ${r.masterDpiX ? Math.round(r.masterDpiX) : '?'} Ã— ${r.masterDpiY ? Math.round(r.masterDpiY) : '?'}</p>
                     <p class="mb-1"><strong>Main Image Rating:</strong> ${mainRatingHtml}</p>
                     ${masterExifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
                         <table class="table table-sm mt-2">${masterExifHtml}</table></details>` : ''}
@@ -451,9 +511,9 @@ ViewData["Title"] = "User Responses";
                         <img src="${escapeHtml(r.linkedImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
                     </a>` : ''}
                     <p class="mt-2 mb-1"><a href="${escapeHtml(r.linkedImageUrl ?? '')}" target="_blank">${escapeHtml(r.linkedImageName ?? '')}</a></p>
-                    <p class="mb-1"><strong>Resolution:</strong> ${r.linkedWidth ?? '?'} × ${r.linkedHeight ?? '?'} px</p>
+                    <p class="mb-1"><strong>Resolution:</strong> ${r.linkedWidth ?? '?'} Ã— ${r.linkedHeight ?? '?'} px</p>
                     <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.linkedFormat ?? 'N/A')}</p>
-                    <p class="mb-1"><strong>DPI:</strong> ${r.linkedDpiX ? Math.round(r.linkedDpiX) : '?'} × ${r.linkedDpiY ? Math.round(r.linkedDpiY) : '?'}</p>
+                    <p class="mb-1"><strong>DPI:</strong> ${r.linkedDpiX ? Math.round(r.linkedDpiX) : '?'} Ã— ${r.linkedDpiY ? Math.round(r.linkedDpiY) : '?'}</p>
                     ${exifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
                         <table class="table table-sm mt-2">${exifHtml}</table></details>` : ''}
                 </div>

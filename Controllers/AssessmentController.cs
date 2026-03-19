@@ -24,6 +24,8 @@ namespace IQA_SOURCE.Controllers
         private readonly IUserResponseRepository _responseRepository;
         private readonly IImageQualityRepository _imageQualityRepository;
         private readonly ISystemCheckParamRepository _systemCheckParamRepository;
+        private readonly IImageGroupRepository _imageGroupRepository;
+        private readonly IImageRepository _imageRepository;
 
         public AssessmentController(
             ILogger<AssessmentController> logger,
@@ -35,7 +37,9 @@ namespace IQA_SOURCE.Controllers
             ISpeedTestRepository speedTestRepository,
             IUserResponseRepository responseRepository,
             IImageQualityRepository imageQualityRepository,
-            ISystemCheckParamRepository systemCheckParamRepository)
+            ISystemCheckParamRepository systemCheckParamRepository,
+            IImageGroupRepository imageGroupRepository,
+            IImageRepository imageRepository)
         {
             _logger = logger;
             _db = db;
@@ -47,6 +51,8 @@ namespace IQA_SOURCE.Controllers
             _responseRepository = responseRepository;
             _imageQualityRepository = imageQualityRepository;
             _systemCheckParamRepository = systemCheckParamRepository;
+            _imageGroupRepository = imageGroupRepository;
+            _imageRepository = imageRepository;
         }
 
         [AllowAnonymous]
@@ -431,6 +437,38 @@ namespace IQA_SOURCE.Controllers
             {
                 _logger.LogError(ex, "Error submitting responses");
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAssessmentImagesByGroup(string assessmentCode, string? groupCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+
+            try
+            {
+                var result = await _imageRepository.GetImagesByAssessmentTypeAndGroup(assessmentCode, groupCode, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetImageGroups()
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                var result = await _imageGroupRepository.GetAllImageGroups(userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
             }
         }
 

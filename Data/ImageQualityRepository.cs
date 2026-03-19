@@ -23,12 +23,20 @@ namespace IQA_SOURCE.Data
             {
                 var query = @"
                     SELECT 
-                        im_id, im_assessment_type, im_file_name, 
-                        im_file_path, im_active, im_created_date, im_created_user
-                    FROM image_master
-                    WHERE im_assessment_type = @assessmentCode
-                    AND im_active = 1
-                    ORDER BY im_created_date, im_id";
+                        im.im_id, im.im_assessment_type, im.im_file_name, 
+                        im.im_file_path, im.im_active, im.im_created_date, im.im_created_user,
+                        im.im_group_code, ig.ig_name
+                    FROM image_master im
+                    LEFT JOIN image_groups ig ON im.im_group_code = ig.ig_code
+                    WHERE im.im_assessment_type = @assessmentCode
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig2 
+                        WHERE ig2.ig_code = im.im_group_code 
+                        AND ig2.ig_is_current_active = 'Y' 
+                        AND ig2.ig_active = 'Y'
+                    ))
+                    ORDER BY im.im_created_date, im.im_id";
 
                 var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
                 var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
@@ -50,6 +58,7 @@ namespace IQA_SOURCE.Data
                     });
                 }
 
+                _logger.LogInformation($"Retrieved {data.Count} image sets from active group for assessment {assessmentCode}");
                 return (1, "Success", data);
             }
             catch (Exception ex)
@@ -63,12 +72,21 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // Only get completed IDs for images from the active group
                 var query = @"
-                    SELECT DISTINCT iqr_im_id
-                    FROM tbl_image_quality_ratings
-                    WHERE iqr_session_id = @sessionId
-                    AND iqr_assessment_code = @assessmentCode
-                    ORDER BY iqr_im_id";
+                    SELECT DISTINCT iqr.iqr_im_id
+                    FROM tbl_image_quality_ratings iqr
+                    INNER JOIN image_master im ON im.im_id = iqr.iqr_im_id
+                    WHERE iqr.iqr_session_id = @sessionId
+                    AND iqr.iqr_assessment_code = @assessmentCode
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig 
+                        WHERE ig.ig_code = im.im_group_code 
+                        AND ig.ig_is_current_active = 'Y' 
+                        AND ig.ig_active = 'Y'
+                    ))
+                    ORDER BY iqr.iqr_im_id";
 
                 var parameters = new[]
                 {
@@ -98,15 +116,31 @@ namespace IQA_SOURCE.Data
                 var query = @"
                     SELECT 
                         im.im_id, im.im_assessment_type, im.im_file_name, 
-                        im.im_file_path, im.im_active, im.im_created_date, im.im_created_user
+                        im.im_file_path, im.im_active, im.im_created_date, im.im_created_user,
+                        im.im_group_code, ig.ig_name
                     FROM image_master im
+                    LEFT JOIN image_groups ig ON im.im_group_code = ig.ig_code
                     WHERE im.im_assessment_type = @assessmentCode
                     AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig2 
+                        WHERE ig2.ig_code = im.im_group_code 
+                        AND ig2.ig_is_current_active = 'Y' 
+                        AND ig2.ig_active = 'Y'
+                    ))
                     AND im.im_id NOT IN (
-                        SELECT DISTINCT iqr_im_id
-                        FROM tbl_image_quality_ratings
-                        WHERE iqr_session_id = @sessionId
-                        AND iqr_assessment_code = @assessmentCode
+                        SELECT DISTINCT iqr.iqr_im_id
+                        FROM tbl_image_quality_ratings iqr
+                        INNER JOIN image_master im2 ON im2.im_id = iqr.iqr_im_id
+                        WHERE iqr.iqr_session_id = @sessionId
+                        AND iqr.iqr_assessment_code = @assessmentCode
+                        AND im2.im_active = 1
+                        AND (im2.im_group_code = '' OR im2.im_group_code IS NULL OR EXISTS (
+                            SELECT 1 FROM image_groups ig3 
+                            WHERE ig3.ig_code = im2.im_group_code 
+                            AND ig3.ig_is_current_active = 'Y' 
+                            AND ig3.ig_active = 'Y'
+                        ))
                     )
                     ORDER BY RAND()
                     LIMIT 1";
@@ -121,18 +155,34 @@ namespace IQA_SOURCE.Data
 
                 if (result.Rows.Count == 0)
                 {
+                    // Check if there are any images in the active group for this assessment
                     var countQuery  = @"
                         SELECT COUNT(*) as total
-                        FROM image_master
-                        WHERE im_assessment_type = @assessmentCode
-                        AND im_active = 1";
+                        FROM image_master im
+                        WHERE im.im_assessment_type = @assessmentCode
+                        AND im.im_active = 1
+                        AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                            SELECT 1 FROM image_groups ig 
+                            WHERE ig.ig_code = im.im_group_code 
+                            AND ig.ig_is_current_active = 'Y' 
+                            AND ig.ig_active = 'Y'
+                        ))";
+                    
                     var countParams = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
                     var countResult = await Task.Run(() => _dbHelper.ExecuteQuery(countQuery, countParams));
                     var totalCount  = countResult.Rows.Count > 0 ? Convert.ToInt32(countResult.Rows[0]["total"]) : 0;
 
-                    return totalCount == 0
-                        ? (-1, "No image sets found for this assessment", null)
-                        : (0,  "All image sets completed",                null);
+                    if (totalCount == 0)
+                    {
+                        // Check if there's an active group
+                        var activeGroupQuery = "SELECT ig_name FROM image_groups WHERE ig_is_current_active = 'Y' AND ig_active = 'Y'";
+                        var activeGroupResult = await Task.Run(() => _dbHelper.ExecuteQuery(activeGroupQuery, null));
+                        var activeGroupName = activeGroupResult.Rows.Count > 0 ? activeGroupResult.Rows[0]["ig_name"]?.ToString() : "Unknown";
+                        
+                        return (-1, $"No image sets found for this assessment in the active group '{activeGroupName}'", null);
+                    }
+
+                    return (0, "All image sets completed for the active group", null);
                 }
 
                 var row = result.Rows[0];
@@ -149,7 +199,8 @@ namespace IQA_SOURCE.Data
                     RisCreatedUser    = row["im_created_user"]?.ToString() ?? string.Empty
                 };
 
-                _logger.LogInformation($"Selected random image set: ID={rawImageSet.RisId}, Name={rawImageSet.RisName}");
+                var groupName = row["ig_name"]?.ToString() ?? "Default";
+                _logger.LogInformation($"Selected random image set: ID={rawImageSet.RisId}, Name={rawImageSet.RisName}, Group={groupName}");
                 return (1, "Success", rawImageSet);
             }
             catch (Exception ex)
@@ -163,14 +214,23 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // Ensure we only get linked images for masters that are in the active group
                 var query = @"
                     SELECT 
-                        il_id, il_master_id, il_file_name, il_file_path,
-                        il_quality_level, il_quality_type, im_active,
-                        il_created_date, il_created_user
-                    FROM image_linked
-                    WHERE il_master_id = @rawImageSetId
-                    AND im_active = 1
+                        il.il_id, il.il_master_id, il.il_file_name, il.il_file_path,
+                        il.il_quality_level, il.il_quality_type, il.im_active,
+                        il.il_created_date, il.il_created_user
+                    FROM image_linked il
+                    INNER JOIN image_master im ON im.im_id = il.il_master_id
+                    WHERE il.il_master_id = @rawImageSetId
+                    AND il.im_active = 1
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig 
+                        WHERE ig.ig_code = im.im_group_code 
+                        AND ig.ig_is_current_active = 'Y' 
+                        AND ig.ig_active = 'Y'
+                    ))
                     ORDER BY RAND()";
 
                 var parameters = new[] { new MySqlParameter("@rawImageSetId", rawImageSetId) };
@@ -192,7 +252,7 @@ namespace IQA_SOURCE.Data
                     });
                 }
 
-                _logger.LogInformation($"Retrieved {data.Count} linked images for master image {rawImageSetId}");
+                _logger.LogInformation($"Retrieved {data.Count} linked images for master image {rawImageSetId} from active group");
                 return (1, "Success", data);
             }
             catch (Exception ex)
@@ -206,6 +266,27 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // Verify the image being rated is from the currently active group before saving
+                var verifyQuery = @"
+                    SELECT COUNT(*) as count
+                    FROM image_master im
+                    WHERE im.im_id = @rawImageSetId
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig 
+                        WHERE ig.ig_code = im.im_group_code 
+                        AND ig.ig_is_current_active = 'Y' 
+                        AND ig.ig_active = 'Y'
+                    ))";
+
+                var verifyParams = new[] { new MySqlParameter("@rawImageSetId", submission.RawImageSetId) };
+                var verifyResult = await Task.Run(() => _dbHelper.ExecuteQuery(verifyQuery, verifyParams));
+                
+                if (verifyResult.Rows.Count == 0 || Convert.ToInt32(verifyResult.Rows[0]["count"]) == 0)
+                {
+                    return (-1, "Image is not available in the current active group");
+                }
+
                 // Single atomic upsert — eliminates race condition between check and insert
                 var upsertQuery = @"
                     INSERT INTO tbl_image_quality_ratings
@@ -256,6 +337,27 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // Verify the image being rated is from the currently active group before saving
+                var verifyQuery = @"
+                    SELECT COUNT(*) as count
+                    FROM image_master im
+                    WHERE im.im_id = @rawImageSetId
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig 
+                        WHERE ig.ig_code = im.im_group_code 
+                        AND ig.ig_is_current_active = 'Y' 
+                        AND ig.ig_active = 'Y'
+                    ))";
+
+                var verifyParams = new[] { new MySqlParameter("@rawImageSetId", submission.RawImageSetId) };
+                var verifyResult = await Task.Run(() => _dbHelper.ExecuteQuery(verifyQuery, verifyParams));
+                
+                if (verifyResult.Rows.Count == 0 || Convert.ToInt32(verifyResult.Rows[0]["count"]) == 0)
+                {
+                    return (-1, "Image is not available in the current active group");
+                }
+
                 // Delete existing ratings for this session + master image set to allow clean resubmission
                 var deleteQuery = @"
                     DELETE FROM tbl_image_quality_ratings
@@ -327,7 +429,13 @@ namespace IQA_SOURCE.Data
                         AND iqr.iqr_session_id = @sessionId
                         AND iqr.iqr_assessment_code = @assessmentCode
                     WHERE im.im_assessment_type = @assessmentCode
-                    AND im.im_active = 1";
+                    AND im.im_active = 1
+                    AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
+                        SELECT 1 FROM image_groups ig 
+                        WHERE ig.ig_code = im.im_group_code 
+                        AND ig.ig_is_current_active = 'Y' 
+                        AND ig.ig_active = 'Y'
+                    ))";
 
                 var parameters = new[]
                 {
@@ -358,7 +466,7 @@ namespace IQA_SOURCE.Data
 
                 progress.IsCompleted = progress.TotalSets > 0 && progress.CompletedSets >= progress.TotalSets;
 
-                _logger.LogInformation($"Progress: {completedSets}/{totalSets} completed for session {sessionId}");
+                _logger.LogInformation($"Progress: {completedSets}/{totalSets} completed for session {sessionId} from active group");
                 return (1, "Success", progress);
             }
             catch (Exception ex)
@@ -378,6 +486,8 @@ namespace IQA_SOURCE.Data
 
                 var whereClause = $"WHERE {string.Join(" AND ", filters)}";
 
+                // Note: Admin views should see ALL ratings regardless of current active group
+                // This is historical data and should not be filtered by current group status
                 var query = $@"
                     SELECT
                         iqr.iqr_id,
@@ -396,6 +506,7 @@ namespace IQA_SOURCE.Data
                         im.im_dpi_x            AS master_dpi_x,
                         im.im_dpi_y            AS master_dpi_y,
                         im.im_exif_data        AS master_exif_data,
+                        im.im_group_code       AS master_group_code,
                         il.il_id,
                         il.il_file_name        AS linked_file_name,
                         il.il_file_path        AS linked_file_path,
@@ -407,6 +518,7 @@ namespace IQA_SOURCE.Data
                         il.il_exif_data        AS linked_exif_data,
                         il.il_quality_level    AS linked_quality_level,
                         il.il_quality_type     AS linked_quality_type,
+                        ig.ig_name             AS group_name,
                         (
                             SELECT iqr2.iqr_quality_rating
                             FROM   tbl_image_quality_ratings iqr2
@@ -419,6 +531,7 @@ namespace IQA_SOURCE.Data
                     FROM tbl_image_quality_ratings iqr
                     INNER JOIN image_master  im ON im.im_id  = iqr.iqr_im_id
                     LEFT  JOIN image_linked  il ON il.il_id  = iqr.iqr_il_id
+                    LEFT  JOIN image_groups  ig ON ig.ig_code = im.im_group_code AND ig.ig_active = 'Y'
                     {whereClause}
                     ORDER BY iqr.iqr_created_date DESC";
 
@@ -463,12 +576,32 @@ namespace IQA_SOURCE.Data
                     });
                 }
 
+                _logger.LogInformation($"Retrieved {data.Count} image ratings for admin view");
                 return (1, "Success", data);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetImageRatingsForAdmin");
                 return (-1, ex.Message, new List<ImageRatingAdminRow>());
+            }
+        }
+
+        public async Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteRatingsByAssessmentCode(string assessmentCode, string userId)
+        {
+            try
+            {
+                var query = @"DELETE FROM tbl_image_quality_ratings WHERE iqr_assessment_code = @assessmentCode";
+                var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
+                
+                var deletedCount = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+                
+                _logger.LogInformation($"Bulk deleted {deletedCount} image rating records for assessment {assessmentCode} by user {userId}");
+                return (1, $"Successfully deleted {deletedCount} image rating records", deletedCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in BulkDeleteRatingsByAssessmentCode");
+                return (0, $"Error deleting image ratings: {ex.Message}", 0);
             }
         }
     }

@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using MySqlConnector;
 using IQA_SOURCE.Models.Admin;
 using YourApp.Data;
@@ -66,11 +66,12 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // FIXED: Corrected linked images count query
+                // ✅ FIXED: Added im_group_code to SELECT and GROUP BY
                 var query = @"
                     SELECT 
                         im.im_assessment_type,
                         atm.atm_name as assessment_name,
+                        im.im_group_code as group_code,
                         COUNT(DISTINCT im.im_id) as total_master_images,
                         (SELECT COUNT(*) 
                          FROM image_linked il2 
@@ -107,8 +108,8 @@ namespace IQA_SOURCE.Data
                     LEFT JOIN image_linked il 
                         ON im.im_id = il.il_master_id AND il.im_active = 1
                     WHERE im.im_active = 1
-                    GROUP BY im.im_assessment_type, atm.atm_name
-                    ORDER BY im.im_assessment_type";
+                    GROUP BY im.im_assessment_type, atm.atm_name, im.im_group_code
+                    ORDER BY im.im_assessment_type, im.im_group_code";
 
                 var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, null));
 
@@ -119,13 +120,15 @@ namespace IQA_SOURCE.Data
                     {
                         AssessmentType = row["im_assessment_type"]?.ToString(),
                         AssessmentName = row["assessment_name"]?.ToString() ?? row["im_assessment_type"]?.ToString(),
+                        GroupCode = row["group_code"]?.ToString(),  // ✅ NEW: Map GroupCode from database
                         TotalMasterImages = row["total_master_images"] != DBNull.Value ? Convert.ToInt32(row["total_master_images"]) : 0,
                         TotalLinkedImages = row["total_linked_images"] != DBNull.Value ? Convert.ToInt32(row["total_linked_images"]) : 0,
                         ImagesWithLinked = row["images_with_linked"] != DBNull.Value ? Convert.ToInt32(row["images_with_linked"]) : 0,
                         LastUploadDate = row["last_upload_date"] != DBNull.Value ? (DateTime?)row["last_upload_date"] : null,
                         LastUploadBy = row["last_upload_by"]?.ToString(),
                         AverageFileSize = row["avg_file_size"] != DBNull.Value ? Convert.ToDecimal(row["avg_file_size"]) : 0,
-                        TotalStorageUsed = row["total_storage_used"] != DBNull.Value ? Convert.ToInt64(row["total_storage_used"]) : 0
+                        TotalStorageUsed = row["total_storage_used"] != DBNull.Value ? Convert.ToInt64(row["total_storage_used"]) : 0,
+                        GroupName = null  // ✅ Will be populated by controller enrichment
                     });
                 }
 
@@ -143,6 +146,100 @@ namespace IQA_SOURCE.Data
                     OutputCode = 0,
                     OutputMsg = $"Error retrieving assessment image summary: {ex.Message}",
                     Data = new List<AssessmentImageSummary>()
+                };
+            }
+        }
+        // ADD this new method
+
+        public async Task<EnhancedDashboardResponse> GetEnhancedDashboardStats(string userId)
+        {
+            try
+            {
+                var query = @"
+            SELECT 
+                atm.atm_code as AssessmentType,
+                atm.atm_name as AssessmentName,
+                ig.ig_code as GroupCode,
+                ig.ig_name as GroupName,
+                COUNT(DISTINCT CASE WHEN im.im_id IS NOT NULL THEN im.im_id END) as TotalMasterImages,
+                COUNT(DISTINCT CASE WHEN il.il_id IS NOT NULL THEN il.il_id END) as TotalLinkedImages,
+                COUNT(DISTINCT CASE WHEN im.im_id IS NOT NULL AND il.il_id IS NOT NULL THEN im.im_id END) as ImagesWithLinked,
+                MAX(im.im_created_date) as LastUploadDate,
+                (SELECT im_created_user FROM image_master 
+                 WHERE im_assessment_type = atm.atm_code AND im_group_code = ig.ig_code 
+                 ORDER BY im_created_date DESC LIMIT 1) as LastUploadBy,
+                AVG(CASE WHEN im.im_file_size > 0 THEN im.im_file_size ELSE 0 END) as AverageFileSize,
+                SUM(COALESCE(im.im_file_size, 0) + COALESCE(il.il_file_size, 0)) as TotalStorageUsed
+            FROM assessment_type_master atm
+            LEFT JOIN image_group ig ON ig.ig_assessment_type = atm.atm_code AND ig.ig_active = 'Y'
+            LEFT JOIN image_master im ON im.im_assessment_type = atm.atm_code AND im.im_group_code = ig.ig_code AND im.im_active = 1
+            LEFT JOIN image_linked il ON il.il_master_id = im.im_id AND il.im_active = 1
+            WHERE atm.atm_active = 'Y'
+            GROUP BY atm.atm_code, atm.atm_name, ig.ig_code, ig.ig_name
+            ORDER BY atm.atm_name, ig.ig_name";
+
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, null));
+
+                var assessmentGroupSummaries = new List<AssessmentGroupImageSummary>();
+
+                foreach (DataRow row in result.Rows)
+                {
+                    assessmentGroupSummaries.Add(new AssessmentGroupImageSummary
+                    {
+                        AssessmentType = row["AssessmentType"]?.ToString(),
+                        AssessmentName = row["AssessmentName"]?.ToString(),
+                        GroupCode = row["GroupCode"]?.ToString(),
+                        GroupName = row["GroupName"]?.ToString(),
+                        TotalMasterImages = row["TotalMasterImages"] != DBNull.Value ? Convert.ToInt32(row["TotalMasterImages"]) : 0,
+                        TotalLinkedImages = row["TotalLinkedImages"] != DBNull.Value ? Convert.ToInt32(row["TotalLinkedImages"]) : 0,
+                        ImagesWithLinked = row["ImagesWithLinked"] != DBNull.Value ? Convert.ToInt32(row["ImagesWithLinked"]) : 0,
+                        LastUploadDate = row["LastUploadDate"] != DBNull.Value ? (DateTime?)row["LastUploadDate"] : null,
+                        LastUploadBy = row["LastUploadBy"]?.ToString(),
+                        AverageFileSize = row["AverageFileSize"] != DBNull.Value ? Convert.ToDecimal(row["AverageFileSize"]) : 0,
+                        TotalStorageUsed = row["TotalStorageUsed"] != DBNull.Value ? Convert.ToInt64(row["TotalStorageUsed"]) : 0
+                    });
+                }
+
+                // Get total counts
+                var countQuery = @"
+            SELECT 
+                (SELECT COUNT(*) FROM assessment_type_master WHERE atm_active = 'Y') as TotalAssessmentTypes,
+                (SELECT COUNT(*) FROM question_master WHERE qs_active = 1) as TotalQuestions,
+                (SELECT COUNT(*) FROM image_master WHERE im_active = 1) as TotalMasterImages,
+                (SELECT COUNT(*) FROM image_linked WHERE im_active = 1) as TotalLinkedImages,
+                (SELECT COUNT(*) FROM image_group WHERE ig_active = 'Y') as TotalImageGroups";
+
+                var countResult = await Task.Run(() => _dbHelper.ExecuteQuery(countQuery, null));
+
+                var dashboardStats = new EnhancedDashboardStats
+                {
+                    TotalAssessmentTypes = countResult.Rows.Count > 0 && countResult.Rows[0]["TotalAssessmentTypes"] != DBNull.Value
+                        ? Convert.ToInt32(countResult.Rows[0]["TotalAssessmentTypes"]) : 0,
+                    TotalQuestions = countResult.Rows.Count > 0 && countResult.Rows[0]["TotalQuestions"] != DBNull.Value
+                        ? Convert.ToInt32(countResult.Rows[0]["TotalQuestions"]) : 0,
+                    TotalImages = countResult.Rows.Count > 0 && countResult.Rows[0]["TotalMasterImages"] != DBNull.Value
+                        ? Convert.ToInt32(countResult.Rows[0]["TotalMasterImages"]) : 0,
+                    TotalLinkedImages = countResult.Rows.Count > 0 && countResult.Rows[0]["TotalLinkedImages"] != DBNull.Value
+                        ? Convert.ToInt32(countResult.Rows[0]["TotalLinkedImages"]) : 0,
+                    TotalImageGroups = countResult.Rows.Count > 0 && countResult.Rows[0]["TotalImageGroups"] != DBNull.Value
+                        ? Convert.ToInt32(countResult.Rows[0]["TotalImageGroups"]) : 0,
+                    AssessmentGroupSummaries = assessmentGroupSummaries
+                };
+
+                return new EnhancedDashboardResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = "Enhanced dashboard statistics retrieved successfully",
+                    Data = dashboardStats
+                };
+            }
+            catch (Exception ex)
+            {
+                return new EnhancedDashboardResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving enhanced dashboard stats: {ex.Message}",
+                    Data = null
                 };
             }
         }

@@ -109,6 +109,7 @@ namespace IQA_SOURCE.Models
         public string AssessmentCode { get; set; }
         public string AssessmentName { get; set; }
         public string IpAddress { get; set; }
+        public string GroupName { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? SubmitTime { get; set; }
         public string Status { get; set; }

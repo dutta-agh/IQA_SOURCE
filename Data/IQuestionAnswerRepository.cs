@@ -10,5 +10,6 @@ namespace IQA_SOURCE.Data
         Task<QuestionAnswerResultsResponse> GetAllQuestionAnswers(string userId);
         Task<QuestionAnswerResultsResponse> GetQuestionAnswersByCode(string assessmentCode, string userId);
         Task<List<QuestionAnswerExcelRow>> GetQuestionAnswersForExcel(string assessmentCode, string userId);
+        Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteByAssessmentCode(string assessmentCode, string userId);
     }
 }

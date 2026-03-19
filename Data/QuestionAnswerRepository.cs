@@ -325,7 +325,7 @@ namespace IQA_SOURCE.Data
                 {
                     var responseId = Convert.ToInt32(row["Urid"]);
 
-                    // FIX: Join on UrdQsId (question FK) and display UrdAnswerText (stored option label).
+                    // FIX: Join on UrdQsId (question FK) and display UrdAnswerText (stored option label text).
                     // UserResponseRepository saves: UrdQsId = QuestionId, UrdQoId = OptionId (int), UrdAnswerText = option label text.
                     var answersQuery = @"
                         SELECT 
@@ -433,6 +433,23 @@ namespace IQA_SOURCE.Data
             catch (Exception ex)
             {
                 throw new Exception($"Error preparing Excel data: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteByAssessmentCode(string assessmentCode, string userId)
+        {
+            try
+            {
+                var query = @"DELETE FROM user_responses WHERE ur_assessment_code = @assessmentCode";
+                var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
+        
+                var deletedCount = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+        
+                return (1, $"Successfully deleted {deletedCount} question answer records", deletedCount);
+            }
+            catch (Exception ex)
+            {
+                return (0, $"Error deleting question answers: {ex.Message}", 0);
             }
         }
     }

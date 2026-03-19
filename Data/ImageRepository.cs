@@ -270,7 +270,7 @@ namespace IQA_SOURCE.Data
                 {
                     var insertMasterQuery = @"
                         INSERT INTO image_master (
-                            im_assessment_type, im_file_name, im_file_path, 
+                            im_assessment_type, im_group_code, im_file_name, im_file_path, 
                             im_file_size, im_width, im_height, im_format,
                             im_color_space, im_bit_depth, im_dpi_x, im_dpi_y,
                             im_exif_data, im_camera_make, im_camera_model,
@@ -280,7 +280,7 @@ namespace IQA_SOURCE.Data
                             im_orientation, im_compression_quality,
                             im_upload_batch, im_created_user, im_created_date, im_active
                         ) VALUES (
-                            @assessmentType, @fileName, @filePath, 
+                            @assessmentType, @groupCode, @fileName, @filePath, 
                             @fileSize, @width, @height, @format,
                             @colorSpace, @bitDepth, @dpiX, @dpiY,
                             @exifData, @cameraMake, @cameraModel,
@@ -295,6 +295,7 @@ namespace IQA_SOURCE.Data
                     var masterParams = new[]
                     {
                         new MySqlParameter("@assessmentType", master.ImAssessmentType),
+                        new MySqlParameter("@groupCode", (object?)master.ImGroupCode ?? DBNull.Value),
                         new MySqlParameter("@fileName", master.ImFileName),
                         new MySqlParameter("@filePath", master.ImFilePath),
                         new MySqlParameter("@fileSize", (object)master.ImFileSize ?? DBNull.Value),
@@ -338,7 +339,7 @@ namespace IQA_SOURCE.Data
                         {
                             linked.IlMasterId = masterId;
 
-                            // ✅ FIXED: VALUES now includes @qualityLevel, @qualityType
+                            // ✅ FIXED: Removed il_group_code from column list and VALUES
                             var insertLinkedQuery = @"
                                 INSERT INTO image_linked (
                                     il_master_id, il_file_name, il_file_path, 
@@ -360,8 +361,7 @@ namespace IQA_SOURCE.Data
                                     @shutterSpeed, @iso, @flash,
                                     @exposureMode, @whiteBalance, @dateTaken,
                                     @orientation, @compressionQuality,
-                                    @qualityLevel, @qualityType, @uploadBatch,
-                                    @userId, NOW(), 1
+                                    @uploadBatch, @userId, NOW(), 1
                                 )";
 
                             var linkedParams = new[]
@@ -415,6 +415,7 @@ namespace IQA_SOURCE.Data
 
                 foreach (var linked in linkedImagesForExistingMasters)
                 {
+                    // ✅ FIXED: Removed il_group_code from column list and VALUES
                     var insertLinkedQuery = @"
                         INSERT INTO image_linked (
                             il_master_id, il_file_name, il_file_path, 
@@ -436,8 +437,7 @@ namespace IQA_SOURCE.Data
                             @shutterSpeed, @iso, @flash,
                             @exposureMode, @whiteBalance, @dateTaken,
                             @orientation, @compressionQuality,
-                            @qualityLevel, @qualityType, @uploadBatch,
-                            @userId, NOW(), 1
+                            @uploadBatch, @userId, NOW(), 1
                         )";
 
                     var linkedParams = new[]
@@ -509,11 +509,12 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // ✅ FIXED: Return ALL active images regardless of group (including untagged)
                 var query = @"
                     SELECT * FROM image_master 
                     WHERE im_assessment_type = @assessmentType 
                     AND im_active = 1
-                    ORDER BY im_created_date DESC";
+                    ORDER BY CASE WHEN im_group_code IS NULL THEN 1 ELSE 0 END, im_group_code, im_created_date DESC";
 
                 var parameters = new[]
                 {
@@ -526,6 +527,91 @@ namespace IQA_SOURCE.Data
                 foreach (DataRow row in result.Rows)
                 {
                     images.Add(MapToImageMaster(row));
+                }
+
+                return new ImageMasterResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = $"Retrieved {images.Count} images successfully",
+                    Data = images
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ImageMasterResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving images: {ex.Message}",
+                    Data = new List<ImageMaster>()
+                };
+            }
+        }
+
+        public async Task<ImageMasterResponse> GetImagesByAssessmentTypeAndGroup(string assessmentType, string? groupCode, string userId)
+        {
+            try
+            {
+                string query;
+                MySqlParameter[] parameters;
+
+                if (string.IsNullOrEmpty(groupCode))
+                {
+                    query = @"
+                        SELECT * FROM image_master 
+                        WHERE im_assessment_type = @assessmentType 
+                        AND im_active = 1
+                        AND im_group_code IS NOT NULL
+                        ORDER BY im_created_date DESC";
+
+                    parameters = new[]
+                    {
+                        new MySqlParameter("@assessmentType", assessmentType)
+                    };
+                }
+                else
+                {
+                    query = @"
+                        SELECT * FROM image_master 
+                        WHERE im_assessment_type = @assessmentType 
+                        AND im_group_code = @groupCode
+                        AND im_active = 1
+                        ORDER BY im_created_date DESC";
+
+                    parameters = new[]
+                    {
+                        new MySqlParameter("@assessmentType", assessmentType),
+                        new MySqlParameter("@groupCode", groupCode)
+                    };
+                }
+
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+
+                var images = new List<ImageMaster>();
+                foreach (DataRow row in result.Rows)
+                {
+                    var master = MapToImageMaster(row);
+
+                    // ✅ FIXED: Changed to use im_active (which exists in image_linked)
+                    var linkedQuery = @"
+                        SELECT * FROM image_linked 
+                        WHERE il_master_id = @masterId 
+                        AND im_active = 1
+                        ORDER BY il_quality_level";
+
+                    var linkedParams = new[]
+                    {
+                        new MySqlParameter("@masterId", master.ImId)
+                    };
+
+                    var linkedResult = await Task.Run(() => _dbHelper.ExecuteQuery(linkedQuery, linkedParams));
+
+                    master.LinkedImages = new List<ImageLinked>();
+                    foreach (DataRow linkedRow in linkedResult.Rows)
+                    {
+                        master.LinkedImages.Add(MapToImageLinked(linkedRow));
+                    }
+
+                    images.Add(master);
                 }
 
                 return new ImageMasterResponse
@@ -568,7 +654,7 @@ namespace IQA_SOURCE.Data
                 {
                     var master = MapToImageMaster(result.Rows[0]);
 
-                    // Get linked images
+                    // ✅ FIXED: Changed to use im_active (which exists in image_linked)
                     var linkedQuery = @"
                         SELECT * FROM image_linked 
                         WHERE il_master_id = @masterId 
@@ -683,7 +769,7 @@ namespace IQA_SOURCE.Data
                     FROM image_linked 
                     WHERE il_master_id = @masterId 
                     AND il_file_name = @fileName 
-                    AND im_active = 1";
+                    AND im_active = 1";  // ✅ This is correct since image_linked has im_active column
 
                 var parameters = new[]
                 {
@@ -860,6 +946,7 @@ namespace IQA_SOURCE.Data
             {
                 ImId                 = row["im_id"] != DBNull.Value ? Convert.ToInt32(row["im_id"]) : 0,
                 ImAssessmentType     = row["im_assessment_type"]?.ToString(),
+                ImGroupCode          = row["im_group_code"]?.ToString(),  // ✅ ADD THIS LINE
                 ImFileName           = row["im_file_name"]?.ToString(),
                 ImFilePath           = ImageUrlHelper.BuildImageUrl(row["im_file_path"]?.ToString()),
                 ImFileSize           = row["im_file_size"] != DBNull.Value ? Convert.ToInt64(row["im_file_size"]) : null,
@@ -936,6 +1023,7 @@ namespace IQA_SOURCE.Data
         {
             try
             {
+                // ✅ FIXED: Removed the CASE WHEN filter from GROUP BY to ensure we count all linked images
                 var query = @"
                     SELECT 
                         im.im_id,
@@ -987,7 +1075,7 @@ namespace IQA_SOURCE.Data
                         LinkedImagesCount = row["linked_count"] != DBNull.Value ? Convert.ToInt32(row["linked_count"]) : 0
                     };
 
-                    // Get linked images for this master
+                    // Get linked images for this master (only active ones)
                     if (imageAudit.LinkedImagesCount > 0)
                     {
                         var linkedQuery = @"
@@ -1025,7 +1113,7 @@ namespace IQA_SOURCE.Data
                             FROM image_linked
                             WHERE il_master_id = @masterId
                             AND im_active = 1
-                            ORDER BY il_quality_level";
+                            ORDER BY CAST(il_quality_level AS UNSIGNED) ASC";
 
                         var linkedParams = new[]
                         {
@@ -1038,36 +1126,36 @@ namespace IQA_SOURCE.Data
                         {
                             imageAudit.LinkedImages.Add(new LinkedImageAuditTrail
                             {
-                                IlId               = linkedRow["il_id"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_id"]) : 0,
-                                IlFileName         = linkedRow["il_file_name"]?.ToString(),
-                                IlFilePath         = ImageUrlHelper.BuildImageUrl(linkedRow["il_file_path"]?.ToString()),
-                                IlFileSize         = linkedRow["il_file_size"] != DBNull.Value ? Convert.ToInt64(linkedRow["il_file_size"]) : null,
-                                IlWidth            = linkedRow["il_width"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_width"]) : null,
-                                IlHeight           = linkedRow["il_height"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_height"]) : null,
-                                IlFormat           = linkedRow["il_format"]?.ToString(),
-                                IlColorSpace       = linkedRow["il_color_space"]?.ToString(),
-                                IlBitDepth         = linkedRow["il_bit_depth"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_bit_depth"]) : null,
-                                IlDpiX             = linkedRow["il_dpi_x"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_x"]) : null,
-                                IlDpiY             = linkedRow["il_dpi_y"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_y"]) : null,
-                                IlOrientation      = linkedRow["il_orientation"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_orientation"]) : null,
+                                IlId = linkedRow["il_id"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_id"]) : 0,
+                                IlFileName = linkedRow["il_file_name"]?.ToString(),
+                                IlFilePath = ImageUrlHelper.BuildImageUrl(linkedRow["il_file_path"]?.ToString()),
+                                IlFileSize = linkedRow["il_file_size"] != DBNull.Value ? Convert.ToInt64(linkedRow["il_file_size"]) : null,
+                                IlWidth = linkedRow["il_width"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_width"]) : null,
+                                IlHeight = linkedRow["il_height"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_height"]) : null,
+                                IlFormat = linkedRow["il_format"]?.ToString(),
+                                IlColorSpace = linkedRow["il_color_space"]?.ToString(),
+                                IlBitDepth = linkedRow["il_bit_depth"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_bit_depth"]) : null,
+                                IlDpiX = linkedRow["il_dpi_x"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_x"]) : null,
+                                IlDpiY = linkedRow["il_dpi_y"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_dpi_y"]) : null,
+                                IlOrientation = linkedRow["il_orientation"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_orientation"]) : null,
                                 IlCompressionQuality = linkedRow["il_compression_quality"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_compression_quality"]) : null,
-                                IlExifData         = linkedRow["il_exif_data"]?.ToString(),
-                                IlCameraMake       = linkedRow["il_camera_make"]?.ToString(),
-                                IlCameraModel      = linkedRow["il_camera_model"]?.ToString(),
-                                IlLensModel        = linkedRow["il_lens_model"]?.ToString(),
-                                IlFocalLength      = linkedRow["il_focal_length"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_focal_length"]) : null,
-                                IlAperture         = linkedRow["il_aperture"]?.ToString(),
-                                IlShutterSpeed     = linkedRow["il_shutter_speed"]?.ToString(),
-                                IlIso              = linkedRow["il_iso"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_iso"]) : null,
-                                IlFlash            = linkedRow["il_flash"]?.ToString(),
-                                IlExposureMode     = linkedRow["il_exposure_mode"]?.ToString(),
-                                IlWhiteBalance     = linkedRow["il_white_balance"]?.ToString(),
-                                IlDateTaken        = linkedRow["il_date_taken"] != DBNull.Value ? (DateTime?)linkedRow["il_date_taken"] : null,
-                                IlUploadBatch      = linkedRow["il_upload_batch"]?.ToString(),
-                                IlQualityLevel     = linkedRow["il_quality_level"]?.ToString(),
-                                IlQualityType      = linkedRow["il_quality_type"]?.ToString(),
-                                IlCreatedDate      = linkedRow["il_created_date"] != DBNull.Value ? (DateTime?)linkedRow["il_created_date"] : null,
-                                IlCreatedUser      = linkedRow["il_created_user"]?.ToString()
+                                IlExifData = linkedRow["il_exif_data"]?.ToString(),
+                                IlCameraMake = linkedRow["il_camera_make"]?.ToString(),
+                                IlCameraModel = linkedRow["il_camera_model"]?.ToString(),
+                                IlLensModel = linkedRow["il_lens_model"]?.ToString(),
+                                IlFocalLength = linkedRow["il_focal_length"] != DBNull.Value ? Convert.ToDecimal(linkedRow["il_focal_length"]) : null,
+                                IlAperture = linkedRow["il_aperture"]?.ToString(),
+                                IlShutterSpeed = linkedRow["il_shutter_speed"]?.ToString(),
+                                IlIso = linkedRow["il_iso"] != DBNull.Value ? Convert.ToInt32(linkedRow["il_iso"]) : null,
+                                IlFlash = linkedRow["il_flash"]?.ToString(),
+                                IlExposureMode = linkedRow["il_exposure_mode"]?.ToString(),
+                                IlWhiteBalance = linkedRow["il_white_balance"]?.ToString(),
+                                IlDateTaken = linkedRow["il_date_taken"] != DBNull.Value ? (DateTime?)linkedRow["il_date_taken"] : null,
+                                IlUploadBatch = linkedRow["il_upload_batch"]?.ToString(),
+                                IlQualityLevel = linkedRow["il_quality_level"]?.ToString(),
+                                IlQualityType = linkedRow["il_quality_type"]?.ToString(),
+                                IlCreatedDate = linkedRow["il_created_date"] != DBNull.Value ? (DateTime?)linkedRow["il_created_date"] : null,
+                                IlCreatedUser = linkedRow["il_created_user"]?.ToString()
                             });
                         }
                     }

@@ -19,11 +19,14 @@ namespace IQA_SOURCE.Data
             try
             {
                 var query = @"
-                    SELECT user_id, user_name 
-                    FROM admin_users 
-                    WHERE username = @username 
-                    AND password_hash = @password
-                    AND is_active = 'Y'
+                    SELECT 
+                        au.user_id, 
+                        au.user_name,
+                        COALESCE(au.user_role, 'Operator') AS user_role
+                    FROM admin_users au
+                    WHERE au.username = @username 
+                    AND au.password_hash = @password
+                    AND au.is_active = 'Y'
                     LIMIT 1";
 
                 var parameters = new[]
@@ -42,7 +45,8 @@ namespace IQA_SOURCE.Data
                         Success = true,
                         Message = "Login successful",
                         UserId = row["user_id"]?.ToString(),
-                        UserName = row["user_name"]?.ToString()
+                        UserName = row["user_name"]?.ToString(),
+                        UserRole = row["user_role"]?.ToString() ?? "Operator"
                     };
                 }
 

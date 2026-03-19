@@ -31,6 +31,8 @@ namespace IQA_SOURCE.Models.Admin
         public int? ImOrientation { get; set; }
         public int? ImCompressionQuality { get; set; }
         public string ImUploadBatch { get; set; }
+        public string ImGroupCode { get; set; }
+        public string ImGroupName { get; set; }  // NEW: Display name for the group
         public string ImCreatedUser { get; set; }
         public DateTime? ImCreatedDate { get; set; }
         public string ImModifiedUser { get; set; }
@@ -39,6 +41,7 @@ namespace IQA_SOURCE.Models.Admin
         
         // Navigation property
         public List<ImageLinked> LinkedImages { get; set; }
+        public ImageGroup Group { get; set; } // NEW: Navigation to group
     }
 
     public class ImageLinked
@@ -75,6 +78,8 @@ namespace IQA_SOURCE.Models.Admin
         public string IlCreatedUser { get; set; }
         public DateTime? IlCreatedDate { get; set; }
         public int ImActive { get; set; }
+        public string IlGroupCode { get; set; }
+        public string IlGroupName { get; set; }  // NEW: Display name for the group
     }
 
     public class ImageMetadata

@@ -6,5 +6,6 @@ namespace IQA_SOURCE.Data
     {
         Task<DashboardStatsResponse> GetDashboardStats(string userId);
         Task<AssessmentImageSummaryResponse> GetAssessmentImageSummary(string userId);
+        Task<EnhancedDashboardResponse> GetEnhancedDashboardStats(string userId);
     }
 }   

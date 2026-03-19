@@ -21,6 +21,42 @@
             box-sizing: border-box;
         }
 
+        /* ── Group Filter Section ──────────────────────────────────── */
+        .group-filter-section {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .group-filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            white-space: nowrap;
+        }
+
+        .group-filter-select {
+            padding: 5px 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .group-filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
         .assessment-body {
             display: flex;
             flex-direction: row;
@@ -28,7 +64,7 @@
             flex: 1;
             overflow: hidden;
             min-height: 0;
-            align-items: center; /* ← vertically centres both panels */
+            align-items: center;
         }
 
         /* ── Reference image panel ──────────────────────────────────── */
@@ -41,7 +77,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center; /* ← centres content inside the panel */
+            justify-content: center;
             flex-shrink: 0;
             width: fit-content;
         }
@@ -79,7 +115,7 @@
             flex-direction: column;
             overflow: hidden;
             min-height: 0;
-            height: fit-content; /* shrinks to content — no white space below */
+            height: fit-content;
             max-height: 100%;
         }
 
@@ -456,6 +492,7 @@
             .image-assessment-container       { height: auto; overflow: visible; }
             .linked-images-section            { height: auto; }
             .fullscreen-prompt-box            { padding: 30px 20px; }
+            .group-filter-section             { flex-wrap: wrap; }
         }
     </style>
 }
@@ -482,6 +519,16 @@
         <div class="progress-info">
             Image Set <span id="currentSetNumber">@Model.CurrentSetNumber</span> of <span id="totalSets">@Model.TotalSets</span>
         </div>
+    </div>
+
+    <!-- Group Filter Section -->
+    <div class="group-filter-section">
+        <label class="group-filter-label" for="groupFilterSelect">
+            <i class="fas fa-filter"></i> Filter by Group:
+        </label>
+        <select class="group-filter-select" id="groupFilterSelect" onchange="changeImageGroup()">
+            <option value="">All Images</option>
+        </select>
     </div>
 
     <div class="assessment-body">
@@ -590,6 +637,7 @@
 
         let selectedImageId = null;
         let selectedRating  = null;
+        let currentGroupCode = ''; // Track the currently selected group
 
         const ratingDescriptions = { 1: 'Bad', 2: 'Poor', 3: 'Fair', 4: 'Good', 5: 'Excellent' };
 
@@ -601,8 +649,73 @@
                 .then(data => { clientIpAddress = data.ip || ''; })
                 .catch(() => { clientIpAddress = ''; });
 
+            loadImageGroups();
             initFullscreen();
         });
+
+        // ── Load Image Groups ──────────────────────────────────────────
+        async function loadImageGroups() {
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/GetImageGroups'));
+                if (!response.ok) throw new Error('Failed to load groups');
+                
+                const data = await response.json();
+                if (!data.success || !data.data) return;
+                
+                const select = document.getElementById('groupFilterSelect');
+                const fragment = document.createDocumentFragment();
+                
+                // Add "All Images" option
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = 'All Images';
+                fragment.appendChild(allOption);
+                
+                // Add each group
+                data.data.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.igCode;
+                    option.textContent = group.igName;
+                    fragment.appendChild(option);
+                });
+                
+                select.appendChild(fragment);
+                console.log('Loaded ' + data.data.length + ' image groups');
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
+
+        // ── Change Image Group ─────────────────────────────────────────
+        async function changeImageGroup() {
+            const groupSelect = document.getElementById('groupFilterSelect');
+            const newGroupCode = groupSelect.value;
+            
+            if (newGroupCode === currentGroupCode) {
+                return; // No change
+            }
+            
+            currentGroupCode = newGroupCode;
+            
+            try {
+                const response = await fetch(buildApiUrl(`/Assessment/GetAssessmentImagesByGroup?assessmentCode=${assessmentCode}&groupCode=${newGroupCode}`));
+                if (!response.ok) throw new Error('Failed to load images');
+                
+                const data = await response.json();
+                if (!data.success) {
+                    alert('Error loading images for selected group');
+                    return;
+                }
+                
+                // Refresh the page with new images
+                window.location.reload();
+            } catch (error) {
+                console.error('Error changing group:', error);
+                alert('Error loading images');
+                // Reset the select to previous value
+                groupSelect.value = currentGroupCode;
+            }
+        }
 
         // ── Fullscreen logic ──────────────────────────────────────────
         function isInFullscreen() {

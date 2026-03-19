@@ -52,6 +52,8 @@ builder.Services.Configure<ImageStorageSettings>(
 
 // Register repositories
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IAdminUserRepository, AdminUserRepository>();
+builder.Services.AddScoped<IAdminMenuRepository, AdminMenuRepository>();
 builder.Services.AddScoped<IAssessmentTypeRepository, AssessmentTypeRepository>();
 builder.Services.AddScoped<IQuestionMasterRepository, QuestionMasterRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
@@ -62,6 +64,8 @@ builder.Services.AddScoped<IUserResponseRepository, UserResponseRepository>();
 builder.Services.AddScoped<IQuestionAnswerRepository, QuestionAnswerRepository>();
 builder.Services.AddScoped<IImageQualityRepository, ImageQualityRepository>();
 builder.Services.AddScoped<ISystemCheckParamRepository, SystemCheckParamRepository>();
+builder.Services.AddScoped<IImageGroupRepository, ImageGroupRepository>();
+builder.Services.AddScoped<IBulkOperationsRepository, BulkOperationsRepository>();
 
 // Register services
 builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();

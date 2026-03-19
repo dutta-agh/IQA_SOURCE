@@ -3,56 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\data\\imagequalityrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\imagequalityrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\assessment\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\assessment\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\data\\imagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\imagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\imagesmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\imagesmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\models\\dashboardstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:models\\dashboardstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\assessmentimages.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\assessmentimages.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\shared\\_adminlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\shared\\_adminlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\assessment\\sortassessment.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\assessment\\sortassessment.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\data\\imagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\imagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\assessment\\questions.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\assessment\\questions.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\assessment\\speedtest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\assessment\\speedtest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\shared\\_assessmentlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\shared\\_assessmentlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\imagegroups.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\imagegroups.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\questionanswers.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\questionanswers.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\models\\imagequalityassessment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:models\\imagequalityassessment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\data\\imagegrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:data\\imagegrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -62,175 +42,110 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\Index.cshtml",
-              "RelativeDocumentMoniker": "Views\\Assessment\\Index.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\Index.cshtml",
-              "RelativeToolTip": "Views\\Assessment\\Index.cshtml",
-              "ViewState": "AgIAANIAAAAAAAAAAAAAAOcAAAAxAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T19:38:55.483Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ImagesMaster.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ImagesMaster.cshtml",
-              "RelativeDocumentMoniker": "Views\\Admin\\ImagesMaster.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ImagesMaster.cshtml",
-              "RelativeToolTip": "Views\\Admin\\ImagesMaster.cshtml",
-              "ViewState": "AgIAADQBAAAAAAAAAIAwwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T18:15:43.734Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAADsAAAAAAAAAAAAAAEYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T18:03:48.983Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "_AdminLayout.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AdminLayout.cshtml",
-              "RelativeDocumentMoniker": "Views\\Shared\\_AdminLayout.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AdminLayout.cshtml",
-              "RelativeToolTip": "Views\\Shared\\_AdminLayout.cshtml",
-              "ViewState": "AgIAAFkAAAAAAAAAAAAAAGoAAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T16:01:21.393Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "SortAssessment.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SortAssessment.cshtml",
-              "RelativeDocumentMoniker": "Views\\Assessment\\SortAssessment.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SortAssessment.cshtml",
-              "RelativeToolTip": "Views\\Assessment\\SortAssessment.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T15:47:49.383Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "Questions.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\Questions.cshtml",
-              "RelativeDocumentMoniker": "Views\\Assessment\\Questions.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\Questions.cshtml",
-              "RelativeToolTip": "Views\\Assessment\\Questions.cshtml",
-              "ViewState": "AgIAAIsBAAAAAAAAAAAAAKYBAABRAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T15:41:37.128Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ImageQualityRepository.cs",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageQualityRepository.cs",
-              "RelativeDocumentMoniker": "Data\\ImageQualityRepository.cs",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageQualityRepository.cs",
-              "RelativeToolTip": "Data\\ImageQualityRepository.cs",
-              "ViewState": "AgIAAGwBAAAAAAAAAAAqwH4BAAAjAAAAAAAAAA==",
+              "Title": "DashboardStats.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\DashboardStats.cs",
+              "RelativeDocumentMoniker": "Models\\DashboardStats.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\DashboardStats.cs",
+              "RelativeToolTip": "Models\\DashboardStats.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAADgvxkAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:27:18.471Z",
+              "WhenOpened": "2026-03-19T21:46:22.2Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ImageRepository.cs",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageRepository.cs",
-              "RelativeDocumentMoniker": "Data\\ImageRepository.cs",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageRepository.cs",
-              "RelativeToolTip": "Data\\ImageRepository.cs",
-              "ViewState": "AgIAAOYBAAAAAAAAAAD4vwkBAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:30:07.859Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "_AssessmentLayout.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AssessmentLayout.cshtml",
-              "RelativeDocumentMoniker": "Views\\Shared\\_AssessmentLayout.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AssessmentLayout.cshtml",
-              "RelativeToolTip": "Views\\Shared\\_AssessmentLayout.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T15:39:35.119Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "QuestionAnswers.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\QuestionAnswers.cshtml",
-              "RelativeDocumentMoniker": "Views\\Admin\\QuestionAnswers.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\QuestionAnswers.cshtml",
-              "RelativeToolTip": "Views\\Admin\\QuestionAnswers.cshtml",
-              "ViewState": "AgIAADgAAAAAAAAAAAAAADgAAAA8AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T15:28:37.241Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "AdminController.cs",
               "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Controllers\\AdminController.cs",
               "RelativeDocumentMoniker": "Controllers\\AdminController.cs",
               "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Controllers\\AdminController.cs",
               "RelativeToolTip": "Controllers\\AdminController.cs",
-              "ViewState": "AgIAAOIDAAAAAAAAAAAlwFYBAABcAAAAAAAAAA==",
+              "ViewState": "AgIAAKYCAAAAAAAAAAAAALQCAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:27:44.591Z",
+              "WhenOpened": "2026-03-19T21:42:08.121Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "SpeedTest.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SpeedTest.cshtml",
-              "RelativeDocumentMoniker": "Views\\Assessment\\SpeedTest.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SpeedTest.cshtml",
-              "RelativeToolTip": "Views\\Assessment\\SpeedTest.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABRAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "AssessmentImages.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\AssessmentImages.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\AssessmentImages.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\AssessmentImages.cshtml",
+              "RelativeToolTip": "Views\\Admin\\AssessmentImages.cshtml",
+              "ViewState": "AgIAAKQCAAAAAAAAAADwvwIAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-12T15:48:01.793Z",
+              "WhenOpened": "2026-03-19T21:39:49.058Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "ImageQualityAssessment.cs",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\ImageQualityAssessment.cs",
-              "RelativeDocumentMoniker": "Models\\ImageQualityAssessment.cs",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\ImageQualityAssessment.cs",
-              "RelativeToolTip": "Models\\ImageQualityAssessment.cs",
-              "ViewState": "AgIAADsAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\Dashboard.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\Dashboard.cshtml",
+              "RelativeToolTip": "Views\\Admin\\Dashboard.cshtml",
+              "ViewState": "AgIAAEwBAAAAAAAAAAAjwCQAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-19T21:36:31.23Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ImageGroups.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ImageGroups.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\ImageGroups.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ImageGroups.cshtml",
+              "RelativeToolTip": "Views\\Admin\\ImageGroups.cshtml",
+              "ViewState": "AgIAAN4AAAAAAAAAAAAwwGIAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-19T21:06:13.578Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ImageRepository.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageRepository.cs",
+              "RelativeDocumentMoniker": "Data\\ImageRepository.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageRepository.cs",
+              "RelativeToolTip": "Data\\ImageRepository.cs",
+              "ViewState": "AgIAAPQDAAAAAAAAAAAtwAoEAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:26:58.922Z",
+              "WhenOpened": "2026-03-19T20:50:37.927Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ImageGroupRepository.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageGroupRepository.cs",
+              "RelativeDocumentMoniker": "Data\\ImageGroupRepository.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Data\\ImageGroupRepository.cs",
+              "RelativeToolTip": "Data\\ImageGroupRepository.cs",
+              "ViewState": "AgIAAK0AAAAAAAAAAAAqwBkAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T20:56:05.699Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "QuestionAnswers.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\QuestionAnswers.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\QuestionAnswers.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\QuestionAnswers.cshtml",
+              "RelativeToolTip": "Views\\Admin\\QuestionAnswers.cshtml",
+              "ViewState": "AgIAAE4BAAAAAAAAAAAwwGoBAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-19T20:47:18.757Z",
               "EditorCaption": ""
             }
           ]

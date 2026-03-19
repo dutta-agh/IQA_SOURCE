@@ -22,6 +22,8 @@ namespace IQA_SOURCE.Models.Admin
         public string LastUploadBy { get; set; }
         public decimal AverageFileSize { get; set; }
         public long TotalStorageUsed { get; set; }
+        public string GroupCode { get; set; }    
+        public string GroupName { get; set; }
     }
 
     public class DashboardStatsResponse
@@ -53,6 +55,8 @@ namespace IQA_SOURCE.Models.Admin
         public DateTime? ImModifiedDate { get; set; }
         public string ImModifiedUser { get; set; }
         public int LinkedImagesCount { get; set; }
+        public string ImGroupCode { get; set; }  // NEW: Group code
+        public string ImGroupName { get; set; }  // NEW: Group display name
         public List<LinkedImageAuditTrail> LinkedImages { get; set; } = new();
     }
 
@@ -88,6 +92,8 @@ namespace IQA_SOURCE.Models.Admin
         public string IlQualityType { get; set; }
         public DateTime? IlCreatedDate { get; set; }
         public string IlCreatedUser { get; set; }
+        public string IlGroupCode { get; set; }  // NEW: Group code
+        public string IlGroupName { get; set; }  // NEW: Group display name
     }
 
     public class ImageAuditTrailResponse
@@ -95,5 +101,37 @@ namespace IQA_SOURCE.Models.Admin
         public int OutputCode { get; set; }
         public string OutputMsg { get; set; }
         public List<ImageAuditTrail> Data { get; set; }
+    }
+
+    public class AssessmentGroupImageSummary
+    {
+        public string AssessmentType { get; set; }
+        public string AssessmentName { get; set; }
+        public string GroupCode { get; set; }
+        public string GroupName { get; set; }
+        public int TotalMasterImages { get; set; }
+        public int TotalLinkedImages { get; set; }
+        public int ImagesWithLinked { get; set; }
+        public DateTime? LastUploadDate { get; set; }
+        public string LastUploadBy { get; set; }
+        public decimal AverageFileSize { get; set; }
+        public long TotalStorageUsed { get; set; }
+    }
+
+    public class EnhancedDashboardStats
+    {
+        public int TotalAssessmentTypes { get; set; }
+        public int TotalQuestions { get; set; }
+        public int TotalImages { get; set; }
+        public int TotalLinkedImages { get; set; }
+        public int TotalImageGroups { get; set; }
+        public List<AssessmentGroupImageSummary> AssessmentGroupSummaries { get; set; } = new();
+    }
+
+    public class EnhancedDashboardResponse
+    {
+        public int OutputCode { get; set; }
+        public string OutputMsg { get; set; }
+        public EnhancedDashboardStats Data { get; set; }
     }
 }

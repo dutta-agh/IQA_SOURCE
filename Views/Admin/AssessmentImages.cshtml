@@ -1,5 +1,5 @@
 ﻿@{
-    Layout = "_AdminLayout";
+    Layout = "_AdminLayoutDynamic";
     ViewData["Title"] = "Assessment Images";
 }
 
@@ -359,6 +359,12 @@
             <select class="form-select" id="assessmentTypeFilter">
                 <option value="">-- Select Assessment Type --</option>
             </select>
+        </div>  
+        <div class="form-group">
+            <label class="form-label fw-bold"><i class="fas fa-layer-group"></i> Image Group</label>
+            <select class="form-select" id="imageGroupFilter">
+                <option value="">-- All Groups --</option>
+            </select>
         </div>
         <div class="btn-group">
             <button class="btn btn-primary-modern btn-modern" onclick="loadImages()">
@@ -434,12 +440,24 @@
            Init
         ════════════════════════════════════════ */
         $(document).ready(function () {
+            console.log('Document ready - initializing Assessment Images page');
             loadAssessmentTypes();
+            
+            // Reload groups when assessment type changes
+            $('#assessmentTypeFilter').on('change', function() {
+                console.log('Assessment type changed, loading groups');
+                loadImageGroups();
+            });
 
             // Auto-load from query string
             const type = new URLSearchParams(window.location.search).get('type');
             if (type) {
-                setTimeout(() => { $('#assessmentTypeFilter').val(type); loadImages(); }, 500);
+                console.log('Auto-loading assessment type from query string:', type);
+                setTimeout(() => { 
+                    $('#assessmentTypeFilter').val(type); 
+                    loadImageGroups();
+                    loadImages(); 
+                }, 500);
             }
 
             // Tab clicks
@@ -469,40 +487,146 @@
             });
         });
 
+        function loadImageGroups() {
+            console.log('Loading image groups...');
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllImageGroups'),
+                type: 'GET',
+                dataType: 'json',
+                success: function (res) {
+                    console.log('Image Groups Response:', res);
+                    
+                    if (res && res.success && res.data && Array.isArray(res.data)) {
+                        const sel = $('#imageGroupFilter');
+                        
+                        // Clear existing options except first
+                        sel.find('option').not(':first').remove();
+                        
+                        console.log(`Adding ${res.data.length} groups to dropdown`);
+                        
+                        // Add each group
+                        res.data.forEach((g, index) => {
+                            const code = g.igCode || g.IgCode || '';
+                            const name = g.igName || g.IgName || '';
+                            
+                            console.log(`Group ${index}: code="${code}", name="${name}"`);
+                            
+                            if (code && code.trim() !== '') {
+                                const $option = $('<option></option>')
+                                    .attr('value', code.trim())
+                                    .text(name.trim() || code.trim());
+                                sel.append($option);
+                            }
+                        });
+                        
+                        console.log(`Loaded ${res.data.length} image groups successfully`);
+                    } else {
+                        console.warn('Invalid response format:', res);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading image groups:', error);
+                    console.error('XHR Status:', xhr.status);
+                    console.error('XHR Response:', xhr.responseText);
+                }
+            });
+        }
+
         /* ════════════════════════════════════════
            API
         ════════════════════════════════════════ */
         function loadAssessmentTypes() {
+            console.log('Loading assessment types...');
             $.ajax({
                 url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
                 type: 'GET',
+                dataType: 'json',
                 success: function (res) {
-                    if (res.success && res.data) {
+                    console.log('Assessment Types Response:', res);
+                    
+                    if (res && res.success && res.data && Array.isArray(res.data)) {
                         const sel = $('#assessmentTypeFilter');
-                        res.data.forEach(t => {
+                        
+                        console.log(`Adding ${res.data.length} assessment types to dropdown`);
+                        
+                        res.data.forEach((t, index) => {
                             const code = t.atmCode || t.AtmCode || '';
                             const name = t.atmName || t.AtmName || '';
-                            if (code) sel.append(`<option value="${escHtml(code)}">${escHtml(name)}</option>`);
+                            
+                            console.log(`Assessment ${index}: code="${code}", name="${name}"`);
+                            
+                            if (code && code.trim() !== '') {
+                                const $option = $('<option></option>')
+                                    .attr('value', code.trim())
+                                    .text(name.trim() || code.trim());
+                                sel.append($option);
+                            }
                         });
+                        
+                        console.log(`Loaded ${res.data.length} assessment types successfully`);
+                    } else {
+                        console.warn('Invalid response format:', res);
                     }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading assessment types:', error);
+                    console.error('XHR Status:', xhr.status);
+                    console.error('XHR Response:', xhr.responseText);
                 }
             });
         }
 
         function loadImages() {
             const assessmentType = $('#assessmentTypeFilter').val();
-            if (!assessmentType) { showAlert('Please select an assessment type', 'warning'); return; }
+            const groupCode = $('#imageGroupFilter').val();
+            
+            console.log('Loading images with:', { assessmentType, groupCode });
+            
+            if (!assessmentType) { 
+                showAlert('Please select an assessment type', 'warning'); 
+                return; 
+            }
+            
             showLoader();
+            
+            let url;
+            let ajaxData;
+            
+            if (groupCode) {
+                url = buildApiUrl(`/Admin/GetImagesByAssessmentTypeAndGroup?assessmentType=${encodeURIComponent(assessmentType)}&groupCode=${encodeURIComponent(groupCode)}`);
+                ajaxData = {};
+            } else {
+                url = buildApiUrl('/Admin/GetImagesWithAuditTrail');
+                ajaxData = { assessmentType: assessmentType };
+            }
+            
+            console.log('AJAX URL:', url);
+            
             $.ajax({
-                url: buildApiUrl('/Admin/GetImagesWithAuditTrail'),
+                url: url,
                 type: 'GET',
-                data: { assessmentType },
+                data: ajaxData,
+                dataType: 'json',
                 success: function (res) {
                     hideLoader();
-                    if (res.success) { currentImages = res.data || []; displayImages(); }
-                    else showAlert('Error: ' + res.message, 'danger');
+                    console.log('Images Response:', res);
+                    
+                    if (res && res.success) { 
+                        currentImages = res.data || []; 
+                        console.log(`Loaded ${currentImages.length} images`);
+                        displayImages(); 
+                    }
+                    else {
+                        showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
+                    }
                 },
-                error: function () { hideLoader(); showAlert('Error loading images. Please try again.', 'danger'); }
+                error: function (xhr, status, error) { 
+                    hideLoader(); 
+                    console.error('Error loading images:', error);
+                    console.error('XHR Status:', xhr.status);
+                    console.error('XHR Response:', xhr.responseText);
+                    showAlert('Error loading images. Please try again.', 'danger'); 
+                }
             });
         }
 
@@ -512,11 +636,13 @@
         function displayImages() {
             const container = $('#imagesContainer');
             const statsBar  = $('#statsBar');
-            container.empty(); statsBar.empty();
+            container.empty(); 
+            statsBar.empty();
 
             if (!currentImages.length) {
                 container.html(`<div class="empty-state"><i class="fas fa-folder-open"></i><h4>No Images Found</h4><p>No images available for this assessment type</p></div>`);
-                statsBar.hide(); return;
+                statsBar.hide(); 
+                return;
             }
 
             const totalLinked = currentImages.reduce((s, i) => s + (i.linkedImagesCount || 0), 0);
@@ -540,6 +666,7 @@
 
             let linkedHtml = '';
             if (image.linkedImages && image.linkedImages.length) {
+                const linkedCount = image.linkedImages.length || image.linkedImagesCount || 0;  // ✅ FIX: Use actual array length
                 const thumbs = image.linkedImages.map((li, idx) => {
                     const qc = li.ilQualityType === 'enhanced' ? 'enhanced' : 'degraded';
                     return `<div class="linked-image-thumb" onclick="event.stopPropagation();openGallery(${mi},${idx+1})" title="${escHtml(li.ilFileName||'')}">
@@ -548,15 +675,19 @@
                     </div>`;
                 }).join('');
                 linkedHtml = `<div class="linked-images-section">
-                    <div class="linked-images-title"><i class="fas fa-layer-group"></i> Linked Images (${image.linkedImagesCount})</div>
+                    <div class="linked-images-title"><i class="fas fa-layer-group"></i> Linked Images (${linkedCount})</div>  <!-- ✅ FIX: Use linkedCount instead of image.linkedImagesCount -->
                     <div class="linked-images-grid">${thumbs}</div>
                 </div>`;
             }
 
+            const groupBadge = (image.imGroupName || image.ImGroupName) 
+                ? `<div style="margin-top:8px;"><span class="badge bg-info" style="font-size:0.8rem;"><i class="fas fa-layer-group"></i> ${escHtml(image.imGroupName||image.ImGroupName)}</span></div>`
+                : '';
+            
             return `<div class="image-item">
                 <div class="image-preview-container" onclick="openGallery(${mi},0)">
                     <img src="${image.imFilePath}" class="image-preview-main" alt="${escHtml(image.imFileName||'')}" loading="lazy">
-                    <div class="image-badge"><i class="fas fa-link"></i> ${image.linkedImagesCount} Linked</div>
+                    <div class="image-badge"><i class="fas fa-link"></i> ${image.linkedImages ? image.linkedImages.length : 0} Linked</div>  <!-- ✅ FIX: Use actual array length -->
                     <div class="open-gallery-hint"><i class="fas fa-expand"></i> Open Gallery</div>
                 </div>
                 <div class="image-details">
@@ -568,6 +699,7 @@
                         <div class="meta-item"><i class="fas fa-calendar"></i><span class="meta-value">${dateStr}</span></div>
                     </div>
                     ${linkedHtml}
+                    ${groupBadge}
                     <div class="audit-section">
                         <div class="audit-title"><i class="fas fa-history"></i> Audit Trail</div>
                         <div class="audit-grid">
@@ -768,7 +900,7 @@
                     ${kv('Exposure Mode', na(s.exposureMode))}
                     ${kv('White Balance', na(s.whiteBalance))}`;
 
-            } else { // exif
+            } else {
                 if (s.exifData) {
                     try {
                         const exif = typeof s.exifData === 'string' ? JSON.parse(s.exifData) : s.exifData;
@@ -815,6 +947,7 @@
         ════════════════════════════════════════ */
         function clearFilter() {
             $('#assessmentTypeFilter').val('');
+            $('#imageGroupFilter').val('');
             $('#statsBar').hide();
             $('#imagesContainer').html(`<div class="empty-state"><i class="fas fa-images"></i><h4>No Images Selected</h4><p>Select an assessment type to view the image gallery</p></div>`);
         }

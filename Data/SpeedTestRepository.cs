@@ -241,6 +241,34 @@ namespace IQA_SOURCE.Data
             }
         }
 
+        public async Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteByAssessmentCode(string assessmentCode, string userId)
+        {
+            try
+            {
+                var query = @"
+                    DELETE FROM SpeedTestLog
+                    WHERE AssessmentCode = @assessmentCode";
+                var parameters = new[]
+                {
+                    new MySqlParameter("@assessmentCode", assessmentCode)
+                };
+                var deletedCount = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+                return (
+                    OutputCode: deletedCount > 0 ? 1 : 0,
+                    OutputMsg: deletedCount > 0 ? "Speed test logs deleted successfully" : "No logs found to delete",
+                    DeletedCount: deletedCount
+                );
+            }
+            catch (Exception ex)
+            {
+                return (
+                    OutputCode: 0,
+                    OutputMsg: $"Error deleting speed test logs: {ex.Message}",
+                    DeletedCount: 0
+                );
+            }
+        }
+
         private SpeedTestLog MapToSpeedTestLog(DataRow row)
         {
             return new SpeedTestLog

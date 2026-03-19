@@ -14,5 +14,6 @@ namespace IQA_SOURCE.Data
         Task<ImageMasterResponse> DeleteImage(int imageId, string userId);
         Task<ImageUploadResponse> ProcessFolderImages(string folderPath, string assessmentType, string userId);
         Task<ImageAuditTrailResponse> GetImagesWithAuditTrail(string assessmentType, string userId);
+        Task<ImageMasterResponse> GetImagesByAssessmentTypeAndGroup(string assessmentType, string? groupCode, string userId);
     }
 }

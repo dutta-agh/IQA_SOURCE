@@ -8,5 +8,6 @@ namespace IQA_SOURCE.Data
         Task<SpeedTestLogResponse> GetAllSpeedTestLogs(string userId);
         Task<SpeedTestLogResponse> GetSpeedTestLogsByAssessment(string assessmentCode, string userId);
         Task<SpeedTestLogResponse> GetSpeedTestLogsByDateRange(DateTime startDate, DateTime endDate, string userId);
+        Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteByAssessmentCode(string assessmentCode, string userId);
     }
 }

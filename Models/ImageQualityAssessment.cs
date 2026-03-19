@@ -43,6 +43,8 @@ namespace IQA_SOURCE.Models
         public string IqrIpAddress { get; set; } = string.Empty;
         public string IqrUserAgent { get; set; } = string.Empty;
         public DateTime? IqrCreatedDate { get; set; }
+        public string MasterGroupCode { get; set; }
+        public string GroupName { get; set; }  // NEW: Group display name
     }
 
     // Admin grid + Excel row for image ratings
@@ -64,6 +66,8 @@ namespace IQA_SOURCE.Models
         public double? MasterDpiX { get; set; }
         public double? MasterDpiY { get; set; }
         public string? MasterExifData { get; set; }
+        public string MasterGroupCode { get; set; } = string.Empty;
+        public string GroupName { get; set; } = string.Empty;
 
         /// <summary>Rating given to the main (master) image in Sort assessments. Null for non-Sort assessments.</summary>
         public int? MasterImageRating { get; set; }

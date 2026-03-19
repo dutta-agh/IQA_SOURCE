@@ -28,6 +28,10 @@ namespace IQA_SOURCE.Controllers
         private readonly IDbHelper _dbHelper;
         private readonly IImageQualityRepository _imageQualityRepository;
         private readonly ISystemCheckParamRepository _systemCheckParamRepository;
+        private readonly IImageGroupRepository _imageGroupRepository;
+        private readonly IBulkOperationsRepository _bulkOperationsRepository;
+        private readonly IAdminUserRepository _adminUserRepository;
+        private readonly IAdminMenuRepository _adminMenuRepository;
 
         public AdminController(
             IAdminRepository adminRepository,
@@ -41,8 +45,12 @@ namespace IQA_SOURCE.Controllers
             IQuestionAnswerRepository questionAnswerRepository,
             IImageQualityRepository imageQualityRepository,
             ISystemCheckParamRepository systemCheckParamRepository,
+            IImageGroupRepository imageGroupRepository,
+            IBulkOperationsRepository bulkOperationsRepository,
             ILogger<AdminController> logger,
-            IDbHelper dbHelper)
+            IDbHelper dbHelper,
+            IAdminUserRepository adminUserRepository,
+            IAdminMenuRepository adminMenuRepository)
         {
             _adminRepository = adminRepository;
             _assessmentTypeRepository = assessmentTypeRepository;
@@ -55,8 +63,12 @@ namespace IQA_SOURCE.Controllers
             _questionAnswerRepository = questionAnswerRepository;
             _imageQualityRepository = imageQualityRepository;
             _systemCheckParamRepository = systemCheckParamRepository;
+            _imageGroupRepository = imageGroupRepository;
+            _bulkOperationsRepository = bulkOperationsRepository;
             _logger = logger;
             _dbHelper = dbHelper;
+            _adminUserRepository = adminUserRepository;
+            _adminMenuRepository = adminMenuRepository;
         }
 
         // Login Page
@@ -80,6 +92,7 @@ namespace IQA_SOURCE.Controllers
             {
                 HttpContext.Session.SetString("UserId", result.UserId);
                 HttpContext.Session.SetString("UserName", result.UserName);
+                HttpContext.Session.SetString("UserRole", result.UserRole);  // Add this line
             }
 
             return Json(new { success = result.Success, message = result.Message });
@@ -341,7 +354,7 @@ namespace IQA_SOURCE.Controllers
         [HttpPost]
         [RequestSizeLimit(2147483648)]
         [RequestFormLimits(MultipartBodyLengthLimit = 2147483648, ValueCountLimit = 100000)]
-        public async Task<IActionResult> UploadImages([FromForm] string assessmentType, [FromForm] IFormFile[] files)
+            public async Task<IActionResult> UploadImages([FromForm] string assessmentType, [FromForm] string groupCode, [FromForm] IFormFile[] files)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -349,6 +362,10 @@ namespace IQA_SOURCE.Controllers
 
             if (files == null || files.Length == 0)
                 return Json(new { success = false, message = "No files uploaded" });
+
+            // Validate group code
+            if (string.IsNullOrWhiteSpace(groupCode))
+                return Json(new { success = false, message = "Image group code is required" });
 
             try
             {
@@ -394,7 +411,7 @@ namespace IQA_SOURCE.Controllers
                                 var (qualityLevel, qualityType)  = ParseQualityInfo(linkedFileName);
                                 var webPath                      = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
 
-                                linkedImages.Add(BuildLinkedImage(existingMaster.ImId, linkedFileName, webPath, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch));
+                                linkedImages.Add(BuildLinkedImage(existingMaster.ImId, linkedFileName, webPath, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch, groupCode));
                             }
                             catch (Exception ex)
                             {
@@ -412,7 +429,7 @@ namespace IQA_SOURCE.Controllers
 
                             var metadata = await _metadataService.ExtractMetadata(masterFilePath);
                             var webPath  = $"{_imageSettings.WebBasePath}/{assessmentType}/{masterFileName}";
-                            masterImages.Add(BuildMasterImage(assessmentType, masterFileName, webPath, masterFile.Length, metadata, uploadBatch));
+                            masterImages.Add(BuildMasterImage(assessmentType, masterFileName, webPath, masterFile.Length, metadata, uploadBatch, groupCode));
 
                             foreach (var linkedFile in group.Where(f => !IsMasterImage(f.FileName)))
                             {
@@ -427,7 +444,7 @@ namespace IQA_SOURCE.Controllers
                                     var (qualityLevel, qualityType) = ParseQualityInfo(linkedFileName);
                                     var webPath1                    = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
 
-                                    linkedImages.Add(BuildLinkedImage(0, linkedFileName, webPath1, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch));
+                                    linkedImages.Add(BuildLinkedImage(0, linkedFileName, webPath1, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch, groupCode));
                                 }
                                 catch (Exception ex)
                                 {
@@ -505,7 +522,72 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _imageRepository.GetImagesByAssessmentType(assessmentType, userId);
+            
+            // ✅ FIX: Enrich images with group names
+            if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
+            {
+                // Get all image groups for mapping
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
+                    ?? new Dictionary<string, string>();
+
+                // Enrich each image with its group name
+                foreach (var image in result.Data)
+                {
+                    if (!string.IsNullOrEmpty(image.ImGroupCode) && string.IsNullOrEmpty(image.ImGroupName))
+                    {
+                        if (groupsMap.TryGetValue(image.ImGroupCode, out var groupName))
+                        {
+                            image.ImGroupName = groupName;
+                        }
+                    }
+                }
+            }
+            
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetImagesByAssessmentTypeAndGroup(string assessmentType, string? groupCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                var result = await _imageRepository.GetImagesByAssessmentTypeAndGroup(assessmentType, groupCode, userId);
+                
+                // ✅ FIX: Enrich images with group names (same logic as dashboard)
+                if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
+                {
+                    // Get all image groups for mapping
+                    var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                    var groupsMap = groupsResult.Data?
+                        .ToDictionary(g => g.IgCode, g => g.IgName)
+                        ?? new Dictionary<string, string>();
+
+                    // Enrich each image with its group name
+                    foreach (var image in result.Data)
+                    {
+                        // If groupCode is set but groupName is empty, look it up
+                        if (!string.IsNullOrEmpty(image.ImGroupCode) && string.IsNullOrEmpty(image.ImGroupName))
+                        {
+                            if (groupsMap.TryGetValue(image.ImGroupCode, out var groupName))
+                            {
+                                image.ImGroupName = groupName;
+                            }
+                        }
+                    }
+                }
+                
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost]
@@ -592,6 +674,33 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _dashboardRepository.GetDashboardStats(userId);
+            
+            // ✅ FIX: Enrich dashboard stats with group names
+            if (result.OutputCode == 1 && result.Data != null)
+            {
+                // Get all image groups for mapping
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    ?? new Dictionary<string, string>();
+
+                // Enrich assessment image summaries with group names
+                if (result.Data.AssessmentImageSummaries != null && result.Data.AssessmentImageSummaries.Count > 0)
+                {
+                    foreach (var summary in result.Data.AssessmentImageSummaries)
+                    {
+                        // If groupCode is set but groupName is empty, look it up
+                        if (!string.IsNullOrEmpty(summary.GroupCode) && string.IsNullOrEmpty(summary.GroupName))
+                        {
+                            if (groupsMap.TryGetValue(summary.GroupCode, out var groupName))
+                            {
+                                summary.GroupName = groupName;
+                            }
+                        }
+                    }
+                }
+            }
+
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
@@ -612,7 +721,76 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _imageRepository.GetImagesWithAuditTrail(assessmentType, userId);
+            
+            // Enrich result data with group names
+            if (result.OutputCode == 1 && result.Data != null)
+            {
+                // Get all image groups
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    ?? new Dictionary<string, string>();
+
+                // Add group names to each image
+                foreach (var image in result.Data)
+                {
+                    if (!string.IsNullOrEmpty(image.ImGroupCode) && groupsMap.TryGetValue(image.ImGroupCode, out var groupName))
+                    {
+                        image.ImGroupName = groupName;
+                    }
+                    
+                    if (image.LinkedImages != null)
+                    {
+                        foreach (var linked in image.LinkedImages)
+                        {
+                            if (!string.IsNullOrEmpty(linked.IlGroupCode) && groupsMap.TryGetValue(linked.IlGroupCode, out var linkedGroupName))
+                            {
+                                linked.IlGroupName = linkedGroupName;
+                            }
+                        }
+                    }
+                }
+            }
+
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllImageRatings(string? assessmentCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var (outputCode, outputMsg, data) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
+            
+            // Enrich data with group names if available
+            if (outputCode == 1 && data != null && data.Count > 0)
+            {
+                // Get all image groups
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    ?? new Dictionary<string, string>();
+
+                // Add group names to each rating - using master group code
+                foreach (var rating in data)
+                {
+                    if (string.IsNullOrEmpty(rating.GroupName))
+                    {
+                        if (!string.IsNullOrEmpty(rating.MasterGroupCode) && groupsMap.TryGetValue(rating.MasterGroupCode, out var groupName))
+                        {
+                            rating.GroupName = groupName;
+                        }
+                        else
+                        {
+                            rating.GroupName = "N/A";
+                        }
+                    }
+                }
+            }
+
+            return Json(new { success = outputCode == 1, message = outputMsg, data });
         }
 
         // Speed Test Logs
@@ -788,6 +966,47 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _questionAnswerRepository.GetAllQuestionAnswers(userId);
+            
+            // Enrich with image group names for question answers
+            if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
+            {
+                // Get all image groups
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
+                    ?? new Dictionary<string, string>();
+
+                // Group by session and get first image group for each session
+                var sessionGroupMap = new Dictionary<string, string>();
+                var imageRatingsResult = await _imageQualityRepository.GetImageRatingsForAdmin(null, userId);
+                var (_, _, irData) = imageRatingsResult;
+
+                if (irData != null && irData.Count > 0)
+                {
+                    foreach (var rating in irData)
+                    {
+                        var sessionKey = rating.SessionId;
+                        if (!sessionGroupMap.ContainsKey(sessionKey) && !string.IsNullOrEmpty(rating.GroupName))
+                        {
+                            sessionGroupMap[sessionKey] = rating.GroupName;
+                        }
+                    }
+                }
+
+                // Add group name to question answers
+                foreach (var qa in result.Data)
+                {
+                    if (!string.IsNullOrEmpty(qa.SessionId) && sessionGroupMap.TryGetValue(qa.SessionId, out var groupName))
+                    {
+                        qa.GroupName = groupName;
+                    }
+                    else
+                    {
+                        qa.GroupName = "N/A";
+                    }
+                }
+            }
+
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
@@ -799,6 +1018,41 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _questionAnswerRepository.GetQuestionAnswersByCode(assessmentCode, userId);
+            
+            // Enrich with image group names for question answers
+            if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
+            {
+                // Get image ratings to extract first group name per session
+                var imageRatingsResult = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
+                var (_, _, irData) = imageRatingsResult;
+
+                var sessionGroupMap = new Dictionary<string, string>();
+                if (irData != null && irData.Count > 0)
+                {
+                    foreach (var rating in irData)
+                    {
+                        var sessionKey = rating.SessionId;
+                        if (!sessionGroupMap.ContainsKey(sessionKey) && !string.IsNullOrEmpty(rating.GroupName))
+                        {
+                            sessionGroupMap[sessionKey] = rating.GroupName;
+                        }
+                    }
+                }
+
+                // Add group name to question answers
+                foreach (var qa in result.Data)
+                {
+                    if (!string.IsNullOrEmpty(qa.SessionId) && sessionGroupMap.TryGetValue(qa.SessionId, out var groupName))
+                    {
+                        qa.GroupName = groupName;
+                    }
+                    else
+                    {
+                        qa.GroupName = "N/A";
+                    }
+                }
+            }
+
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
@@ -886,13 +1140,34 @@ namespace IQA_SOURCE.Controllers
                 // Image Ratings sheet — destructure the tuple return
                 var (irCode, irMsg, irData) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
 
+                // Get all image groups for mapping
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    ?? new Dictionary<string, string>();
+
+                // Enrich data with group names
+                if (irData != null && irData.Count > 0)
+                {
+                    foreach (var rating in irData)
+                    {
+                        if (string.IsNullOrEmpty(rating.GroupName) && !string.IsNullOrEmpty(rating.MasterGroupCode))
+                        {
+                            if (groupsMap.TryGetValue(rating.MasterGroupCode, out var groupName))
+                            {
+                                rating.GroupName = groupName;
+                            }
+                        }
+                    }
+                }
+
                 var irSheet     = workbook.CreateSheet("Image Ratings");
                 var irHdrStyle  = CreateHeaderStyle(workbook);
                 var irDataStyle = CreateDataStyle(workbook);
                 var irAltStyle  = CreateAltRowStyle(workbook);
 
                 string[] irHeaders = {
-                    "Session ID", "Assessment", "IP Address", "Rated At",
+                    "Session ID", "Image Group", "Assessment", "IP Address", "Rated At",
                     "Ref Image", "Ref Resolution", "Ref DPI", "Ref Format",
                     "Main Image Rating", "Main Image Rating Label",
                     "Rated Image", "Rated Resolution", "Rated DPI", "Rated Format",
@@ -913,25 +1188,26 @@ namespace IQA_SOURCE.Controllers
                     var r     = irSheet.CreateRow(irRowIdx);
                     var style = irRowIdx % 2 == 0 ? irAltStyle : irDataStyle;
                     r.CreateCell(0).SetCellValue(row.SessionId ?? "");         r.GetCell(0).CellStyle  = style;
-                    r.CreateCell(1).SetCellValue(row.AssessmentCode ?? "");    r.GetCell(1).CellStyle  = style;
-                    r.CreateCell(2).SetCellValue(row.IpAddress ?? "");         r.GetCell(2).CellStyle  = style;
-                    r.CreateCell(3).SetCellValue(row.RatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""); r.GetCell(3).CellStyle = style;
-                    r.CreateCell(4).SetCellValue(row.MasterImageName ?? "");   r.GetCell(4).CellStyle  = style;
-                    r.CreateCell(5).SetCellValue(row.MasterWidth.HasValue && row.MasterHeight.HasValue ? $"{row.MasterWidth} x {row.MasterHeight}" : ""); r.GetCell(5).CellStyle = style;
-                    r.CreateCell(6).SetCellValue(row.MasterDpiX.HasValue ? $"{Math.Round(row.MasterDpiX.Value)} x {Math.Round(row.MasterDpiY ?? 0)}" : ""); r.GetCell(6).CellStyle = style;
-                    r.CreateCell(7).SetCellValue(row.MasterFormat ?? "");      r.GetCell(7).CellStyle  = style;
+                    r.CreateCell(1).SetCellValue(row.GroupName ?? "N/A");      r.GetCell(1).CellStyle  = style;  // IMAGE GROUP NAME (NEW)
+                    r.CreateCell(2).SetCellValue(row.AssessmentCode ?? "");    r.GetCell(2).CellStyle  = style;
+                    r.CreateCell(3).SetCellValue(row.IpAddress ?? "");         r.GetCell(3).CellStyle  = style;
+                    r.CreateCell(4).SetCellValue(row.RatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""); r.GetCell(4).CellStyle = style;
+                    r.CreateCell(5).SetCellValue(row.MasterImageName ?? "");   r.GetCell(5).CellStyle  = style;
+                    r.CreateCell(6).SetCellValue(row.MasterWidth.HasValue && row.MasterHeight.HasValue ? $"{row.MasterWidth} x {row.MasterHeight}" : ""); r.GetCell(6).CellStyle = style;
+                    r.CreateCell(7).SetCellValue(row.MasterDpiX.HasValue ? $"{Math.Round(row.MasterDpiX.Value)} x {Math.Round(row.MasterDpiY ?? 0)}" : ""); r.GetCell(7).CellStyle = style;
+                    r.CreateCell(8).SetCellValue(row.MasterFormat ?? "");      r.GetCell(8).CellStyle  = style;
                     // Main image (Sort) rating columns
-                    r.CreateCell(8).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRating.Value.ToString() : ""); r.GetCell(8).CellStyle = style;
-                    r.CreateCell(9).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRatingLabel : "");              r.GetCell(9).CellStyle = style;
+                    r.CreateCell(9).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRating.Value.ToString() : ""); r.GetCell(9).CellStyle = style;
+                    r.CreateCell(10).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRatingLabel : "");              r.GetCell(10).CellStyle = style;
                     // Linked image columns
-                    r.CreateCell(10).SetCellValue(row.LinkedImageName ?? "");   r.GetCell(10).CellStyle = style;
-                    r.CreateCell(11).SetCellValue(row.LinkedWidth.HasValue && row.LinkedHeight.HasValue ? $"{row.LinkedWidth} x {row.LinkedHeight}" : ""); r.GetCell(11).CellStyle = style;
-                    r.CreateCell(12).SetCellValue(row.LinkedDpiX.HasValue ? $"{Math.Round(row.LinkedDpiX.Value)} x {Math.Round(row.LinkedDpiY ?? 0)}" : ""); r.GetCell(12).CellStyle = style;
-                    r.CreateCell(13).SetCellValue(row.LinkedFormat ?? "");       r.GetCell(13).CellStyle = style;
-                    r.CreateCell(14).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(14).CellStyle = style;
-                    r.CreateCell(15).SetCellValue(row.LinkedQualityType  ?? ""); r.GetCell(15).CellStyle = style;
-                    r.CreateCell(16).SetCellValue(row.QualityRating);            r.GetCell(16).CellStyle = style;
-                    r.CreateCell(17).SetCellValue(row.QualityRatingLabel);       r.GetCell(17).CellStyle = style;
+                    r.CreateCell(11).SetCellValue(row.LinkedImageName ?? "");   r.GetCell(11).CellStyle = style;
+                    r.CreateCell(12).SetCellValue(row.LinkedWidth.HasValue && row.LinkedHeight.HasValue ? $"{row.LinkedWidth} x {row.LinkedHeight}" : ""); r.GetCell(12).CellStyle = style;
+                    r.CreateCell(13).SetCellValue(row.LinkedDpiX.HasValue ? $"{Math.Round(row.LinkedDpiX.Value)} x {Math.Round(row.LinkedDpiY ?? 0)}" : ""); r.GetCell(13).CellStyle = style;
+                    r.CreateCell(14).SetCellValue(row.LinkedFormat ?? "");       r.GetCell(14).CellStyle = style;
+                    r.CreateCell(15).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(15).CellStyle = style;
+                    r.CreateCell(16).SetCellValue(row.LinkedQualityType  ?? ""); r.GetCell(16).CellStyle = style;
+                    r.CreateCell(17).SetCellValue(row.QualityRating);            r.GetCell(17).CellStyle = style;
+                    r.CreateCell(18).SetCellValue(row.QualityRatingLabel);       r.GetCell(18).CellStyle = style;
                     irRowIdx++;
                 }
 
@@ -957,31 +1233,70 @@ namespace IQA_SOURCE.Controllers
 
         // ── Helper methods ──────────────────────────────────────────────────────
 
-        private ImageMaster BuildMasterImage(string assessmentType, string fileName, string webPath, long fileSize, dynamic meta, string uploadBatch) =>
+        private ImageMaster BuildMasterImage(string assessmentType, string fileName, string webPath, long fileSize, dynamic meta, string uploadBatch, string groupCode) =>
             new()
             {
-                ImAssessmentType   = assessmentType, ImFileName = fileName, ImFilePath = webPath, ImFileSize = fileSize,
-                ImWidth            = meta.Width,      ImHeight = meta.Height, ImFormat = meta.Format, ImColorSpace = meta.ColorSpace,
-                ImBitDepth         = meta.BitDepth,   ImDpiX = meta.DpiX, ImDpiY = meta.DpiY,
-                ImExifData         = JsonSerializer.Serialize(meta.ExifData), ImCameraMake = meta.CameraMake, ImCameraModel = meta.CameraModel,
-                ImLensModel        = meta.LensModel,  ImFocalLength = meta.FocalLength, ImAperture = meta.Aperture,
-                ImShutterSpeed     = meta.ShutterSpeed, ImIso = meta.Iso, ImFlash = meta.Flash,
-                ImExposureMode     = meta.ExposureMode, ImWhiteBalance = meta.WhiteBalance, ImDateTaken = meta.DateTaken,
-                ImOrientation      = meta.Orientation, ImCompressionQuality = meta.CompressionQuality, ImUploadBatch = uploadBatch
+                ImAssessmentType   = assessmentType,
+                ImGroupCode        = groupCode,  // NEW: Add group code
+                ImFileName         = fileName,
+                ImFilePath         = webPath,
+                ImFileSize         = fileSize,
+                ImWidth            = meta.Width,
+                ImHeight           = meta.Height,
+                ImFormat           = meta.Format,
+                ImColorSpace       = meta.ColorSpace,
+                ImBitDepth         = meta.BitDepth,
+                ImDpiX             = meta.DpiX,
+                ImDpiY             = meta.DpiY,
+                ImExifData         = JsonSerializer.Serialize(meta.ExifData),
+                ImCameraMake       = meta.CameraMake,
+                ImCameraModel      = meta.CameraModel,
+                ImLensModel        = meta.LensModel,
+                ImFocalLength      = meta.FocalLength,
+                ImAperture         = meta.Aperture,
+                ImShutterSpeed     = meta.ShutterSpeed,
+                ImIso              = meta.Iso,
+                ImFlash            = meta.Flash,
+                ImExposureMode     = meta.ExposureMode,
+                ImWhiteBalance     = meta.WhiteBalance,
+                ImDateTaken        = meta.DateTaken,
+                ImOrientation      = meta.Orientation,
+                ImCompressionQuality = meta.CompressionQuality,
+                ImUploadBatch      = uploadBatch
             };
 
-        private ImageLinked BuildLinkedImage(int masterId, string fileName, string webPath, long fileSize, dynamic meta, string qualityLevel, string qualityType, string uploadBatch) =>
+        private ImageLinked BuildLinkedImage(int masterId, string fileName, string webPath, long fileSize, dynamic meta, string qualityLevel, string qualityType, string uploadBatch, string groupCode) =>
             new()
             {
-                IlMasterId         = masterId, IlFileName = fileName, IlFilePath = webPath, IlFileSize = fileSize,
-                IlWidth            = meta.Width, IlHeight = meta.Height, IlFormat = meta.Format, IlColorSpace = meta.ColorSpace,
-                IlBitDepth         = meta.BitDepth, IlDpiX = meta.DpiX, IlDpiY = meta.DpiY,
-                IlExifData         = JsonSerializer.Serialize(meta.ExifData), IlCameraMake = meta.CameraMake, IlCameraModel = meta.CameraModel,
-                IlLensModel        = meta.LensModel, IlFocalLength = meta.FocalLength, IlAperture = meta.Aperture,
-                IlShutterSpeed     = meta.ShutterSpeed, IlIso = meta.Iso, IlFlash = meta.Flash,
-                IlExposureMode     = meta.ExposureMode, IlWhiteBalance = meta.WhiteBalance, IlDateTaken = meta.DateTaken,
-                IlOrientation      = meta.Orientation, IlCompressionQuality = meta.CompressionQuality,
-                IlQualityLevel     = qualityLevel, IlQualityType = qualityType, IlUploadBatch = uploadBatch
+                IlMasterId         = masterId,
+                IlGroupCode        = groupCode,  // NEW: Add group code
+                IlFileName         = fileName,
+                IlFilePath         = webPath,
+                IlFileSize         = fileSize,
+                IlWidth            = meta.Width,
+                IlHeight           = meta.Height,
+                IlFormat           = meta.Format,
+                IlColorSpace       = meta.ColorSpace,
+                IlBitDepth         = meta.BitDepth,
+                IlDpiX             = meta.DpiX,
+                IlDpiY             = meta.DpiY,
+                IlExifData         = JsonSerializer.Serialize(meta.ExifData),
+                IlCameraMake       = meta.CameraMake,
+                IlCameraModel      = meta.CameraModel,
+                IlLensModel        = meta.LensModel,
+                IlFocalLength      = meta.FocalLength,
+                IlAperture         = meta.Aperture,
+                IlShutterSpeed     = meta.ShutterSpeed,
+                IlIso              = meta.Iso,
+                IlFlash            = meta.Flash,
+                IlExposureMode     = meta.ExposureMode,
+                IlWhiteBalance     = meta.WhiteBalance,
+                IlDateTaken        = meta.DateTaken,
+                IlOrientation      = meta.Orientation,
+                IlCompressionQuality = meta.CompressionQuality,
+                IlQualityLevel     = qualityLevel,
+                IlQualityType      = qualityType,
+                IlUploadBatch      = uploadBatch
             };
 
         private string GetBaseName(string fileName)
@@ -1054,21 +1369,397 @@ namespace IQA_SOURCE.Controllers
             return style;
         }
 
+        // Image Groups
         [HttpGet]
-        public async Task<IActionResult> GetAllImageRatings(string? assessmentCode)
+        public IActionResult ImageGroups()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllImageGroups()
+        {
+            try
+            {
+                // Try to get from session first, fallback to "Anonymous" if not available
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                
+                _logger.LogInformation($"GetAllImageGroups called with userId: {userId}");
+                
+                var result = await _imageGroupRepository.GetAllImageGroups(userId);
+                
+                _logger.LogInformation($"GetAllImageGroups returned {result.Data?.Count ?? 0} groups. Success: {result.OutputCode == 1}");
+                
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data ?? new List<ImageGroup>()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading image groups");
+                return Json(new 
+                { 
+                    success = false, 
+                    message = $"Error: {ex.Message}", 
+                    data = new List<ImageGroup>() 
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveImageGroup([FromBody] ImageGroup model)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                var result = await _imageGroupRepository.SaveImageGroup(model, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetActiveImageGroup([FromBody] string groupCode)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                var result = await _imageGroupRepository.SetActiveGroup(groupCode, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteImageGroup([FromBody] string groupCode)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                var result = await _imageGroupRepository.DeleteImageGroup(groupCode, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkDeleteImagesByGroup([FromBody] BulkDeleteByGroupRequest request)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
+                var result = await _imageGroupRepository.BulkDeleteImagesByGroup(request.GroupCode, request.AssessmentType, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // Bulk Operations
+        [HttpGet]
+        public IActionResult BulkOperations()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAssessmentCodesWithData()
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            var (outputCode, outputMsg, data) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
-            return Json(new { success = outputCode == 1, message = outputMsg, data });
+            var (outputCode, outputMsg, data) = await _bulkOperationsRepository.GetAssessmentCodesWithData(userId);
+            return Json(new
+            {
+                success = outputCode == 1,
+                message = outputMsg,
+                data = data
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkDeleteAssessmentData([FromBody] BulkDeleteAssessmentRequest request)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(request.AssessmentCode))
+                return Json(new { success = false, message = "Assessment code is required" });
+
+            try
+            {
+                var result = await _bulkOperationsRepository.BulkDeleteAssessmentData(request, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAssessmentDataSummary(string assessmentCode)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                // Get counts for each data type
+                var questionAnswersQuery = @"
+                    SELECT COUNT(*) as count FROM user_responses WHERE ur_assessment_code = @assessmentCode";
+                
+                var imageRatingsQuery = @"
+                    SELECT COUNT(*) as count FROM image_quality_ratings WHERE iqr_assessment_code = @assessmentCode";
+                
+                var speedTestQuery = @"
+                    SELECT COUNT(*) as count FROM speed_test_logs WHERE stl_assessment_code = @assessmentCode";
+
+                var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
+
+                var qaResult = await Task.Run(() => _dbHelper.ExecuteQuery(questionAnswersQuery, parameters));
+                var irResult = await Task.Run(() => _dbHelper.ExecuteQuery(imageRatingsQuery, parameters));
+                var stResult = await Task.Run(() => _dbHelper.ExecuteQuery(speedTestQuery, parameters));
+
+                var summary = new
+                {
+                    assessmentCode = assessmentCode,
+                    questionAnswers = qaResult.Rows.Count > 0 ? Convert.ToInt32(qaResult.Rows[0]["count"]) : 0,
+                    imageRatings = irResult.Rows.Count > 0 ? Convert.ToInt32(irResult.Rows[0]["count"]) : 0,
+                    speedTestLogs = stResult.Rows.Count > 0 ? Convert.ToInt32(stResult.Rows[0]["count"]) : 0
+                };
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Summary retrieved successfully",
+                    data = summary
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ========== ADMIN USER MANAGEMENT ==========
+        [HttpGet]
+        public IActionResult AdminUsers()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllAdminUsers()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminUserRepository.GetAllAdminUsers(userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveAdminUser([FromBody] AdminUser user)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                AdminUserResponse result;
+                if (!string.IsNullOrEmpty(user.AuId))
+                {
+                    result = await _adminUserRepository.UpdateAdminUser(user, userId);
+                }
+                else
+                {
+                    result = await _adminUserRepository.InsertAdminUser(user, userId);
+                }
+
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAdminUser([FromBody] string auId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminUserRepository.DeleteAdminUser(auId, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+        }
+
+        // ========== ADMIN MENU MANAGEMENT ==========
+        [HttpGet]
+        public IActionResult AdminMenus()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllAdminMenus()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminMenuRepository.GetAllAdminMenus(userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveAdminMenu([FromBody] AdminMenu menu)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                AdminMenuResponse result;
+                if (menu.AmId > 0)
+                {
+                    result = await _adminMenuRepository.UpdateAdminMenu(menu, userId);
+                }
+                else
+                {
+                    result = await _adminMenuRepository.InsertAdminMenu(menu, userId);
+                }
+
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAdminMenu([FromBody] int amId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminMenuRepository.DeleteAdminMenu(amId, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMenuRoleAccess(int menuId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminMenuRepository.GetMenuRoleAccess(menuId, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveMenuRoleAccess([FromBody] List<MenuRoleAccess> roleAccess)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _adminMenuRepository.SaveMenuRoleAccess(roleAccess, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+        }
+
+        // Get menus for current user based on their role
+        [HttpGet]
+        public async Task<IActionResult> GetUserMenus()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            var userRole = HttpContext.Session.GetString("UserRole") ?? "Operator";
+            
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized", data = new List<object>() });
+
+            try
+            {
+                var menus = await _adminMenuRepository.GetMenusByUserRole(userRole);
+                return Json(new 
+                { 
+                    success = true, 
+                    message = $"Retrieved {menus.Count} menus for role {userRole}", 
+                    data = menus 
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}", data = new List<object>() });
+            }
         }
     }
 
     public class FolderProcessRequest
     {
         public string FolderPath   { get; set; }
+        public string AssessmentType { get; set; }
+    }
+
+    public class BulkDeleteByGroupRequest
+    {
+        public string GroupCode      { get; set; }
         public string AssessmentType { get; set; }
     }
 }

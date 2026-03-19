@@ -1,5 +1,5 @@
 @{
-    Layout = "_AdminLayout";
+    Layout = "_AdminLayoutDynamic";
     ViewData["Title"] = "Dashboard";
 }
 
@@ -32,18 +32,114 @@
             float: right;
         }
 
-        .assessment-summary-card {
+        /* Assessment Type Section */
+        .assessment-type-section {
             background: white;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            margin-bottom: 25px;
+            border-top: 4px solid #667eea;
         }
 
-        .assessment-summary-card h5 {
+        .assessment-type-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .assessment-type-header h4 {
             color: #667eea;
-            margin-bottom: 15px;
+            font-weight: 600;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .assessment-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Image Group / Assessment Image Set Section */
+        .image-group-container {
+            margin-left: 20px;
+        }
+
+        .image-group-card {
+            background: #f8f9fa;
+            border-left: 4px solid #40c997;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .image-group-card:hover {
+            background: #f0f8ff;
+            border-left-color: #667eea;
+        }
+
+        .image-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .image-group-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .image-group-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #667eea;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            background: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
         }
 
         .info-row {
@@ -71,6 +167,20 @@
             border-radius: 15px;
             font-size: 0.85rem;
         }
+
+        .expand-collapse-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+            transition: transform 0.3s;
+        }
+
+        .expand-collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
     </style>
 }
 
@@ -81,7 +191,7 @@
     </button>
 </div>
 
-<!-- Statistics Cards -->
+<!-- Top Statistics Cards -->
 <div class="row" id="statsCards">
     <div class="col-md-3">
         <div class="stats-card">
@@ -117,17 +227,17 @@
     </div>
 </div>
 
-<!-- Assessment-wise Image Summary -->
+<!-- Assessment Type-wise Summary with Image Groups -->
 <div class="row mt-4">
     <div class="col-12">
         <div class="stats-card">
             <h4 class="mb-4"><i class="fas fa-chart-pie"></i> Assessment Type-wise Image Summary</h4>
             <div id="assessmentSummaryContainer">
-                <div class="text-center py-5">
+                <div class="loading-spinner">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-3">Loading assessment summary...</p>
+                    <p class="mt-3 ms-3">Loading assessment summary...</p>
                 </div>
             </div>
         </div>
@@ -136,9 +246,19 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            loadDashboardStats();
-        });
+        // Ensure jQuery is loaded before executing
+        function initDashboard() {
+            if (typeof $ === 'undefined') {
+                setTimeout(initDashboard, 100);
+                return;
+            }
+            
+            $(document).ready(function() {
+                loadDashboardStats();
+            });
+        }
+
+        initDashboard();
 
         function loadDashboardStats() {
             showLoader();
@@ -162,78 +282,122 @@
         }
 
         function updateDashboard(data) {
-            // Update stats cards
+            // Update top stats cards
             $('#totalAssessmentTypes').text(data.totalAssessmentTypes || 0);
             $('#totalImages').text(data.totalImages || 0);
             $('#totalLinkedImages').text(data.totalLinkedImages || 0);
             $('#totalQuestions').text(data.totalQuestions || 0);
 
-            // Update assessment summaries
+            // Build Assessment Type-wise summary with Image Groups
             const summaryContainer = $('#assessmentSummaryContainer');
             summaryContainer.empty();
 
             if (data.assessmentImageSummaries && data.assessmentImageSummaries.length > 0) {
+                // Group by assessment type
+                const groupedByAssessment = {};
                 data.assessmentImageSummaries.forEach(summary => {
-                    const lastUploadDate = summary.lastUploadDate 
-                        ? new Date(summary.lastUploadDate).toLocaleDateString() 
-                        : 'N/A';
-                    
-                    const storageMB = (summary.totalStorageUsed / (1024 * 1024)).toFixed(2);
-                    const avgSizeKB = (summary.averageFileSize / 1024).toFixed(2);
+                    if (!groupedByAssessment[summary.assessmentType]) {
+                        groupedByAssessment[summary.assessmentType] = {
+                            assessmentName: summary.assessmentName,
+                            assessmentType: summary.assessmentType,
+                            groups: []
+                        };
+                    }
+                    groupedByAssessment[summary.assessmentType].groups.push(summary);
+                });
 
-                    const card = `
-                        <div class="assessment-summary-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5><i class="fas fa-folder-open"></i> ${escapeHtml(summary.assessmentName)}</h5>
-                                <button class="btn btn-sm btn-primary" onclick="viewAssessmentImages('${escapeHtml(summary.assessmentType)}')">
-                                    <i class="fas fa-eye"></i> View Images
+                // Render assessment types with their image groups
+                Object.values(groupedByAssessment).forEach((assessment, idx) => {
+                    const assessmentTypeSection = `
+                        <div class="assessment-type-section">
+                            <div class="assessment-type-header">
+                                <h4>
+                                    <i class="fas fa-folder"></i> ${escapeHtml(assessment.assessmentName)}
+                                </h4>
+                                <button class="btn btn-sm btn-primary" onclick="viewAssessmentImages('${escapeHtml(assessment.assessmentType)}')">
+                                    <i class="fas fa-eye"></i> View All Images
                                 </button>
                             </div>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-image"></i> Master Images:</span>
-                                        <span class="info-value"><span class="badge bg-primary badge-custom">${summary.totalMasterImages}</span></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-link"></i> Linked Images:</span>
-                                        <span class="info-value"><span class="badge bg-info badge-custom">${summary.totalLinkedImages}</span></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-check-double"></i> Images with Links:</span>
-                                        <span class="info-value"><span class="badge bg-success badge-custom">${summary.imagesWithLinked}</span></span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-hdd"></i> Total Storage:</span>
-                                        <span class="info-value">${storageMB} MB</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-file"></i> Avg File Size:</span>
-                                        <span class="info-value">${avgSizeKB} KB</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-clock"></i> Last Upload:</span>
-                                        <span class="info-value">${lastUploadDate}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label"><i class="fas fa-user"></i> Uploaded By:</span>
-                                        <span class="info-value">${summary.lastUploadBy || 'N/A'}</span>
-                                    </div>
-                                </div>
+
+                            <div class="image-group-container">
+                                ${renderImageGroups(assessment.groups)}
                             </div>
                         </div>
                     `;
-                    summaryContainer.append(card);
+                    summaryContainer.append(assessmentTypeSection);
                 });
             } else {
                 summaryContainer.html(`
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> No image data available yet. Start by uploading images from the Images Master section.
+                    <div class="no-data-message">
+                        <i class="fas fa-info-circle fa-3x mb-3"></i>
+                        <p>No image data available yet. Start by uploading images from the Images Master section.</p>
                     </div>
                 `);
             }
+        }
+
+        function renderImageGroups(groups) {
+            if (!groups || groups.length === 0) {
+                return '<div class="no-data-message"><small>No image groups available</small></div>';
+            }
+
+            let html = '';
+            groups.forEach(group => {
+                const lastUploadDate = group.lastUploadDate 
+                    ? new Date(group.lastUploadDate).toLocaleDateString() 
+                    : 'N/A';
+                
+                const storageMB = (group.totalStorageUsed / (1024 * 1024)).toFixed(2);
+                const avgSizeKB = (group.averageFileSize / 1024).toFixed(2);
+
+                html += `
+                    <div class="image-group-card">
+                        <div class="image-group-header">
+                            <span class="image-group-name">
+                                <i class="fas fa-images"></i> ${escapeHtml(group.groupName || 'Ungrouped')}
+                            </span>
+                            <div class="image-group-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label"><i class="fas fa-image"></i> Masters:</span>
+                                    <span class="stat-value">${group.totalMasterImages}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label"><i class="fas fa-link"></i> Linked:</span>
+                                    <span class="stat-value">${group.totalLinkedImages}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label"><i class="fas fa-hdd"></i> Size:</span>
+                                    <span class="stat-value">${storageMB} MB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2" style="font-size: 0.9rem;">
+                            <div class="col-md-6">
+                                <div class="info-row">
+                                    <span class="info-label">Avg File Size:</span>
+                                    <span class="info-value">${avgSizeKB} KB</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">With Links:</span>
+                                    <span class="info-value"><span class="badge bg-success">${group.imagesWithLinked}</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-row">
+                                    <span class="info-label">Last Upload:</span>
+                                    <span class="info-value">${lastUploadDate}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Uploaded By:</span>
+                                    <span class="info-value">${escapeHtml(group.lastUploadBy || 'N/A')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            return html;
         }
 
         function refreshDashboard() {
