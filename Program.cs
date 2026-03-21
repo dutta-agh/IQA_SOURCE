@@ -66,6 +66,7 @@ builder.Services.AddScoped<IImageQualityRepository, ImageQualityRepository>();
 builder.Services.AddScoped<ISystemCheckParamRepository, SystemCheckParamRepository>();
 builder.Services.AddScoped<IImageGroupRepository, ImageGroupRepository>();
 builder.Services.AddScoped<IBulkOperationsRepository, BulkOperationsRepository>();
+builder.Services.AddScoped<IColorblindnessRepository, ColorblindnessRepository>();
 
 // Register services
 builder.Services.AddScoped<IImageMetadataService, ImageMetadataService>();
@@ -134,8 +135,8 @@ app.MapGet("/isalive", () =>
     };
 });
 
-// Assessment-specific routes FIRST (most specific routes first)
-app.MapControllerRoute(
+// ── Assessment-specific routes FIRST (most specific routes first) ──────────
+app.MapControllerRoute( 
     name: "assessmentGetIntroContent",
     pattern: "Assessment/GetIntroContent",
     defaults: new { controller = "Assessment", action = "GetIntroContent" });
@@ -224,40 +225,93 @@ app.MapControllerRoute(
     pattern: "Assessment/{assessmentType}",
     defaults: new { controller = "Assessment", action = "Index" });
 
-// Short URL format - Image Assessment
+// ── Add explicit download routes BEFORE short URL routes ────────────────────
+app.MapControllerRoute(
+    name: "adminDownloadColorblindnessResultsExcel",
+    pattern: "Admin/DownloadColorblindnessResultsExcel",
+    defaults: new { controller = "Admin", action = "DownloadColorblindnessResultsExcel" });
+
+app.MapControllerRoute(
+    name: "adminDownloadSpeedTestLogsExcel",
+    pattern: "Admin/DownloadSpeedTestLogsExcel",
+    defaults: new { controller = "Admin", action = "DownloadSpeedTestLogsExcel" });
+
+app.MapControllerRoute(
+    name: "adminDownloadQuestionAnswersExcel",
+    pattern: "Admin/DownloadQuestionAnswersExcel",
+    defaults: new { controller = "Admin", action = "DownloadQuestionAnswersExcel" });
+
+// Short URL format routes (MUST be after all specific routes)
 app.MapControllerRoute(
     name: "assessmentShortImageAssessment",
     pattern: "{assessmentType}/ImageAssessment",
     defaults: new { controller = "Assessment", action = "ImageAssessment", assessmentCode = "" },
-    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+    constraints: new { assessmentType = "^(?!Admin|Account|api|Download).*$" });
 
-// Short URL format - Sort Assessment
 app.MapControllerRoute(
     name: "assessmentShortSortAssessment",
     pattern: "{assessmentType}/SortAssessment",
     defaults: new { controller = "Assessment", action = "SortAssessment", assessmentCode = "" },
-    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+    constraints: new { assessmentType = "^(?!Admin|Account|api|Download).*$" });
 
-// Short URL format - SpeedTest
 app.MapControllerRoute(
     name: "assessmentShortSpeedTest",
     pattern: "{assessmentType}/SpeedTest",
     defaults: new { controller = "Assessment", action = "SpeedTest" },
-    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+    constraints: new { assessmentType = "^(?!Admin|Account|api|Download).*$" });
 
-// Short URL format - Questions
 app.MapControllerRoute(
     name: "assessmentShortQuestions",
     pattern: "{assessmentType}/Questions",
     defaults: new { controller = "Assessment", action = "Questions", assessmentCode = "" },
-    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+    constraints: new { assessmentType = "^(?!Admin|Account|api|Download).*$" });
 
-// Short URL format - Index (catch-all, must be last)
 app.MapControllerRoute(
     name: "assessmentShortIndex",
     pattern: "{assessmentType}",
     defaults: new { controller = "Assessment", action = "Index" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api|Download).*$" });
+
+app.MapControllerRoute(
+    name: "assessmentColorblindnessTest",
+    pattern: "Assessment/{assessmentType}/ColorblindnessTest",
+    defaults: new { controller = "Assessment", action = "ColorblindnessTest" });
+
+app.MapControllerRoute(
+    name: "assessmentColorblindnessTestShort",
+    pattern: "{assessmentType}/ColorblindnessTest",
+    defaults: new { controller = "Assessment", action = "ColorblindnessTest" },
     constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+// ── Colorblindness Test Images routes ──────────────────────────────────────
+app.MapControllerRoute(
+    name: "assessmentGetColorblindnessImagesForTestWithType",
+    pattern: "Assessment/{assessmentType}/GetColorblindnessImagesForTest",
+    defaults: new { controller = "Assessment", action = "GetColorblindnessImagesForTest" });
+
+app.MapControllerRoute(
+    name: "assessmentGetColorblindnessImagesForTestShort",
+    pattern: "{assessmentType}/GetColorblindnessImagesForTest",
+    defaults: new { controller = "Assessment", action = "GetColorblindnessImagesForTest" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+
+app.MapControllerRoute(
+    name: "assessmentGetColorblindnessImages",
+    pattern: "Assessment/GetColorblindnessImagesForTest",
+    defaults: new { controller = "Assessment", action = "GetColorblindnessImagesForTest" });
+
+// ── Colorblindness Submit routes ──────────────────────────────────────────
+app.MapControllerRoute(
+    name: "assessmentSubmitColorblindnessResponses",
+    pattern: "Assessment/SubmitColorblindnessResponses",
+    defaults: new { controller = "Assessment", action = "SubmitColorblindnessResponses" });
+
+app.MapControllerRoute(
+    name: "assessmentSubmitColorblindnessResponsesShort",
+    pattern: "{assessmentType}/SubmitColorblindnessResponses",
+    defaults: new { controller = "Assessment", action = "SubmitColorblindnessResponses" },
+    constraints: new { assessmentType = "^(?!Admin|Account|api).*$" });
+// ──────────────────────────────────────────────────────────────────────────
 
 // Admin routes
 app.MapControllerRoute(

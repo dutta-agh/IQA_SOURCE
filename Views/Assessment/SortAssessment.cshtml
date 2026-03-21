@@ -2,448 +2,512 @@
 @{
     ViewData["Title"] = $"{Model.AssessmentName} - Sort Assessment";
     Layout = "_AssessmentLayout";
-    var stepLabels = new[] { "Bad", "Poor", "Fair", "Good", "Excellent" };
-    
-    // Filter: Raw image for reference, non-raw images for rating
+
     var rawImage = Model.AllImages.FirstOrDefault(img => img.IsRawImage);
     var ratableImages = Model.AllImages.Where(img => !img.IsRawImage).ToList();
 }
 
 @section Styles {
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         html, body {
             height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
         .sort-container {
             display: flex;
             flex-direction: column;
-            margin: 0 2%;
-            padding: 6px 0 0;
-            overflow: hidden;
-            box-sizing: border-box;
-            gap: 6px;
-            height: calc(100vh - 130px);
+            height: 100vh;
+            width: 100vw;
+            gap: 0;
+            background: #f8fafc;
         }
 
-        /* ── Main content wrapper (ref + grid side-by-side) ──────────── */
-        .content-wrapper {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            min-height: 0;
-            overflow: auto;
-            justify-content: center;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        /* ── Reference Image Card (Left Side) ──────────────────────── */
-        .reference-image-section {
+        /* ── Header (Enhanced) ──────────────────────────────────── */
+        .header {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
             flex-shrink: 0;
-            width: 380px;
-            height: fit-content;
-            display: flex;
-            flex-direction: column;
         }
 
-        .reference-header {
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            max-width: 100%;
+        }
+
+        .header-left {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 16px;
+            flex: 1;
         }
 
-        .reference-header-icon {
-            color: #667eea;
-            font-size: 1.2rem;
+        .header-icon {
+            color: #4f46e5;
+            font-size: 1.25rem;
+            flex-shrink: 0;
         }
 
-        .reference-header-title {
-            font-size: 1rem;
+        .header-title {
+            font-size: 1.05rem;
             font-weight: 700;
-            color: #2d3748;
+            color: #0f172a;
+            margin: 0;
+            letter-spacing: -0.3px;
         }
 
-        .reference-header-subtitle {
-            font-size: 0.85rem;
-            color: #718096;
-            margin-left: auto;
+        .header-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #eef2ff 0%, #f0f9ff 100%);
+            color: #3730a3;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid #c7d2fe;
+            flex-shrink: 0;
         }
+
+        .progress-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #4f46e5;
+            border-radius: 50%;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* ── Main content area ────────────────────────────────────── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+        }
+
+        /* ── Corner positions ──────────────────────────────────────── */
+        .image-card.top-left {
+            grid-column: 1;
+            grid-row: 1;
+            align-self: start;
+            justify-self: start;
+        }
+
+        .image-card.top-right {
+            grid-column: 3;
+            grid-row: 1;
+            align-self: start;
+            justify-self: end;
+        }
+
+        .image-card.bottom-left {
+            grid-column: 1;
+            grid-row: 3;
+            align-self: end;
+            justify-self: start;
+        }
+
+        .image-card.bottom-right {
+            grid-column: 3;
+            grid-row: 3;
+            align-self: end;
+            justify-self: end;
+        }
+
+        /* ── Center reference ──────────────────────────────────────── */
+        .reference-section {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            height: 100%;
+        }
+
+        .reference-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1.5px solid #e2e8f0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+            .reference-card:hover {
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                border-color: #cbd5e1;
+                transform: translateY(-3px);
+            }
+
+        .reference-header {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+            .reference-header i {
+                font-size: 1rem;
+            }
 
         .reference-image-container {
+            width: 220px;
+            height: 220px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            overflow: hidden;
             display: flex;
-            justify-content: center;
             align-items: center;
-            background: #f7fafc;
-            border-radius: 8px;
-            padding: 16px;
+            justify-content: center;
+            border-top: 1px solid #e5e7eb;
+            padding: 8px;
         }
 
-        .reference-image-container img {
-            object-fit: contain;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        /* ── Reference Rating Section ──────────────────────────────── */
-        .reference-rating-section {
-            width: 100%;
-            padding: 7px 6px 6px;
-            background: #f0f4f8;
-            border-radius: 6px;
-            border: 2px solid #cbd5e0;
-            margin-top: 7px;
-        }
-
-        .reference-rating-header {
-            display: flex;
-            flex-direction: row;
-            gap: 4px;
-            margin-bottom: 5px;
-            justify-content: space-between;
-        }
-
-        .reference-rating-title {
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
-
-        .reference-reset-btn {
-            background: #fc8181;
-            color: white;
-            border: none;
-            padding: 2px 8px;
-            font-size: 0.62rem;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s;
-            align-self: flex-start;
-        }
-
-            .reference-reset-btn:hover {
-                background: #f56565;
+            .reference-image-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 8px;
             }
 
-        .reference-rating-steps {
-            display: flex;
-            justify-content: center;
-            gap: 4px;
-        }
-
-        .step-wrap {
+        /* ── Comparison cards (Modern) ──────────────────────────────────────────── */
+        .image-card {
+            background: white;
+            border-radius: 14px;
+            padding: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1.5px solid #e2e8f0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 2px;
+            gap: 6px;
+            width: 160px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
 
-        .step-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid #cbd5e0;
-            background: white;
-            color: #4a5568;
-            font-weight: 700;
-            font-size: 0.72rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-        }
-
-            .step-btn:hover:not(:disabled) {
-                border-color: #667eea;
-                color: #667eea;
-                background: #edf2f7;
+            .image-card:hover {
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                border-color: #cbd5e1;
+                transform: translateY(-3px);
             }
 
-            .step-btn:disabled {
-                opacity: 0.3;
-                cursor: not-allowed;
+            .image-card.rated {
+                border-color: #86efac;
+                background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+                box-shadow: 0 4px 16px rgba(34, 197, 94, 0.12);
             }
 
-            .step-btn.active[data-score="1"] {
-                background: #fc8181;
-                border-color: #fc8181;
-                color: white;
-            }
+                .image-card.rated::after {
+                    content: '✓';
+                    position: absolute;
+                    top: 4px;
+                    right: 4px;
+                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                    color: white;
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
+                }
 
-            .step-btn.active[data-score="2"] {
-                background: #f6ad55;
-                border-color: #f6ad55;
-                color: white;
-            }
-
-            .step-btn.active[data-score="3"] {
-                background: #ecc94b;
-                border-color: #ecc94b;
-                color: #2d3748;
-            }
-
-            .step-btn.active[data-score="4"] {
-                background: #68d391;
-                border-color: #68d391;
-                color: #2d3748;
-            }
-
-            .step-btn.active[data-score="5"] {
-                background: #48bb78;
-                border-color: #48bb78;
-                color: white;
-            }
-
-        .step-label {
-            font-size: 0.50rem;
+        .image-filename {
+            font-size: 0.6rem;
+            color: #64748b;
             font-weight: 600;
-            color: #718096;
-            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
+            letter-spacing: 0.2px;
         }
 
-        /* ── Images Grid (Right Side) ──────────────────────────────── */
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: auto auto;
-            gap: 16px;
-            flex: 1;
-            max-width: 600px;
-            max-height: 100%;
-            overflow: auto;
-            padding-right: 12px;
-        }
-
-        .images-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .images-grid::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-
-        .images-grid::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 4px;
-        }
-
-            .images-grid::-webkit-scrollbar-thumb:hover {
-                background: #a0aec0;
+            .image-filename i {
+                color: #94a3b8;
+                margin-right: 3px;
             }
 
-        /* ── Sort Image Card ───────────────────────────────────────── */
-        .sort-image-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-            .sort-image-card:hover {
-                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-                border-color: #cbd5e0;
-            }
-
-            .sort-image-card.rated {
-                border-color: #48bb78;
-                background: #f0fdf4;
-            }
-
-            .sort-image-card.needs-rating {
-                border-color: #fc8181;
-                background: #fef2f2;
-                animation: pulse-error 0.5s ease-in-out;
-            }
-
-        @@keyframes pulse-error {
-            0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-            50% { box-shadow: 0 4px 16px rgba(252, 129, 129, 0.3); }
-        }
-
-        .sort-image-card img {
+        .image-container {
             width: 100%;
-            height: 240px;
-            object-fit: cover;
+            height: auto;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
             border-radius: 8px;
-            background: #f7fafc;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
         }
+
+            .image-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
 
         .rating-section {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-        }
-
-        .rating-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 4px;
         }
 
         .rating-title {
-            font-size: 0.9rem;
+            font-size: 0.6rem;
             font-weight: 700;
-            color: #2d3748;
+            color: #1e293b;
+            text-align: center;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
         }
 
-        .reset-btn {
-            background: #fc8181;
-            color: white;
-            border: none;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s;
+        /* ── Rating buttons (Modern) ──────────────────────────────────────── */
+        .rating-buttons {
             display: flex;
-            align-items: center;
-            gap: 4px;
+            justify-content: center;
+            gap: 1px;
+            flex-wrap: wrap;
+            row-gap: 2px;
         }
 
-            .reset-btn:hover {
-                background: #f56565;
-            }
-
-        .rating-steps {
-            display: flex;
-            justify-content: space-around;
-            gap: 4px;
-        }
-
-        /* ── Fixed submit bar ───────────────────────────────────────── */
-        .submit-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.98), #f7fafc);
-            border-top: 2px solid #e2e8f0;
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
-            backdrop-filter: blur(10px);
-        }
-
-        .submit-left {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex: 1;
-        }
-
-        .submit-button {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            color: white;
-            border: none;
-            padding: 14px 48px;
-            font-size: 1.1rem;
+        .rating-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1.5px solid #d1d5db;
+            background: white;
+            color: #475569;
             font-weight: 700;
-            border-radius: 8px;
+            font-size: 0.55rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 16px rgba(72,187,120,0.35);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            min-width: 180px;
+            padding: 0;
+            position: relative;
             flex-shrink: 0;
         }
 
-            .submit-button:hover:not(:disabled) {
-                box-shadow: 0 8px 28px rgba(72,187,120,0.5);
-                transform: translateY(-2px) scale(1.02);
-                background: linear-gradient(135deg, #56d989 0%, #46b878 100%);
+            .rating-btn:hover:not(:disabled) {
+                border-color: #4f46e5;
+                background: #eef2ff;
+                transform: scale(1.1);
+                box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
             }
 
-            .submit-button:active:not(:disabled) {
-                transform: translateY(0) scale(0.99);
-                box-shadow: 0 2px 8px rgba(72,187,120,0.3);
-            }
-
-            .submit-button:disabled {
-                opacity: 0.55;
+            .rating-btn:disabled {
+                opacity: 0.3;
                 cursor: not-allowed;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                background: #f9fafb;
             }
 
-        .submit-button i {
-            font-size: 1.3rem;
+            /* Active states with semantic colors */
+            .rating-btn.active[data-score="-3"] {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                border-color: #dc2626;
+                color: white;
+                box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35);
+            }
+
+            .rating-btn.active[data-score="-2"] {
+                background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+                border-color: #ea580c;
+                color: white;
+                box-shadow: 0 3px 8px rgba(249, 115, 22, 0.35);
+            }
+
+            .rating-btn.active[data-score="-1"] {
+                background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+                border-color: #ca8a04;
+                color: white;
+                box-shadow: 0 3px 8px rgba(234, 179, 8, 0.35);
+            }
+
+            .rating-btn.active[data-score="0"] {
+                background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+                border-color: #4b5563;
+                color: white;
+                box-shadow: 0 3px 8px rgba(107, 114, 128, 0.35);
+            }
+
+            .rating-btn.active[data-score="1"] {
+                background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+                border-color: #65a30d;
+                color: white;
+                box-shadow: 0 3px 8px rgba(132, 204, 22, 0.35);
+            }
+
+            .rating-btn.active[data-score="2"] {
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                border-color: #16a34a;
+                color: white;
+                box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35);
+            }
+
+            .rating-btn.active[data-score="3"] {
+                background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+                border-color: #0891b2;
+                color: white;
+                box-shadow: 0 3px 8px rgba(6, 182, 212, 0.35);
+            }
+
+        .rating-label {
+            font-size: 0.5rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 1px;
+            letter-spacing: 0.1px;
+            line-height: 1.2;
         }
 
-        .submit-info {
-            font-size: 0.95rem;
-            color: #718096;
+        /* ── Footer (Enhanced) ────────────────────────────────────────────────── */
+        .footer {
+            background: white;
+            padding: 12px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
+            flex-shrink: 0;
+        }
+
+        .footer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .footer-status {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+            .footer-status.ready {
+                color: #059669;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+                .footer-status.ready::before {
+                    content: '✓';
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 16px;
+                    height: 16px;
+                    background: #059669;
+                    color: white;
+                    border-radius: 50%;
+                    font-size: 0.65rem;
+                    font-weight: 700;
+                }
+
+        .footer-subtext {
+            font-size: 0.7rem;
+            color: #64748b;
             font-weight: 500;
         }
 
-            .submit-info.ready {
-                color: #38a169;
-                font-weight: 700;
-                font-size: 1rem;
-            }
-
-            .submit-info.error {
-                color: #e53e3e;
-                font-weight: 700;
-                font-size: 1rem;
-            }
-
-        .validation-banner {
-            display: none;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
-            border: 2px solid #fc8181;
+        .submit-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 0.85rem;
+            font-weight: 700;
             border-radius: 8px;
-            padding: 10px 16px;
-            color: #742a2a;
-            font-weight: 600;
-            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
             align-items: center;
-            gap: 8px;
-            flex: 1;
+            gap: 7px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 0.2px;
         }
 
-            .validation-banner.show {
-                display: flex;
+            .submit-button:hover:not(:disabled) {
+                box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+                transform: translateY(-2px);
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
             }
 
-            .validation-banner i {
-                font-size: 1.1rem;
+            .submit-button:active:not(:disabled) {
+                transform: translateY(0);
             }
 
-        body {
-            padding-bottom: 80px;
-        }
+            .submit-button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            }
 
-        /* ── Fullscreen prompt ──────────────────────────────────────── */
+        /* ── Modals ────────────────────────────────────────────── */
         .fullscreen-prompt {
             display: none;
             position: fixed;
             inset: 0;
             z-index: 20000;
-            background: rgba(0,0,0,0.88);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
             justify-content: center;
             align-items: center;
         }
@@ -454,36 +518,36 @@
 
         .fullscreen-prompt-box {
             background: white;
-            border-radius: 14px;
-            padding: 40px 50px;
+            border-radius: 16px;
+            padding: 48px 56px;
             text-align: center;
-            max-width: 440px;
+            max-width: 480px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
         }
 
             .fullscreen-prompt-box .fs-icon {
-                font-size: 3rem;
-                color: #667eea;
-                margin-bottom: 14px;
+                font-size: 3.5rem;
+                color: #4f46e5;
+                margin-bottom: 16px;
             }
 
             .fullscreen-prompt-box h3 {
-                color: #2d3748;
-                font-size: 1.3rem;
+                color: #0f172a;
+                font-size: 1.5rem;
                 font-weight: 700;
-                margin-bottom: 8px;
+                margin-bottom: 12px;
             }
 
             .fullscreen-prompt-box p {
-                color: #718096;
-                font-size: 0.9rem;
-                margin-bottom: 22px;
+                color: #64748b;
+                font-size: 1rem;
+                margin-bottom: 28px;
                 line-height: 1.6;
             }
 
         .fs-enter-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             border: none;
             padding: 12px 36px;
@@ -491,41 +555,57 @@
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
             .fs-enter-btn:hover {
-                opacity: 0.9;
+                box-shadow: 0 12px 24px rgba(79, 70, 229, 0.4);
+                transform: translateY(-2px);
             }
 
         .fs-toast {
             position: fixed;
-            top: 12px;
-            right: 14px;
+            top: 16px;
+            right: 16px;
             z-index: 19000;
-            background: #2d3748;
+            background: #1e293b;
             color: white;
-            border-radius: 8px;
-            padding: 8px 14px;
-            font-size: 0.78rem;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
             font-weight: 600;
             display: none;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
             .fs-toast.show {
                 display: flex;
+                animation: slideIn 0.3s ease;
             }
 
-        /* ── Thank-you modal ────────────────────────────────────────── */
+        @@keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         .thankyou-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(4px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
@@ -533,99 +613,159 @@
 
             .thankyou-modal.show {
                 display: flex;
+                animation: fadeIn 0.4s ease;
             }
 
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
         .thankyou-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             border-radius: 20px;
             padding: 60px 80px;
             text-align: center;
             max-width: 600px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(102,126,234,0.5);
+            box-shadow: 0 25px 50px rgba(79, 70, 229, 0.3);
         }
 
         .thankyou-icon {
-            font-size: 5rem;
-            color: #48bb78;
-            margin-bottom: 20px;
+            font-size: 4.5rem;
+            color: #22c55e;
+            margin-bottom: 24px;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @@keyframes scaleIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .thankyou-content h2 {
             color: white;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin: 0 0 16px 0;
         }
 
         .thankyou-content p {
-            color: #e2e8f0;
-            font-size: 1.2rem;
+            color: #f0f9ff;
+            font-size: 1.1rem;
             line-height: 1.8;
-            margin-bottom: 30px;
+            margin: 0 0 32px 0;
         }
 
         .redirect-message {
-            color: #c7d2fe;
-            font-size: 1rem;
+            color: #dbeafe;
+            font-size: 0.95rem;
             font-weight: 600;
         }
 
         .redirect-timer {
             display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
             border-radius: 20px;
-            margin-left: 5px;
+            margin-left: 8px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        @@media (max-width: 1024px) {
-            .content-wrapper {
-                flex-direction: column;
-                padding: 12px;
-                align-items: center;
+        /* ── Responsive ────────────────────────────────────────────── */
+        @@media (max-width: 1500px) {
+            .assessment-grid {
+                gap: 10px;
+                max-width: 1000px;
             }
 
-            .reference-image-section {
-                width: 100%;
-                max-width: 400px;
-                margin: 0 auto;
+            .image-card {
+                width: 150px;
             }
 
-            .images-grid {
-                max-width: 100%;
-                grid-template-columns: repeat(2, 1fr);
+            .image-container {
+                height: auto;
+            }
+
+            .reference-image-container {
+                width: 200px;
+                height: 200px;
+            }
+
+            .rating-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 0.5rem;
+            }
+        }
+
+        @@media (max-width: 1200px) {
+            .assessment-grid {
+                gap: 8px;
+                max-width: 900px;
+            }
+
+            .image-card {
+                width: 140px;
+            }
+
+            .image-container {
+                height: 80px;
+            }
+
+            .reference-image-container {
+                width: 180px;
+                height: 180px;
+            }
+
+            .rating-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 0.5rem;
             }
         }
 
         @@media (max-width: 768px) {
-            .images-grid {
+            .assessment-grid {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                gap: 12px;
+                max-width: 100%;
+                aspect-ratio: auto;
+            }
+
+            .image-card {
+                grid-column: 1 !important;
+                justify-self: center;
+                width: 200px;
+            }
+
+            .reference-section {
+                grid-column: 1 !important;
+                grid-row: 3 !important;
+            }
+
+            .footer {
+                flex-direction: column;
                 gap: 12px;
             }
 
-            .sort-image-card img {
-                height: 200px;
-            }
-
-            .sort-container {
-                height: auto;
-                overflow: visible;
-            }
-
-            .fullscreen-prompt-box {
-                padding: 30px 20px;
-            }
-
-            .reference-image-section {
-                margin-bottom: 12px;
-                padding: 14px;
+            .submit-button {
                 width: 100%;
-            }
-
-            .content-wrapper {
-                gap: 12px;
-                padding: 12px;
+                justify-content: center;
             }
         }
     </style>
@@ -635,10 +775,10 @@
 <div class="fullscreen-prompt" id="fullscreenPrompt">
     <div class="fullscreen-prompt-box">
         <div class="fs-icon"><i class="fas fa-expand"></i></div>
-        <h3>Enter Full Screen</h3>
+        <h3>Enter Full Screen Mode</h3>
         <p>For the best assessment experience, this session will run in full-screen mode.</p>
         <button class="fs-enter-btn" onclick="enterFullscreenAndStart()">
-            <i class="fas fa-expand-arrows-alt"></i> Enter Full Screen &amp; Start
+            <i class="fas fa-expand-arrows-alt"></i> Enter Full Screen
         </button>
     </div>
 </div>
@@ -648,164 +788,149 @@
 </div>
 
 <div class="sort-container">
-    <div class="sort-header">
-        <div class="card">
-            <div class="card-body">
-                <span class="sort-hint">
-                    <i class="fas fa-info-circle"></i>
-                    Rate each image <strong>1–5</strong>. Each rating value can only be used <strong>once</strong> across all images.
-                    After rating all <strong>@ratableImages.Count</strong> images, click the <strong>Submit</strong> button below.
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content: Reference (Left) + Rating Grid (Right) -->
-    <div class="content-wrapper">
-        <!-- Reference Image Card (Left Side) -->
-        @if (rawImage != null)
-        {
-            <div class="reference-image-section">
-                <div class="reference-header">
-                    <div class="reference-header-icon">
-                        <i class="fas fa-image"></i>
-                    </div>
-                    <div class="reference-header-title">Reference Image</div>
-                    <div class="reference-header-subtitle">Use as baseline</div>
-                </div>
-                <div class="reference-image-container">
-                    <img src="@rawImage.ImagePath"
-                         alt="Reference Image"
-                         loading="eager">
-                </div>
-                <div class="reference-rating-section">
-                    <div class="reference-rating-header">
-                        <span class="reference-rating-title"><i class="fas fa-star"></i> Quality Rating</span>
-                        <button type="button"
-                                class="reference-reset-btn"
-                                onclick="resetRating(@rawImage.ImageId, @rawImage.IsRawImage.ToString().ToLower())">
-                            <i class="fas fa-undo"></i> Reset
-                        </button>
-                    </div>
-                    <div class="reference-rating-steps">
-                        @for (int s = 1; s <= 5; s++)
-                        {
-                            <div class="step-wrap">
-                                <button type="button"
-                                        class="step-btn"
-                                        id="btn-@rawImage.ImageId-@rawImage.IsRawImage.ToString().ToLower()-@s"
-                                        data-image-id="@rawImage.ImageId"
-                                        data-is-raw="@rawImage.IsRawImage.ToString().ToLower()"
-                                        data-score="@s"
-                                        onclick="setRating(@rawImage.ImageId, @rawImage.IsRawImage.ToString().ToLower(), @s)">
-                                    @s
-                                </button>
-                                <span class="step-label">@stepLabels[s - 1]</span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-
-        <!-- Rating Grid (Right Side) — 2x2 grid -->
-        <div class="images-grid" id="imagesGrid">
-            @foreach (var img in ratableImages)
+    <!-- Main Assessment Area -->
+    <div class="main-content">
+        <div class="assessment-grid">
+            <!-- Top-Left -->
+            @if (ratableImages.Count > 0)
             {
-                <div class="sort-image-card"
-                     id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()"
-                     data-image-id="@img.ImageId"
-                     data-is-raw="@img.IsRawImage.ToString().ToLower()">
-
-                    <img src="@img.ImagePath"
-                         alt="Image @img.ImageId"
-                         loading="eager">
-
+                var img = ratableImages[0];
+                <div class="image-card top-left" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                     <div class="rating-section">
-                        <div class="rating-header">
-                            <span class="rating-title"><i class="fas fa-star"></i> Rating</span>
-                            @* <span class="rating-title">@img.ImageLabel</span> *@
-                            <button type="button"
-                                    class="reset-btn"
-                                    onclick="resetRating(@img.ImageId, @img.IsRawImage.ToString().ToLower())">
-                                <i class="fas fa-undo"></i> Reset
-                            </button>
-                        </div>
-                        <div class="rating-steps">
-                            @for (int s = 1; s <= 5; s++)
+                        <div class="rating-title">Quality</div>
+                        <div class="rating-buttons">
+                            @for (int s = -3; s <= 3; s++)
                             {
-                                <div class="step-wrap">
-                                    <button type="button"
-                                            class="step-btn"
-                                            id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s"
-                                            data-image-id="@img.ImageId"
-                                            data-is-raw="@img.IsRawImage.ToString().ToLower()"
-                                            data-score="@s"
-                                            onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)">
-                                        @s
-                                    </button>
-                                    <span class="step-label">@stepLabels[s - 1]</span>
-                                </div>
+                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
                             }
                         </div>
+                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
+                    </div>
+                </div>
+            }
+
+            <!-- Top-Right -->
+            @if (ratableImages.Count > 1)
+            {
+                var img = ratableImages[1];
+                <div class="image-card top-right" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                    <div class="rating-section">
+                        <div class="rating-title">Quality</div>
+                        <div class="rating-buttons">
+                            @for (int s = -3; s <= 3; s++)
+                            {
+                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                            }
+                        </div>
+                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
+                    </div>
+                </div>
+            }
+
+            <!-- Center Reference -->
+            @if (rawImage != null)
+            {
+                <div class="reference-section">
+                    <div class="reference-card">
+                        <div class="reference-header">
+                            <i class="fas fa-star"></i> Reference
+                        </div>
+                        <div class="reference-image-container">
+                            <img src="@rawImage.ImagePath" alt="Reference Image" loading="eager">
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Bottom-Left -->
+            @if (ratableImages.Count > 2)
+            {
+                var img = ratableImages[2];
+                <div class="image-card bottom-left" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                    <div class="rating-section">
+                        <div class="rating-title">Quality</div>
+                        <div class="rating-buttons">
+                            @for (int s = -3; s <= 3; s++)
+                            {
+                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                            }
+                        </div>
+                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
+                    </div>
+                </div>
+            }
+
+            <!-- Bottom-Right -->
+            @if (ratableImages.Count > 3)
+            {
+                var img = ratableImages[3];
+                <div class="image-card bottom-right" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                    <div class="rating-section">
+                        <div class="rating-title">Quality</div>
+                        <div class="rating-buttons">
+                            @for (int s = -3; s <= 3; s++)
+                            {
+                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                            }
+                        </div>
+                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
                     </div>
                 </div>
             }
         </div>
     </div>
-</div>
 
-<!-- Submit bar -->
-<div class="submit-bar">
-    <div class="submit-left">
-        <div class="validation-banner" id="validationBanner">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="validationMsg"></span>
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-info">
+            <div class="footer-status" id="footerStatus">Rate all @ratableImages.Count images to submit</div>
+            <div class="footer-subtext" id="footerSubtext">0 of @ratableImages.Count rated – @ratableImages.Count remaining</div>
         </div>
-        <div class="submit-info" id="submitInfo">Rate all @ratableImages.Count images to submit.</div>
+        <button type="button" class="submit-button" id="submitButton" onclick="submitAll()" disabled>
+            <i class="fas fa-check"></i> Submit Ratings
+        </button>
     </div>
-    <button type="button" class="submit-button" id="submitButton" onclick="submitAll()">
-        <i class="fas fa-check-circle"></i> Submit Ratings
-    </button>
 </div>
 
-<!-- Thank-you modal -->
+<!-- Thank-you Modal -->
 <div class="thankyou-modal" id="thankyouModal">
     <div class="thankyou-content">
         <div class="thankyou-icon"><i class="fas fa-check-circle"></i></div>
         <h2>Thank You!</h2>
-        <p>Your ratings have been recorded. We appreciate your valuable input.</p>
+        <p>Your ratings have been recorded successfully.</p>
         <div class="redirect-message">
-            Closing in <span class="redirect-timer" id="redirectTimer">5</span> seconds...
+            Closing in <span class="redirect-timer" id="redirectTimer">5</span>s
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        const sessionId      = '@Model.SessionId';
+        const sessionId = '@Model.SessionId';
         const assessmentCode = '@Model.AssessmentCode';
-        const rawImageSetId  = @Model.RawImage.RisId;
-        const totalImages    = @ratableImages.Count;
-        const FS_KEY         = 'iqa_fs_granted';
+        const rawImageSetId = @Model.RawImage.RisId;
+        const totalImages = @ratableImages.Count;
+        const FS_KEY = 'iqa_fs_granted';
 
-        // Map: "imageId|isRaw" → chosen rating (null = unrated)
         const ratings = new Map();
-
-        // Set of currently "taken" rating values (1–5)
         const takenRatings = new Set();
-
         let clientIpAddress = '';
 
         document.addEventListener('DOMContentLoaded', function () {
             fetch('https://api.ipify.org?format=json')
                 .then(r => r.json())
                 .then(d => { clientIpAddress = d.ip || ''; })
-                .catch(() => { clientIpAddress = ''; });
+                .catch(() => {});
 
-            // Initialise rating state for reference image and all ratable images
-            const allCards = document.querySelectorAll('[data-image-id][data-is-raw]');
-            allCards.forEach(card => {
+            document.querySelectorAll('[data-image-id][data-is-raw]').forEach(card => {
                 const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
                 ratings.set(key, null);
             });
@@ -818,12 +943,10 @@
             return `${imageId}|${isRaw}`;
         }
 
-        // ── Rating logic ──────────────────────────────────────────────
         function setRating(imageId, isRaw, score) {
-            const key  = makeKey(imageId, isRaw);
+            const key = makeKey(imageId, isRaw);
             const prev = ratings.get(key);
 
-            // If the button clicked is already active → deselect (toggle off)
             if (prev === score) {
                 ratings.set(key, null);
                 takenRatings.delete(score);
@@ -834,15 +957,11 @@
                 return;
             }
 
-            // Release the previously held rating for this card
-            if (prev !== null) {
-                takenRatings.delete(prev);
-            }
+            if (prev !== null) takenRatings.delete(prev);
 
             ratings.set(key, score);
             takenRatings.add(score);
 
-            // Highlight chosen button on this card
             clearCardButtons(imageId, isRaw);
             const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
             if (btn) btn.classList.add('active');
@@ -850,26 +969,10 @@
             updateCardState(imageId, isRaw);
             refreshAllDisabledStates();
             updateSubmitInfo();
-
-            // Hide validation banner once user acts
-            document.getElementById('validationBanner').classList.remove('show');
-        }
-
-        function resetRating(imageId, isRaw) {
-            const key  = makeKey(imageId, isRaw);
-            const prev = ratings.get(key);
-            if (prev !== null) {
-                takenRatings.delete(prev);
-                ratings.set(key, null);
-                clearCardButtons(imageId, isRaw);
-                updateCardState(imageId, isRaw);
-                refreshAllDisabledStates();
-                updateSubmitInfo();
-            }
         }
 
         function clearCardButtons(imageId, isRaw) {
-            for (let s = 1; s <= 5; s++) {
+            for (let s = -3; s <= 3; s++) {
                 const btn = document.getElementById(`btn-${imageId}-${isRaw}-${s}`);
                 if (btn) btn.classList.remove('active');
             }
@@ -877,146 +980,90 @@
 
         function updateCardState(imageId, isRaw) {
             const card = document.getElementById(`card-${imageId}-${isRaw}`);
-            if (!card) return;
-            const key   = makeKey(imageId, isRaw);
-            const rated = ratings.get(key) !== null;
-            card.classList.toggle('rated',        rated);
-            card.classList.toggle('needs-rating', false);
+            if (card) card.classList.toggle('rated', ratings.get(makeKey(imageId, isRaw)) !== null);
         }
 
-        /// Disable rating buttons whose value is already taken by another card (including reference image).
         function refreshAllDisabledStates() {
-            // Get all rating buttons: from reference image and all rating cards
-            const allButtons = document.querySelectorAll('button[data-image-id][data-is-raw][data-score]');
-
-            allButtons.forEach(btn => {
-                const imageId = btn.dataset.imageId;
-                const isRaw = btn.dataset.isRaw;
+            document.querySelectorAll('button[data-image-id][data-is-raw][data-score]').forEach(btn => {
+                const key = makeKey(btn.dataset.imageId, btn.dataset.isRaw);
                 const score = parseInt(btn.dataset.score);
-                const key = makeKey(imageId, isRaw);
-                const myRating = ratings.get(key);
-
-                // Disable if this score is taken by a DIFFERENT image
-                btn.disabled = takenRatings.has(score) && myRating !== score;
+                btn.disabled = takenRatings.has(score) && ratings.get(key) !== score;
             });
         }
 
         function updateSubmitInfo() {
-            const ratedCount   = [...ratings.values()].filter(v => v !== null).length;
-            const totalToRate  = totalImages + 1; // Include reference image
-            const remaining    = totalToRate - ratedCount;
-            const submitInfo   = document.getElementById('submitInfo');
+            const ratedCount = [...ratings.values()].filter(v => v !== null).length;
+            const remaining = totalImages - ratedCount;
+
+            document.getElementById('footerSubtext').textContent = `${ratedCount} of ${totalImages} rated – ${remaining} remaining`;
+
+            const footerStatus = document.getElementById('footerStatus');
             const submitButton = document.getElementById('submitButton');
 
             if (remaining === 0) {
-                submitInfo.textContent = `All ${totalToRate} images rated — ready to submit!`;
-                submitInfo.className   = 'submit-info ready';
-                submitButton.disabled  = false;
+                footerStatus.textContent = 'Ready to submit!';
+                footerStatus.className = 'footer-status ready';
+                submitButton.disabled = false;
             } else {
-                submitInfo.textContent = `${ratedCount} of ${totalToRate} rated — ${remaining} remaining.`;
-                submitInfo.className   = 'submit-info';
-                submitButton.disabled  = true;
+                footerStatus.textContent = `Rate all ${totalImages} images to submit`;
+                footerStatus.className = 'footer-status';
+                submitButton.disabled = true;
             }
         }
 
-        // ── Submit ────────────────────────────────────────────────────
         async function submitAll() {
-            // Final validation
-            const unrated = [];
-            ratings.forEach((val, key) => { if (val === null) unrated.push(key); });
-
-            if (unrated.length > 0) {
-                document.querySelectorAll('.sort-image-card').forEach(card => {
-                    const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
-                    if (ratings.get(key) === null) card.classList.add('needs-rating');
-                });
-                const banner = document.getElementById('validationBanner');
-                document.getElementById('validationMsg').textContent =
-                    `Please rate all ${totalImages} images before submitting.`;
-                banner.classList.add('show');
-                return;
-            }
+            if ([...ratings.values()].some(v => v === null)) return;
 
             const submitButton = document.getElementById('submitButton');
-            const submitInfo   = document.getElementById('submitInfo');
-            submitButton.disabled  = true;
+            submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-            submitInfo.textContent = 'Saving your ratings...';
-            submitInfo.className   = 'submit-info';
 
-            // Build payload
             const ratingList = [];
             ratings.forEach((score, key) => {
                 const [imageId, isRawStr] = key.split('|');
                 ratingList.push({
-                    imageId:    parseInt(imageId),
+                    imageId: parseInt(imageId),
                     isRawImage: isRawStr === 'true',
-                    rating:     score
+                    rating: score
                 });
             });
 
-            const payload = {
-                sessionId:      sessionId,
-                assessmentCode: assessmentCode,
-                rawImageSetId:  rawImageSetId,
-                ratings:        ratingList,
-                ipAddress:      clientIpAddress
-            };
-
             try {
                 const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
-                    method:  'POST',
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify(payload)
+                    body: JSON.stringify({
+                        sessionId, assessmentCode, rawImageSetId,
+                        ratings: ratingList,
+                        ipAddress: clientIpAddress
+                    })
                 });
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
                 const data = await response.json();
-
-                if (!data.success) {
-                    alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
-                    submitButton.disabled  = false;
-                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
-                    submitInfo.textContent = 'Submission failed. Please try again.';
-                    submitInfo.className   = 'submit-info error';
-                    return;
-                }
-
-                if (data.data.isCompleted) {
+                if (data.success) {
                     showThankYouModal();
                 } else {
-                    navigateTo(buildApiUrl('/Assessment/SortAssessment?assessmentCode=' + assessmentCode));
+                    alert('Error: ' + data.message);
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
                 }
             } catch (error) {
-                console.error('Submit error:', error);
-                alert('❌ Network Error\n\nPlease check your connection and try again.');
-                submitButton.disabled  = false;
-                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
-                submitInfo.textContent = 'Network error. Please try again.';
-                submitInfo.className   = 'submit-info error';
+                alert('Network error. Please try again.');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
             }
         }
 
-        // ── Thank-you modal ───────────────────────────────────────────
         function showThankYouModal() {
-            window.disableLeavePrompt();
-
-            if (document.exitFullscreen && document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-            } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
-                document.webkitExitFullscreen();
-            }
-
+            window.disableLeavePrompt?.();
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
             sessionStorage.removeItem(FS_KEY);
 
-            const modal   = document.getElementById('thankyouModal');
+            const modal = document.getElementById('thankyouModal');
             const timerEl = document.getElementById('redirectTimer');
             modal.classList.add('show');
 
             let countdown = 5;
-            timerEl.textContent = countdown;
-
             const interval = setInterval(() => {
                 countdown--;
                 timerEl.textContent = countdown;
@@ -1024,9 +1071,7 @@
                     clearInterval(interval);
                     try {
                         window.close();
-                        setTimeout(() => {
-                            window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
-                        }, 500);
+                        setTimeout(() => window.location.replace(buildApiUrl('/Assessment/' + assessmentCode)), 500);
                     } catch (e) {
                         window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
                     }
@@ -1034,30 +1079,28 @@
             }, 1000);
         }
 
-        // ── Fullscreen logic ──────────────────────────────────────────
         function isInFullscreen() {
-            return !!(document.fullscreenElement
-                   || document.webkitFullscreenElement
-                   || document.mozFullScreenElement
-                   || document.msFullscreenElement);
+            return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
         }
 
         function initFullscreen() {
             const alreadyGranted = sessionStorage.getItem(FS_KEY) === '1';
             if (isInFullscreen()) { sessionStorage.setItem(FS_KEY, '1'); return; }
-            if (alreadyGranted) { requestFullscreenSilently(); }
-            else { document.getElementById('fullscreenPrompt').classList.add('show'); }
+            if (alreadyGranted) requestFullscreenSilently();
+            else document.getElementById('fullscreenPrompt').classList.add('show');
 
-            document.addEventListener('fullscreenchange',       onFsChange);
-            document.addEventListener('webkitfullscreenchange', onFsChange);
-            document.addEventListener('mozfullscreenchange',    onFsChange);
-            document.addEventListener('MSFullscreenChange',     onFsChange);
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(evt =>
+                document.addEventListener(evt, () => {
+                    const toast = document.getElementById('fsToast');
+                    if (isInFullscreen()) toast.classList.remove('show');
+                    else if (sessionStorage.getItem(FS_KEY) === '1') toast.classList.add('show');
+                })
+            );
         }
 
         function requestFullscreenSilently() {
-            const el  = document.documentElement;
-            const req = el.requestFullscreen || el.webkitRequestFullscreen
-                     || el.mozRequestFullScreen || el.msRequestFullscreen;
+            const el = document.documentElement;
+            const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
             if (req) req.call(el).catch(() => {});
         }
 
@@ -1071,26 +1114,22 @@
             requestFullscreenSilently();
             document.getElementById('fsToast').classList.remove('show');
         }
-
-        function onFsChange() {
-            const toast = document.getElementById('fsToast');
-            if (isInFullscreen()) { toast.classList.remove('show'); }
-            else if (sessionStorage.getItem(FS_KEY) === '1') { toast.classList.add('show'); }
-        }
     </script>
 }
 
 @functions {
-    private string FormatFileSize(long bytes)
+    public string GetRatingLabel(int score)
     {
-        string[] sizes = { "B", "KB", "MB", "GB" };
-        double len = bytes;
-        int order = 0;
-        while (len >= 1024 && order < sizes.Length - 1)
+        return score switch
         {
-            order++;
-            len = len / 1024;
-        }
-        return $"{len:0.##} {sizes[order]}";
+            -3 => "Much worse",
+            -2 => "Worse",
+            -1 => "Slightly worse",
+            0 => "The same",
+            1 => "Slightly better",
+            2 => "Better",
+            3 => "Much better",
+            _ => ""
+        };
     }
 }

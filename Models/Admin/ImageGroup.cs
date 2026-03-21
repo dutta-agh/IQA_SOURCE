@@ -31,15 +31,15 @@ namespace IQA_SOURCE.Models.Admin
     public class BulkDeleteResponse
     {
         public int OutputCode { get; set; }
-        public string OutputMsg { get; set; } = string.Empty;
-        public BulkDeleteResult Data { get; set; } = new();
+        public string OutputMsg { get; set; }
+        public BulkDeleteResult Data { get; set; }
     }
 
-    public class BulkDeleteResult
-    {
-        public int DeletedMasterImages { get; set; }
-        public int DeletedLinkedImages { get; set; }
-        public int TotalDeleted { get; set; }
-        public List<string> ErrorMessages { get; set; } = new();
-    }
+    //public class BulkDeleteResult
+    //{
+    //    public int DeletedMasterImages { get; set; }
+    //    public int DeletedLinkedImages { get; set; }
+    //    public int TotalDeleted { get; set; }
+    //    public List<string> ErrorMessages { get; set; } = new();
+    //}
 }

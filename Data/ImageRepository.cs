@@ -10,10 +10,12 @@ namespace IQA_SOURCE.Data
     public class ImageRepository : IImageRepository
     {
         private readonly IDbHelper _dbHelper;
+        private readonly ILogger<ImageRepository> _logger; // ✅ ADD LOGGER
 
-        public ImageRepository(IDbHelper dbHelper)
+        public ImageRepository(IDbHelper dbHelper, ILogger<ImageRepository> logger)
         {
             _dbHelper = dbHelper;
+            _logger = logger;
         }
 
         public async Task<ImageUploadResponse> ProcessFolderImages(string folderPath, string assessmentType, string userId)
@@ -1178,6 +1180,38 @@ namespace IQA_SOURCE.Data
                     OutputMsg = $"Error retrieving images with audit trail: {ex.Message}",
                     Data = new List<ImageAuditTrail>()
                 };
+            }
+        }
+
+        // Add this method to the ImageRepository class
+        public async Task<int> GetImageCountByGroup(string groupCode, string userId)
+        {
+            try
+            {
+                var query = @"
+                    SELECT COUNT(*) as cnt 
+                    FROM image_master 
+                    WHERE im_group_code = @groupCode 
+                    AND im_active = 1";
+
+                var parameters = new[]
+                {
+                    new MySqlParameter("@groupCode", groupCode)
+                };
+
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                
+                if (result.Rows.Count > 0)
+                {
+                    return Convert.ToInt32(result.Rows[0]["cnt"]);
+                }
+                
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Error getting image count for group {groupCode}");
+                return 0;
             }
         }
     }

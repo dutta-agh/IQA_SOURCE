@@ -36,8 +36,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQXNzZXNzbWVudFR5cGVNYXN0ZXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/BulkDataDelete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQnVsa0RhdGFEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/BulkOperations.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQnVsa09wZXJhdGlvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ColorblindnessImages.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ29sb3JibGluZG5lc3NJbWFnZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ColorblindnessResults.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ29sb3JibGluZG5lc3NSZXN1bHRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ContentMaster.cshtml]
@@ -78,6 +90,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/AssessmentNotFound.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxBc3Nlc3NtZW50Tm90Rm91bmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/ColorblindnessTest.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxDb2xvcmJsaW5kbmVzc1Rlc3QuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/ImageAssessment.cshtml]

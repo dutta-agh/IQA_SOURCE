@@ -15,5 +15,6 @@ namespace IQA_SOURCE.Data
         Task<ImageUploadResponse> ProcessFolderImages(string folderPath, string assessmentType, string userId);
         Task<ImageAuditTrailResponse> GetImagesWithAuditTrail(string assessmentType, string userId);
         Task<ImageMasterResponse> GetImagesByAssessmentTypeAndGroup(string assessmentType, string? groupCode, string userId);
+        Task<int> GetImageCountByGroup(string groupCode, string userId);
     }
 }

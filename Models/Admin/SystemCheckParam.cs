@@ -30,5 +30,7 @@ namespace IQA_SOURCE.Models.Admin
         public string[] AllowedDevices    { get; set; } = ["Desktop", "Laptop"];
         public decimal  MinDownloadMbps   { get; set; } = 2m;
         public bool     IncognitoRequired { get; set; } = true;
+        public int      ColorblindnessTimeLimit { get; set; } = 5; // seconds
+        public bool     IsColorblindnessEnabled { get; set; } = true; // NEW: Whether colorblindness test is required
     }
 }

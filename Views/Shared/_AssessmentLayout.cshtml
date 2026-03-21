@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>     
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,58 +17,142 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #C9D6FF; /* fallback for old browsers */
-            background: -webkit-linear-gradient(to right, #E2E2E2, #C9D6FF); /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to right, #E2E2E2, #C9D6FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-
+            /* Sophisticated light-gray background */
+            background-color: #f4f6f8;
+            background-image: radial-gradient(900px 450px at 12% 10%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 60%), radial-gradient(800px 420px at 88% 18%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 58%), linear-gradient(180deg, #f8fafc 0%, #eef2f7 60%, #e9eef5 100%);
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        .header { background: white; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .logo-container { display: flex; align-items: center; justify-content: center; }
+
+        .header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .content-card {
             background-color: white !important;
             padding: 1% 1% !important;
             box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
         }
-        .logo { max-height: 80px; margin-right: 20px; }
-        .company-name { font-size: 1.2rem; font-weight: bold; color: #667eea; margin: 0; }
+
+        .logo {
+            max-height: 80px;
+            margin-right: 20px;
+        }
+
+        .company-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+
         .assessment-badge {
-            display: inline-block; background: #667eea; color: white;
-            padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 10px;
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 10px;
         }
+
         .main-container {
-            flex: 1; display: flex; align-items: center;
-            justify-content: center; padding: 40px 20px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+           
         }
-        .footer { background: rgba(255,255,255,0.1); color: white; text-align: center; padding: 20px; margin-top: auto; }
+
+        .main-content{
+            margin-left: 0 !important;
+        }
+
+        .footer {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
 
         /* Blocked overlay */
         .nav-blocked-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85); z-index: 99999;
-            justify-content: center; align-items: center;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
         }
-        .nav-blocked-overlay.show { display: flex; }
+
+            .nav-blocked-overlay.show {
+                display: flex;
+            }
+
         .nav-blocked-box {
-            background: white; border-radius: 12px; padding: 40px 50px;
-            text-align: center; max-width: 480px; width: 90%;
+            background: white;
+            border-radius: 12px;
+            padding: 40px 50px;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.4);
         }
-        .nav-blocked-box .blocked-icon { font-size: 3.5rem; color: #e53e3e; margin-bottom: 16px; }
-        .nav-blocked-box h3 { color: #2d3748; font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-        .nav-blocked-box p { color: #718096; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
-        .nav-blocked-box .btn-restart {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; padding: 12px 32px;
-            border-radius: 8px; font-size: 1rem; font-weight: 600;
-            cursor: pointer; transition: opacity 0.2s;
-        }
-        .nav-blocked-box .btn-restart:hover { opacity: 0.9; }
 
-        .main-container { zoom: 0.65 !important; }
+            .nav-blocked-box .blocked-icon {
+                font-size: 3.5rem;
+                color: #e53e3e;
+                margin-bottom: 16px;
+            }
+
+            .nav-blocked-box h3 {
+                color: #2d3748;
+                font-size: 1.4rem;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+
+            .nav-blocked-box p {
+                color: #718096;
+                font-size: 0.95rem;
+                line-height: 1.6;
+                margin-bottom: 24px;
+            }
+
+            .nav-blocked-box .btn-restart {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 12px 32px;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: opacity 0.2s;
+            }
+
+                .nav-blocked-box .btn-restart:hover {
+                    opacity: 0.9;
+                }
+
+        .main-container {
+            zoom: 0.65 !important;
+        }
 
         @RenderSection("Styles", required: false)
     </style>

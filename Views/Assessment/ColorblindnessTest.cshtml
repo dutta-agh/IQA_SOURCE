@@ -1,0 +1,876 @@
+﻿@{
+    ViewData["Title"] = "Colorblindness Test";
+    Layout = "_AssessmentLayout";
+}
+
+@section Styles {
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #f0f2f5;
+        }
+
+        .colorblindness-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 10px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* ── Header Section ──────────────────────────────────────── */
+        .test-header {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .test-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 0;
+        }
+
+        .test-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-info {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #718096;
+        }
+
+            .progress-info strong {
+                font-size: 0.95rem;
+                color: #667eea;
+                font-weight: 700;
+            }
+
+        /* ── Main Content ────────────────────────────────────────── */
+        .test-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 0;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .image-display-section {
+            background: white;
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+            overflow: hidden;
+        }
+
+        .image-container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            position: relative;
+            min-height: 200px;
+            max-height: 400px;
+        }
+
+            .image-container img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
+
+        .image-loading {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            z-index: 10;
+        }
+
+            .image-loading.show {
+                display: flex;
+            }
+
+        /* ── Question Text ───────────────────────────────────────── */
+        .question-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1a202c;
+            text-align: center;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        /* ── Timer Display ───────────────────────────────────────── */
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .timer-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-text {
+            position: relative;
+            z-index: 2;
+        }
+
+        .timer-label {
+            font-size: 0.7rem;
+            color: #718096;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        /* ── Answer Options ──────────────────────────────────────── */
+        .options-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .options-top {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 500px;
+        }
+
+        .options-bottom {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            max-width: 500px;
+        }
+
+        .option-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 9px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            background: white;
+            color: #1a202c;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .option-btn:hover:not(:disabled) {
+                border-color: #667eea;
+                color: #667eea;
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+                transform: translateY(-1px);
+            }
+
+            .option-btn:active:not(:disabled) {
+                transform: translateY(0);
+            }
+
+            .option-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .option-btn.selected {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-color: #667eea;
+                box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+            }
+
+        .cant-read-btn {
+            max-width: 140px;
+        }
+
+        /* ── Status Messages ─────────────────────────────────────── */
+        .status-message {
+            display: none;
+            padding: 7px 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            width: 100%;
+            flex-shrink: 0;
+            max-width: 500px;
+        }
+
+            .status-message.show {
+                display: block;
+            }
+
+            .status-message.success {
+                background: #c6f6d5;
+                color: #22543d;
+                border: 1px solid #9ae6b4;
+            }
+
+            .status-message.warning {
+                background: #feebc8;
+                color: #7c2d12;
+                border: 1px solid #fbd38d;
+            }
+
+            .status-message.error {
+                background: #fed7d7;
+                color: #742a2a;
+                border: 1px solid #fc8181;
+            }
+
+        /* ── Loading State ───────────────────────────────────────── */
+        .loading-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+            .loading-screen.show {
+                display: flex;
+            }
+
+        .loading-spinner {
+            width: 45px;
+            height: 45px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        /* ── Thank You Card ──────────────────────────────────────── */
+        .thankyou-card {
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            padding: 25px 20px;
+            max-width: 400px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .thankyou-icon {
+            font-size: 2.5rem;
+            color: #48bb78;
+            margin-bottom: 12px;
+        }
+
+        .thankyou-title {
+            color: #1a202c;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .thankyou-message {
+            color: #718096;
+            font-size: 0.85rem;
+            margin: 0 0 12px 0;
+        }
+
+        .thankyou-redirect {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            margin-bottom: 12px;
+        }
+
+        .thankyou-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+            .thankyou-btn:hover {
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                transform: translateY(-1px);
+            }
+
+        /* ── Responsive ──────────────────────────────────────── */
+        @@media (max-width: 768px) {
+            .colorblindness-container {
+                padding: 8px;
+                gap: 6px;
+            }
+
+            .test-header {
+                max-width: 100%;
+                padding: 8px 12px;
+            }
+
+            .test-title {
+                font-size: 0.95rem;
+            }
+
+            .image-display-section {
+                max-width: 100%;
+                padding: 12px;
+            }
+
+            .options-top,
+            .options-bottom {
+                max-width: 100%;
+            }
+
+            .option-btn {
+                min-width: 85px;
+                padding: 8px 10px;
+                font-size: 0.75rem;
+            }
+
+            .timer-circle {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .colorblindness-container {
+                padding: 6px;
+                gap: 5px;
+            }
+
+            .test-header {
+                padding: 7px 10px;
+                gap: 6px;
+            }
+
+            .test-title {
+                font-size: 0.85rem;
+            }
+
+            .image-display-section {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .image-container {
+                min-height: 180px;
+                max-height: 320px;
+            }
+
+            .option-btn {
+                min-width: 75px;
+                padding: 7px 8px;
+                font-size: 0.7rem;
+            }
+
+            .options-top,
+            .options-bottom {
+                gap: 6px;
+            }
+
+            .timer-circle {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+
+            .thankyou-card {
+                padding: 20px 15px;
+                max-width: 100%;
+            }
+
+            .thankyou-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+}
+
+<div class="colorblindness-container">
+    <!-- Header -->
+    <div class="test-header">
+        <div style="display:flex;justify-content:space-between">
+            <h1 class="test-title">
+                <i class="fas fa-eye"></i> Colorblindness Test
+            </h1>
+            <div class="test-progress">
+                <div class="progress-info">
+                    <div><strong id="currentImageNum">1</strong>/<strong id="totalImageNum">0</strong></div>
+                    <div style="font-size: 0.65rem; color: #e53e3e;">Skip: <strong id="skippedCountNum">0</strong></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <span style="font-size: 0.55rem;">For viewing original test template owner click this link: <a href="https://colour-blindness.com/colour-blindness-tests/ishihara-colour-test-plates/" target="_blank">Link</a></span>
+
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="test-content">
+        <div class="image-display-section">
+            <div class="question-text">
+                What do you see in this image?
+            </div>
+
+            <div class="image-container">
+                <img id="colorblindImage" src="" alt="Colorblindness Test Image" loading="eager">
+                <div class="image-loading" id="imageLoading" style="opacity:0 !important; ">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                    <span style="font-size: 0.75rem;">Loading...</span>
+                </div>
+            </div>
+
+            <div class="timer-section">
+                <div class="timer-circle">
+                    <div class="timer-text" id="timerDisplay">5</div>
+                </div>
+                <div class="timer-label">
+                    <div>Time</div>
+                    <div>Left</div>
+                </div>
+            </div>
+
+            <div class="options-section" id="optionsContainer">
+                <!-- Options will be dynamically inserted here -->
+            </div>
+
+            <div class="status-message d-none" style="display:none;" id="statusMessage"></div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-screen" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Processing...</div>
+</div>
+
+@section Scripts {
+    <script>
+        const sessionId = '@ViewBag.SessionId';
+        const assessmentType = '@ViewBag.AssessmentType';
+        const timeLimit = @ViewBag.TestTimeLimit ?? 5;
+
+        let images = [];
+        let currentImageIndex = 0;
+        let responses = [];
+        let timeRemaining = timeLimit;
+        let timerInterval = null;
+        let imageAnswered = false;
+        let skippedCount = 0;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadImages();
+        });
+
+        function loadImages() {
+            showLoader('Loading colorblindness test images...');
+
+            fetch(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/GetColorblindnessImagesForTest'))
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}: Failed to load images`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    hideLoader();
+
+                    if (!data.success || !data.data || data.data.length === 0) {
+                        showAlert('No colorblindness test images available', 'warning');
+                        setTimeout(() => {
+                            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                        }, 3000);
+                        return;
+                    }
+
+                    images = data.data.sort(() => Math.random() - 0.5);
+                    document.getElementById('totalImageNum').textContent = images.length;
+
+                    loadNextImage();
+                })
+                .catch(err => {
+                    hideLoader();
+                    console.error('Error loading images:', err);
+                    showAlert('Error loading test images: ' + err.message, 'danger');
+                    setTimeout(() => {
+                        window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                    }, 3000);
+                });
+        }
+
+        function loadNextImage() {
+            if (currentImageIndex >= images.length) {
+                submitResponses();
+                return;
+            }
+
+            imageAnswered = false;
+            timeRemaining = timeLimit;
+            const image = images[currentImageIndex];
+
+            document.getElementById('currentImageNum').textContent = currentImageIndex + 1;
+
+            const imgElement = document.getElementById('colorblindImage');
+            const loadingDiv = document.getElementById('imageLoading');
+
+            imgElement.src = '';
+            loadingDiv.classList.add('show');
+
+            const imgObj = new Image();
+
+            imgObj.onload = function () {
+                imgElement.src = image.imageUrl;
+
+                setTimeout(() => {
+                    loadingDiv.classList.remove('show');
+                    renderOptions(image);
+                    startTimer();
+                }, 100);
+            };
+
+            imgObj.onerror = function () {
+                console.error('Failed to load image:', image.imageUrl);
+                loadingDiv.classList.remove('show');
+
+                const statusMsg = document.getElementById('statusMessage');
+                statusMsg.className = 'status-message error show';
+                statusMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to load image - skipping...';
+
+                setTimeout(() => {
+                    currentImageIndex++;
+                    loadNextImage();
+                }, 2000);
+            };
+
+            imgObj.src = image.imageUrl;
+        }
+
+        function renderOptions(image) {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            let options = [];
+            if (Array.isArray(image.options)) {
+                options = image.options;
+            } else if (typeof image.options === 'string') {
+                options = image.options.split(',').map(o => o.trim()).filter(o => o);
+            }
+
+            if (options.length === 0) {
+                options = ['Option A', 'Option B', 'Can\'t Read'];
+            }
+
+            const cantReadOption = options.find(opt => opt.toLowerCase().includes('can\'t read'));
+            const otherOptions = options.filter(opt => !opt.toLowerCase().includes('can\'t read'));
+
+            const shuffledOptions = otherOptions.sort(() => Math.random() - 0.5);
+
+            const topDiv = document.createElement('div');
+            topDiv.className = 'options-top';
+
+            const topOptionsCount = Math.min(2, shuffledOptions.length);
+            for (let i = 0; i < topOptionsCount; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'option-btn';
+                btn.textContent = shuffledOptions[i];
+                btn.onclick = () => selectOption(i, shuffledOptions[i], image);
+                topDiv.appendChild(btn);
+            }
+
+            container.appendChild(topDiv);
+
+            if (shuffledOptions.length > 2) {
+                for (let i = topOptionsCount; i < shuffledOptions.length; i++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'option-btn';
+                    btn.textContent = shuffledOptions[i];
+                    btn.onclick = () => selectOption(i, shuffledOptions[i], image);
+                    topDiv.appendChild(btn);
+                }
+            }
+
+            if (cantReadOption) {
+                const bottomDiv = document.createElement('div');
+                bottomDiv.className = 'options-bottom';
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'option-btn cant-read-btn';
+                btn.textContent = cantReadOption;
+                btn.onclick = () => selectOption(shuffledOptions.length, cantReadOption, image);
+                bottomDiv.appendChild(btn);
+
+                container.appendChild(bottomDiv);
+            }
+        }
+
+        function selectOption(index, option, image) {
+            if (imageAnswered) return;
+
+            imageAnswered = true;
+            stopTimer();
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('selected');
+                    btn.disabled = true;
+                } else {
+                    btn.disabled = true;
+                }
+            });
+
+            const timeTaken = timeLimit - timeRemaining;
+            responses.push({
+                sessionId: sessionId,
+                assessmentType: assessmentType,
+                imageId: image.ciId || image.imageId || image.id,
+                selectedAnswer: option,
+                correctAnswer: image.ciCorrectAnswer || image.correctAnswer,
+                timeTakenSeconds: timeTaken,
+                isCorrect: option === (image.ciCorrectAnswer || image.correctAnswer)
+            });
+
+            setTimeout(() => {
+                currentImageIndex++;
+                loadNextImage();
+            }, 800);
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    stopTimer();
+                    handleTimeExpired();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timerDisplay');
+            display.textContent = Math.max(0, timeRemaining);
+
+            const circle = document.querySelector('.timer-circle');
+            if (timeRemaining <= 2) {
+                circle.style.background = 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)';
+            } else if (timeRemaining <= 5) {
+                circle.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+
+        function handleTimeExpired() {
+            if (imageAnswered) return;
+
+            imageAnswered = true;
+            skippedCount++;
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const statusMsg = document.getElementById('statusMessage');
+            statusMsg.className = 'status-message warning show';
+            statusMsg.innerHTML = '<i class="fas fa-fast-forward"></i> Skipped';
+
+            const image = images[currentImageIndex];
+            responses.push({
+                sessionId: sessionId,
+                assessmentType: assessmentType,
+                imageId: image.ciId || image.imageId || image.id,
+                selectedAnswer: null,
+                correctAnswer: image.ciCorrectAnswer || image.correctAnswer,
+                timeTakenSeconds: timeLimit,
+                isCorrect: false,
+                skipped: true
+            });
+
+            document.getElementById('skippedCountNum').textContent = skippedCount;
+
+            setTimeout(() => {
+                currentImageIndex++;
+                loadNextImage();
+            }, 1200);
+        }
+
+        function submitResponses() {
+            showLoader('Submitting...');
+
+            const payload = {
+                responses: responses,
+                sessionId: sessionId,
+                assessmentType: assessmentType,
+                totalImages: images.length,
+                skippedCount: skippedCount
+            };
+
+            fetch(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SubmitColorblindnessResponses'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    hideLoader();
+
+                    if (data.success) {
+                        showThankYouMessage();
+                    } else {
+                        showAlert('Error submitting responses: ' + (data.message || 'Unknown error'), 'danger');
+                        setTimeout(() => {
+                            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                        }, 2000);
+                    }
+                })
+                .catch(err => {
+                    hideLoader();
+                    console.error('Submit error:', err);
+                    showAlert('Network error. Please try again.', 'danger');
+                });
+        }
+
+        function showThankYouMessage() {
+            const container = document.querySelector('.test-content');
+            container.innerHTML = `
+                <div class="thankyou-card">
+                    <div class="thankyou-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="thankyou-title">Colorblindness Test Complete!</h2>
+                    <p class="thankyou-message">
+                        Thank you for completing the Colorblindness Test. Next, You'll be redirected to check Device & Internet Bandwidth.'
+                    </p>
+                    <div class="thankyou-redirect">
+                        Redirecting in <span id="redirectCountdown">3</span>s...
+                    </div>
+                    <button onclick="continueToNextPage()" class="thankyou-btn">
+                        <i class="fas fa-arrow-right"></i> Continue
+                    </button>
+                </div>
+            `;
+
+            let countdown = 3;
+            const interval = setInterval(() => {
+                countdown--;
+                const el = document.getElementById('redirectCountdown');
+                if (el) {
+                    el.textContent = countdown;
+                }
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    continueToNextPage();
+                }
+            }, 1000);
+        }
+
+        function continueToNextPage() {
+            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+        }
+
+        function showLoader(message) {
+            const loadingScreen = document.getElementById('loadingScreen');
+            loadingScreen.querySelector('.loading-text').textContent = message || 'Loading...';
+            loadingScreen.classList.add('show');
+        }
+
+        function hideLoader() {
+            document.getElementById('loadingScreen').classList.remove('show');
+        }
+    </script>
+}

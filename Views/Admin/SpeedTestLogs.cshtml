@@ -25,7 +25,7 @@
 
         /* ── Table card ── */
         .logs-table-card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); }
-        .table-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-bottom: 15px; }
+        .table-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
 
         /* ── Badges ── */
         .badge-passed { background: var(--success-gradient); color: white; }
@@ -92,14 +92,25 @@
         .filter-pill.active.all    { background: #667eea; color: white; border-color: #667eea; }
         .filter-pill.active.passed { background: #16a34a; color: white; border-color: #16a34a; }
         .filter-pill.active.failed { background: #dc3545; color: white; border-color: #dc3545; }
+
+        /* Delete button styles */
+        .btn-delete-logs { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none; }
+        .btn-delete-logs:hover { background: linear-gradient(135deg, #f093fb, #f5576c); opacity: 0.9; color: white; }
+        .btn-delete-logs:disabled { background-color: #6c757d; }
     </style>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-tachometer-alt"></i> Speed Test Logs</h2>
-    <button class="btn btn-success" onclick="downloadExcel()">
-        <i class="fas fa-file-excel"></i> Download Excel
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" onclick="downloadExcel()">
+            <i class="fas fa-file-excel"></i> Download Excel
+        </button>
+        <button class="btn btn-delete-logs" id="btnDeleteLogs" onclick="openDeleteLogsModal()" disabled
+                title="Delete speed test logs by assessment">
+            <i class="fas fa-trash"></i> Delete Logs
+        </button>
+    </div>
 </div>
 
 <!-- Statistics Summary -->
@@ -220,6 +231,53 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     DELETE LOGS MODAL
+═══════════════════════════════════════ -->
+<div class="modal fade" id="deleteLogsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none;">
+                <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Delete Speed Test Logs</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-filter"></i> Assessment Type</label>
+                    <select class="form-select no-select2" id="deleteLogsAssessment">
+                        <option value="">-- Select Assessment Type --</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">Required: Select the assessment type to delete logs for</small>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-calendar-alt"></i> Date Range (Optional)</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="date" class="form-control" id="deleteLogsStartDate" placeholder="Start Date">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" class="form-control" id="deleteLogsEndDate" placeholder="End Date">
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-1">Leave empty to delete all logs for the assessment</small>
+                </div>
+                <div id="deleteLogsPreview" style="display: none;">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle"></i> Preview:</strong>
+                        <div id="deletePreviewStats" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteLogs()">
+                    <i class="fas fa-trash"></i> Delete Logs
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
     let currentLogs  = [];
@@ -231,7 +289,24 @@
     ═══════════════════════════════════════ */
     $(document).ready(function () {
         loadAssessmentTypes();
+        loadDeleteLogsAssessmentTypes();
         loadLogs();
+
+        // ✅ FIX: Proper event binding for delete logs modal
+        $(document).off('change', '#deleteLogsAssessment').on('change', '#deleteLogsAssessment', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
+
+        $(document).off('change', '#deleteLogsStartDate').on('change', '#deleteLogsStartDate', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
+
+        $(document).off('change', '#deleteLogsEndDate').on('change', '#deleteLogsEndDate', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
     });
 
     /* ═══════════════════════════════════════
@@ -261,7 +336,30 @@
             success: function (res) {
                 if (res.success && res.data) {
                     const sel = $('#assessmentFilter');
-                    res.data.forEach(a => sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`));
+                    res.data.forEach(a => {
+                        sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                    });
+                    
+                    // Enable delete button now that assessments are loaded
+                    $('#assessmentFilter').on('change', function() {
+                        const btn = document.getElementById('btnDeleteLogs');
+                        btn.disabled = !$(this).val();
+                    });
+                }
+            }
+        });
+    }
+
+    function loadDeleteLogsAssessmentTypes() {
+        $.ajax({
+            url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+            type: 'GET',
+            success: function (res) {
+                if (res.success && res.data) {
+                    const sel = $('#deleteLogsAssessment');
+                    res.data.forEach(a => {
+                        sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                    });
                 }
             }
         });
@@ -482,6 +580,131 @@
             ${infoRow('globe',       'Browser (Private)',   log.privateModeBrowser)}
             ${infoRow('user-agent',  'User Agent',         log.userAgent)}
         `;
+    }
+
+    /* ═══════════════════════════════════════
+       DELETE LOGS FUNCTIONS
+    ═══════════════════════════════════════ */
+    function openDeleteLogsModal() {
+        const modal = new bootstrap.Modal(document.getElementById('deleteLogsModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+        modal.show();
+    }
+
+    async function loadDeleteLogsAssessmentTypes() {
+        try {
+            const res = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+            const json = await res.json();
+            
+            if (json.success && json.data) {
+                const sel = $('#deleteLogsAssessment');
+                sel.find('option').not(':first').remove();
+                json.data.forEach(a => {
+                    sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading delete logs assessment types:', error);
+        }
+    }
+
+    function getDeleteLogsPreview() {
+        const assessmentCode = $('#deleteLogsAssessment').val();
+        const startDate = $('#deleteLogsStartDate').val();
+        const endDate = $('#deleteLogsEndDate').val();
+
+        if (!assessmentCode) {
+            $('#deleteLogsPreview').hide();
+            return;
+        }
+
+        console.log('Getting delete preview for:', { assessmentCode, startDate, endDate });
+        
+        // Calculate from current data
+        let logsToDelete = currentLogs.filter(l => l.assessmentCode === assessmentCode);
+
+        if (startDate) {
+            const start = new Date(startDate);
+            logsToDelete = logsToDelete.filter(l => new Date(l.testDateTime) >= start);
+        }
+
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999); // Include entire end day
+            logsToDelete = logsToDelete.filter(l => new Date(l.testDateTime) <= end);
+        }
+
+        const passed = logsToDelete.filter(l => l.overallPassed).length;
+        const failed = logsToDelete.length - passed;
+
+        const statsHtml = `
+            <div><strong>Total Logs:</strong> ${logsToDelete.length}</div>
+            <div><strong>Passed:</strong> ${passed}</div>
+            <div><strong>Failed:</strong> ${failed}</div>
+            ${startDate ? `<div><strong>Date Range:</strong> ${startDate} to ${endDate || 'Now'}</div>` : ''}
+        `;
+
+        $('#deletePreviewStats').html(statsHtml);
+        $('#deleteLogsPreview').show();
+    }
+
+    function confirmDeleteLogs() {
+        const assessmentCode = $('#deleteLogsAssessment').val();
+        const startDate = $('#deleteLogsStartDate').val();
+        const endDate = $('#deleteLogsEndDate').val();
+
+        if (!assessmentCode) {
+            showAlert('Please select an assessment type', 'warning');
+            return;
+        }
+
+        let message = `Are you sure you want to delete all speed test logs for assessment "${assessmentCode}"?`;
+        if (startDate || endDate) {
+            message += ` from ${startDate || 'the beginning'} to ${endDate || 'now'}?`;
+        } else {
+            message += '? This action cannot be undone.';
+        }
+
+        if (!confirm(message)) {
+            return;
+        }
+
+        showLoader();
+        const request = {
+            assessmentCode: assessmentCode,
+            startDate: startDate || null,
+            endDate: endDate || null
+        };
+
+        $.ajax({
+            url: buildApiUrl('/Admin/BulkDeleteSpeedTestLogs'),
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(request),
+            dataType: 'json',
+            success: function (res) {
+                hideLoader();
+                if (res && res.success) {
+                    showAlert(`Successfully deleted speed test logs: ${res.message}`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteLogsModal')).hide();
+                    
+                    // Refresh if we have assessment loaded
+                    const currentAssessment = $('#assessmentFilter').val();
+                    if (currentAssessment === assessmentCode) {
+                        loadLogs();
+                    }
+                } else {
+                    showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
+                }
+            },
+            error: function (xhr, status, error) {
+                hideLoader();
+                console.error('Error deleting logs:', error);
+                showAlert('Error deleting speed test logs. Please try again.', 'danger');
+            }
+        });
     }
 
     /* ═══════════════════════════════════════

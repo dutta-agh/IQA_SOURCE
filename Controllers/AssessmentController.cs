@@ -1,14 +1,15 @@
-﻿using System.Diagnostics;
+﻿using IQA_SOURCE.Data;
 using IQA_SOURCE.Models;
 using IQA_SOURCE.Models.Admin;
-using Microsoft.AspNetCore.Mvc;
-using YourApp.Data;
-using IQA_SOURCE.Data;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using IQA_SOURCE.Models.Colorblindness;
 using IQA_SOURCE.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using YourApp.Data;
 
 namespace IQA_SOURCE.Controllers
 {
@@ -26,6 +27,7 @@ namespace IQA_SOURCE.Controllers
         private readonly ISystemCheckParamRepository _systemCheckParamRepository;
         private readonly IImageGroupRepository _imageGroupRepository;
         private readonly IImageRepository _imageRepository;
+        private readonly IColorblindnessRepository _colorblindnessRepository;
 
         public AssessmentController(
             ILogger<AssessmentController> logger,
@@ -39,7 +41,8 @@ namespace IQA_SOURCE.Controllers
             IImageQualityRepository imageQualityRepository,
             ISystemCheckParamRepository systemCheckParamRepository,
             IImageGroupRepository imageGroupRepository,
-            IImageRepository imageRepository)
+            IImageRepository imageRepository,
+            IColorblindnessRepository colorblindnessRepository)
         {
             _logger = logger;
             _db = db;
@@ -53,6 +56,7 @@ namespace IQA_SOURCE.Controllers
             _systemCheckParamRepository = systemCheckParamRepository;
             _imageGroupRepository = imageGroupRepository;
             _imageRepository = imageRepository;
+            _colorblindnessRepository = colorblindnessRepository;
         }
 
         [AllowAnonymous]
@@ -133,23 +137,8 @@ namespace IQA_SOURCE.Controllers
             var sessionId = _sessionService.GetOrCreateSessionId();
             _logger.LogInformation($"Speed test accessed with SessionId: {sessionId}, AssessmentType: {assessmentType}");
 
-            // Check if referrer is from the index page or if session flag is set
-            var referrer = Request.Headers["Referer"].ToString();
-            var hasIndexAccessObj = _sessionService.GetSessionData<object>("HasIndexAccess") as bool?;
-            bool hasIndexAccess = hasIndexAccessObj is bool b && b;
-            
-            if (!hasIndexAccess)
-            {
-                // Check if referrer is from index page
-                if (string.IsNullOrEmpty(referrer) || 
-                    (!referrer.Contains("/Assessment/" + assessmentType, StringComparison.OrdinalIgnoreCase) &&
-                     !referrer.Contains("/" + assessmentType, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _logger.LogWarning($"Direct access attempt to SpeedTest blocked for SessionId: {sessionId}");
-                    TempData["ErrorMessage"] = "Please start the assessment from the beginning.";
-                    return RedirectToAction("Index", new { assessmentType });
-                }
-            }
+            // No restriction - colorblindness test is optional
+            // Users can skip colorblindness and go directly to speed test
 
             // Set flag for this session
             _sessionService.SetSessionData("HasIndexAccess", true);
@@ -162,7 +151,6 @@ namespace IQA_SOURCE.Controllers
             }
             else
             {
-                // Try to get from session
                 assessmentType = _sessionService.GetAssessmentType();
                 if (!string.IsNullOrEmpty(assessmentType))
                 {
@@ -173,6 +161,54 @@ namespace IQA_SOURCE.Controllers
             ViewBag.SessionId = sessionId;
             return View();
         }
+
+        //[AllowAnonymous]
+        //public IActionResult SpeedTest(string assessmentType)
+        //{
+        //    // Ensure session is active
+        //    var sessionId = _sessionService.GetOrCreateSessionId();
+        //    _logger.LogInformation($"Speed test accessed with SessionId: {sessionId}, AssessmentType: {assessmentType}");
+
+        //    // Check if referrer is from the index page or if session flag is set
+        //    var referrer = Request.Headers["Referer"].ToString();
+        //    var hasIndexAccessObj = _sessionService.GetSessionData<object>("HasIndexAccess") as bool?;
+        //    bool hasIndexAccess = hasIndexAccessObj is bool b && b;
+
+        //    if (!hasIndexAccess)
+        //    {
+        //        // Check if referrer is from index page
+        //        if (string.IsNullOrEmpty(referrer) || 
+        //            (!referrer.Contains("/Assessment/" + assessmentType, StringComparison.OrdinalIgnoreCase) &&
+        //             !referrer.Contains("/" + assessmentType, StringComparison.OrdinalIgnoreCase)))
+        //        {
+        //            _logger.LogWarning($"Direct access attempt to SpeedTest blocked for SessionId: {sessionId}");
+        //            TempData["ErrorMessage"] = "Please start the assessment from the beginning.";
+        //            return RedirectToAction("Index", new { assessmentType });
+        //        }
+        //    }
+
+        //    // Set flag for this session
+        //    _sessionService.SetSessionData("HasIndexAccess", true);
+        //    _sessionService.SetSessionData("SpeedTestAccess", true);
+
+        //    if (!string.IsNullOrEmpty(assessmentType))
+        //    {
+        //        _sessionService.SetAssessmentType(assessmentType);
+        //        ViewBag.AssessmentType = assessmentType;
+        //    }
+        //    else
+        //    {
+        //        // Try to get from session
+        //        assessmentType = _sessionService.GetAssessmentType();
+        //        if (!string.IsNullOrEmpty(assessmentType))
+        //        {
+        //            ViewBag.AssessmentType = assessmentType;
+        //        }
+        //    }
+
+        //    ViewBag.SessionId = sessionId;
+        //    return View();
+        //}
 
         [AllowAnonymous]
         [HttpGet]
@@ -262,11 +298,12 @@ namespace IQA_SOURCE.Controllers
                     success = true,
                     data = new
                     {
-                        minScreenWidth       = settings.MinScreenWidth,
-                        minScreenHeight      = settings.MinScreenHeight,
-                        allowedDeviceTypes   = settings.AllowedDevices,
-                        minDownloadSpeedMbps = settings.MinDownloadMbps,
-                        incognitoRequired    = settings.IncognitoRequired
+                        minScreenWidth             = settings.MinScreenWidth,
+                        minScreenHeight            = settings.MinScreenHeight,
+                        allowedDeviceTypes         = settings.AllowedDevices,
+                        minDownloadSpeedMbps       = settings.MinDownloadMbps,
+                        incognitoRequired          = settings.IncognitoRequired,
+                        isColorblindnessEnabled    = settings.IsColorblindnessEnabled
                     }
                 });
             }
@@ -855,8 +892,8 @@ namespace IQA_SOURCE.Controllers
                         data = new
                         {
                             completedSets = progressResult.Data.CompletedSets,
-                            totalSets     = progressResult.Data.TotalSets,
-                            isCompleted   = progressResult.Data.IsCompleted
+                                totalSets = progressResult.Data.TotalSets,
+                            isCompleted = progressResult.Data.IsCompleted
                         }
                     });
                 }
@@ -868,6 +905,426 @@ namespace IQA_SOURCE.Controllers
                 _logger.LogError(ex, "Error submitting sort ratings");
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> ColorblindnessTest(string assessmentType)
+        {
+            try
+            {
+                var sessionId = _sessionService.GetOrCreateSessionId();
+                _logger.LogInformation($"Colorblindness test accessed - SessionId: {sessionId}, AssessmentType: {assessmentType}");
+
+                if (string.IsNullOrEmpty(assessmentType))
+                {
+                    assessmentType = _sessionService.GetAssessmentType();
+                    if (string.IsNullOrEmpty(assessmentType))
+                    {
+                        TempData["ErrorMessage"] = "No assessment type specified.";
+                        return RedirectToAction("Index");
+                    }
+                }
+
+                // Store in session for reference
+                _sessionService.SetAssessmentType(assessmentType);
+
+                // Get test time limit from system parameters (default 5 seconds)
+                var settingsResult = await _systemCheckParamRepository.GetResolvedSettings();
+                var timeLimit = 5; // Default
+
+                timeLimit = settingsResult.ColorblindnessTimeLimit;
+
+                ViewBag.SessionId = sessionId;
+                ViewBag.AssessmentType = assessmentType;
+                ViewBag.TestTimeLimit = timeLimit;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading colorblindness test");
+                TempData["ErrorMessage"] = "An error occurred while loading the test.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetColorblindnessImagesForTest(string assessmentType)
+        {
+            try
+            {
+                var result = await _colorblindnessRepository.GetColorblindnessImagesForTest(assessmentType);
+
+                if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
+                {
+                    // Shuffle images on server side for better randomization
+                    var shuffled = result.Data.OrderBy(_ => Random.Shared.Next()).ToList();
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = shuffled.Select(img => new
+                        {
+                            imageId = img.CbImageId,
+                            imageUrl = img.ImageUrl,
+                            options = img.Options,
+                            correctAnswer = img.Options.First() // The first item is the correct answer before shuffling
+                        }).ToList()
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = "No colorblindness test images available"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading colorblindness test images");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> SubmitColorblindnessResponses([FromBody] ColorblindnessTestSubmission submission)
+        {
+            try
+            {
+                if (submission?.Responses == null || submission.Responses.Count == 0)
+                    return Json(new { success = false, message = "No responses provided" });
+
+                // Get client IP address
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+                
+                // Get user agent
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString() ?? "Unknown";
+
+                // Enrich responses with metadata
+                var enrichedResponses = new List<UserColorblindnessResponse>();
+                int sequence = 1;
+                foreach (var response in submission.Responses)
+                {
+                    enrichedResponses.Add(new UserColorblindnessResponse
+                    {
+                        SessionId = submission.SessionId,
+                        AssessmentType = submission.AssessmentType,
+                        ImageId = response.ImageId,
+                        ImageSequence = sequence++, // Assign sequence number based on order in list
+                        SelectedAnswer = response.SelectedAnswer,
+                        CorrectAnswer = response.CorrectAnswer,
+                        IsCorrect = response.IsCorrect,
+                        TimeTakenSeconds = response.TimeTakenSeconds,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent
+                    }); 
+                }
+
+                // Save all responses per image
+                var result = await _colorblindnessRepository.SaveUserResponses(enrichedResponses, "system");
+
+                if (result.OutputCode == 1)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.OutputMsg,
+                        successCount = result.SuccessCount,
+                        failureCount = result.FailureCount
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.OutputMsg,
+                        successCount = result.SuccessCount,
+                        failureCount = result.FailureCount
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting colorblindness responses");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error: {ex.Message}"
+                });
+            }
+        }
+
+        // ── Colorblindness Test Results Download ────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> DownloadColorblindnessResultsExcel(string assessmentType, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                // Validate assessmentType parameter
+                if (string.IsNullOrWhiteSpace(assessmentType))
+                {
+                    TempData["ErrorMessage"] = "Assessment type is required. Please select an assessment type and try again.";
+                    return RedirectToAction("ColorblindnessResults", "Admin");
+                }
+
+                _logger.LogInformation($"DownloadColorblindnessResultsExcel called with assessmentType: {assessmentType}, startDate: {startDate}, endDate: {endDate}");
+
+                ColorblindnessTestResultResponse result;
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation($"Fetching results by date range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
+                    result = await _colorblindnessRepository.GetColorblindnessResultsByDateRange(assessmentType, startDate.Value, endDate.Value, userId);
+                }
+                else
+                {
+                    _logger.LogInformation($"Fetching all results for assessment type: {assessmentType}");
+                    result = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentType, userId);
+                }
+
+                _logger.LogInformation($"Repository returned: OutputCode={result.OutputCode}, DataCount={result.Data?.Count ?? 0}, Message={result.OutputMsg}");
+
+                if (result.OutputCode != 1)
+                {
+                    TempData["ErrorMessage"] = $"Error retrieving data: {result.OutputMsg}";
+                    return RedirectToAction("ColorblindnessResults", "Admin");
+                }
+
+                if (result.Data == null || !result.Data.Any())
+                {
+                    TempData["ErrorMessage"] = $"No colorblindness test data found for assessment type '{assessmentType}'. Please check your filters and try again.";
+                    return RedirectToAction("ColorblindnessResults", "Admin");
+                }
+
+                var workbook = new XSSFWorkbook();
+
+                // Create Summary Sheet
+                CreateSummarySheet(workbook, result.Data);
+
+                // Create Image-Wise Details Sheet
+                CreateImageWiseSheet(workbook, result.Data);
+
+                // Write to memory stream
+                using var memoryStream = new MemoryStream();
+                workbook.Write(memoryStream);   
+                
+                _logger.LogInformation($"Excel file generated successfully for {result.Data.Count} records");
+                
+                return File(memoryStream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"ColorblindnessResults_{assessmentType}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating colorblindness results Excel file");
+                TempData["ErrorMessage"] = $"Error generating Excel file: {ex.Message}";
+                return RedirectToAction("ColorblindnessResults", "Admin");
+            }
+        }
+
+        private void CreateSummarySheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results)
+        {
+            var sheet = workbook.CreateSheet("Summary");
+
+            // Create styles
+            var headerStyle = CreateHeaderStyle(workbook);
+            var dataStyle = CreateDataStyle(workbook);
+            var altStyle = CreateAlternateRowStyle(workbook);
+
+            // Create header row
+            var headerRow = sheet.CreateRow(0);
+            string[] headers = {
+                "Session ID", "Assessment Type", "Total Questions Attempted",
+                "Correct Answers", "Incorrect Answers", "Can't Read Answers",
+                "Accuracy (%)", "Average Time Per Question (sec)", "Test Start Time",
+                "Test End Time", "IP Address", "Test Status"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = headerRow.CreateCell(i);
+                cell.SetCellValue(headers[i]);
+                cell.CellStyle = headerStyle;
+            }
+
+            // Add data rows
+            int rowIndex = 1;
+            foreach (var testResult in results)
+            {
+                var row = sheet.CreateRow(rowIndex);
+                var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
+
+                row.CreateCell(0).SetCellValue(testResult.SessionId ?? "");
+                row.CreateCell(0).CellStyle = style;
+
+                row.CreateCell(1).SetCellValue(testResult.AssessmentType ?? "");
+                row.CreateCell(1).CellStyle = style;
+
+                row.CreateCell(2).SetCellValue(testResult.TotalQuestionsAttempted);
+                row.CreateCell(2).CellStyle = style;
+
+                row.CreateCell(3).SetCellValue(testResult.CorrectAnswers);
+                row.CreateCell(3).CellStyle = style;
+
+                row.CreateCell(4).SetCellValue(testResult.IncorrectAnswers);
+                row.CreateCell(4).CellStyle = style;
+
+                row.CreateCell(5).SetCellValue(testResult.CantReadAnswers);
+                row.CreateCell(5).CellStyle = style;
+
+                row.CreateCell(6).SetCellValue($"{testResult.AccuracyPercentage:F2}");
+                row.CreateCell(6).CellStyle = style;
+
+                row.CreateCell(7).SetCellValue($"{testResult.AverageTimePerQuestion:F2}");
+                row.CreateCell(7).CellStyle = style;
+
+                row.CreateCell(8).SetCellValue(testResult.TestStartTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                row.CreateCell(8).CellStyle = style;
+
+                row.CreateCell(9).SetCellValue(testResult.TestEndTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "");
+                row.CreateCell(9).CellStyle = style;
+
+                row.CreateCell(10).SetCellValue(testResult.IpAddress ?? "");
+                row.CreateCell(10).CellStyle = style;
+
+                row.CreateCell(11).SetCellValue(testResult.TestStatus ?? "");
+                row.CreateCell(11).CellStyle = style;
+
+                rowIndex++;
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.Length; i++)
+            {
+                sheet.AutoSizeColumn(i);
+                if (sheet.GetColumnWidth(i) > 15000)
+                    sheet.SetColumnWidth(i, 15000);
+            }
+        }
+
+        private void CreateImageWiseSheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results)
+        {
+            var sheet = workbook.CreateSheet("Image-Wise Details");
+
+            var headerStyle = CreateHeaderStyle(workbook);
+            var dataStyle = CreateDataStyle(workbook);
+            var altStyle = CreateAlternateRowStyle(workbook);
+
+            // Create header row
+            var headerRow = sheet.CreateRow(0);
+            string[] headers = {
+                "Session ID", "Image Sequence", "Image ID",
+                "Correct Answer", "User Answer", "Result Status",
+                "Time Taken (sec)"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = headerRow.CreateCell(i);
+                cell.SetCellValue(headers[i]);
+                cell.CellStyle = headerStyle;
+            }
+
+            // Add image-wise data
+            int rowIndex = 1;
+            foreach (var testResult in results)
+            {
+                if (testResult.ImageWiseResults != null && testResult.ImageWiseResults.Any())
+                {
+                    foreach (var imageResult in testResult.ImageWiseResults)
+                    {
+                        var row = sheet.CreateRow(rowIndex);
+                        var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
+
+                        row.CreateCell(0).SetCellValue(testResult.SessionId ?? "");
+                        row.CreateCell(0).CellStyle = style;
+
+                        row.CreateCell(1).SetCellValue(imageResult.ImageSequence);
+                        row.CreateCell(1).CellStyle = style;
+
+                        row.CreateCell(2).SetCellValue(imageResult.ImageId);
+                        row.CreateCell(2).CellStyle = style;
+
+                        row.CreateCell(3).SetCellValue(imageResult.CorrectAnswer ?? "");
+                        row.CreateCell(3).CellStyle = style;
+
+                        row.CreateCell(4).SetCellValue(imageResult.SelectedAnswer ?? "Skipped");
+                        row.CreateCell(4).CellStyle = style;
+
+                        row.CreateCell(5).SetCellValue(imageResult.ResultStatus ?? "");
+                        row.CreateCell(5).CellStyle = style;
+
+                        row.CreateCell(6).SetCellValue(imageResult.TimeTakenSeconds);
+                        row.CreateCell(6).CellStyle = style;
+
+                        rowIndex++;
+                    }
+                }
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.Length; i++)
+            {
+                sheet.AutoSizeColumn(i);
+                if (sheet.GetColumnWidth(i) > 15000)
+                    sheet.SetColumnWidth(i, 15000);
+            }
+        }
+
+        private ICellStyle CreateHeaderStyle(XSSFWorkbook workbook)
+        {
+            var style = workbook.CreateCellStyle();
+            var font = workbook.CreateFont();
+            font.IsBold = true;
+            font.Color = IndexedColors.White.Index;
+            font.FontHeightInPoints = 11;
+            style.SetFont(font);
+            style.FillForegroundColor = IndexedColors.DarkBlue.Index;
+            style.FillPattern = FillPattern.SolidForeground;
+            style.Alignment = HorizontalAlignment.Center;
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderBottom = BorderStyle.Medium;
+            style.BorderTop = BorderStyle.Medium;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
+        }
+
+        private ICellStyle CreateDataStyle(XSSFWorkbook workbook)
+        {
+            var style = workbook.CreateCellStyle();
+            var font = workbook.CreateFont();
+            font.FontHeightInPoints = 10;
+            style.SetFont(font);
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
+        }
+
+        private ICellStyle CreateAlternateRowStyle(XSSFWorkbook workbook)
+        {
+            var style = workbook.CreateCellStyle();
+            var font = workbook.CreateFont();
+            font.FontHeightInPoints = 10;
+            style.SetFont(font);
+            style.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
+            style.FillPattern = FillPattern.SolidForeground;
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
         }
     }
 }

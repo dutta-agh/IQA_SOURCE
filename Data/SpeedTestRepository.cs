@@ -269,6 +269,51 @@ namespace IQA_SOURCE.Data
             }
         }
 
+        public async Task<(int OutputCode, string OutputMsg, int DeletedCount)> BulkDeleteLogs(string assessmentCode, DateTime? startDate, DateTime? endDate, string userId)
+        {
+            try
+            {
+                var query = "DELETE FROM SpeedTestLog WHERE AssessmentCode = @assessmentCode";
+                var parameters = new List<MySqlParameter>
+                {
+                    new MySqlParameter("@assessmentCode", assessmentCode)
+                };
+
+                // Add date range conditions if provided
+                if (startDate.HasValue)
+                {
+                    query += " AND TestDateTime >= @startDate";
+                    parameters.Add(new MySqlParameter("@startDate", startDate.Value));
+                }
+
+                if (endDate.HasValue)
+                {
+                    // Include entire end date (until 23:59:59)
+                    var endDateInclusive = endDate.Value.AddDays(1).AddSeconds(-1);
+                    query += " AND TestDateTime <= @endDate";
+                    parameters.Add(new MySqlParameter("@endDate", endDateInclusive));
+                }
+
+                var deletedCount = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters.ToArray()));
+
+                return (
+                    OutputCode: deletedCount > 0 ? 1 : 0,
+                    OutputMsg: deletedCount > 0 
+                        ? $"Successfully deleted {deletedCount} speed test log(s)"
+                        : "No logs found matching the criteria",
+                    DeletedCount: deletedCount
+                );
+            }
+            catch (Exception ex)
+            {
+                return (
+                    OutputCode: 0,
+                    OutputMsg: $"Error deleting speed test logs: {ex.Message}",
+                    DeletedCount: 0
+                );
+            }
+        }
+
         private SpeedTestLog MapToSpeedTestLog(DataRow row)
         {
             return new SpeedTestLog

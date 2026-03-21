@@ -1,0 +1,1269 @@
+﻿@{
+    ViewData["Title"] = "Colorblindness Test Results";
+    Layout = "_AdminLayoutDynamic";
+}
+
+@{
+    if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 15px;">
+            <strong><i class="fas fa-exclamation-circle"></i> Error:</strong> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+}
+
+@section Styles {
+    <style>
+        .results-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filters-section {
+            background: #f8f9fa;            
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .filter-item label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.85rem;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-search {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-search:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+
+        .btn-export {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+        .results-table thead {
+            background: #667eea;
+            color: white;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .results-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .accuracy-high {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .accuracy-low {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.3;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .table-wrapper table {
+            margin: 0;
+        }
+
+        /* Details Button */
+        .btn-details {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-details:hover {
+            background: #0b5ed7;
+            transform: scale(1.05);
+        }
+
+        /* Modal Styles - UPDATED WIDTH */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 75vw;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @@keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-section h3 i {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.85rem;
+        }
+
+        .detail-value {
+            color: #1a202c;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+
+        /* Image-Wise Grid Styles */
+        .image-wise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .image-wise-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .image-wise-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .image-seq {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #667eea;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .image-wise-card:hover .image-seq {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .image-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .image-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .card-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .card-info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .card-info-value {
+            color: #1a202c;
+            word-break: break-word;
+            max-width: 50%;
+            text-align: right;
+        }
+
+        .card-action-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .card-action-btn:hover {
+            background: #5568d3;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-preview:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .answer-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 12px 0;
+        }
+
+        .answer-box {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .answer-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .answer-box.correct {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .answer-box.correct h4 {
+            color: #155724;
+        }
+
+        .answer-box.correct .answer-text {
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .answer-box.incorrect {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+
+        .answer-box.incorrect h4 {
+            color: #721c24;
+        }
+
+        .answer-box.incorrect .answer-text {
+            color: #721c24;
+            font-weight: 600;
+        }
+
+        .answer-box.skipped {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
+        .answer-box.skipped h4 {
+            color: #856404;
+        }
+
+        .answer-box.skipped .answer-text {
+            color: #856404;
+            font-style: italic;
+        }
+
+        .answer-text {
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .status-badge-large {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-correct {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-skipped {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .modal-footer {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #e2e8f0;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .btn-modal {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modal:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-modal.secondary {
+            background: #6c757d;
+        }
+
+        .btn-modal.secondary:hover {
+            background: #5a6268;
+        }
+
+        .back-to-list {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .back-to-list:hover {
+            background: #5a6268;
+        }
+
+        @@media (max-width: 1200px) {
+            .modal-content {
+                max-width: 90vw;
+            }
+            .image-wise-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .modal-content {
+                max-width: 95vw;
+            }
+            .image-wise-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="results-card">
+    <div class="page-header">
+        <h2><i class="fas fa-chart-bar"></i> Colorblindness Test Results</h2>
+    </div>
+
+    <div class="filters-section">
+        <h5><i class="fas fa-filter"></i> Filters</h5>
+        <div class="filter-group">
+            <div class="filter-item">
+                <label for="assessmentType">Assessment Type:</label>
+                <select id="assessmentType" class="form-control">
+                    <option value="">-- Select Type --</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate" class="form-control">
+            </div>
+            <div class="filter-item">
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate" class="form-control">
+            </div>
+            <div class="action-buttons">
+                <button class="btn-search" onclick="searchResults()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button class="btn-reset" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+                <button class="btn-export" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="summaryStats" class="summary-stats" style="display: none;">
+        <div class="stat-card">
+            <h4>Total Tests</h4>
+            <div class="value" id="totalTests">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Avg Accuracy</h4>
+            <div class="value" id="avgAccuracy">0%</div>
+        </div>
+        <div class="stat-card">
+            <h4>Completed</h4>
+            <div class="value" id="completedTests">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Avg Time</h4>
+            <div class="value" id="avgTime">0s</div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading results...</p>
+    </div>
+
+    <div id="resultsContainer">
+        <div class="table-wrapper" id="tableWrapper" style="display: none;">
+            <table class="results-table" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Type</th>
+                        <th>Attempted</th>
+                        <th>Correct</th>
+                        <th>Wrong</th>
+                        <th>Accuracy</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Pass/Fail</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+            <i class="fas fa-inbox"></i>
+            <p>Select an assessment type and click Search to view results</p>
+        </div>
+
+        <div class="no-data" id="noData" style="display: none;">
+            <i class="fas fa-search"></i>
+            <p>No colorblindness test results found. Try adjusting your filters.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal - UPDATED -->
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-eye"></i> Test Result Details</h2>
+            <button class="modal-close" onclick="closeDetailsModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- Session Information -->
+            <div class="detail-section">
+                <h3><i class="fas fa-info-circle"></i> Session Information</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Session ID:</span>
+                    <span class="detail-value" id="detailSessionId">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Assessment Type:</span>
+                    <span class="detail-value" id="detailAssessmentType">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Attempted:</span>
+                    <span class="detail-value" id="detailTotalAttempted">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Accuracy:</span>
+                    <span class="detail-value" id="detailAccuracy">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Test Status:</span>
+                    <span class="detail-value" id="detailTestStatus">-</span>
+                </div>
+            </div>
+
+            <!-- Image-Wise Results in Grid -->
+            <div class="detail-section" id="imageWiseSection" style="display: none;">
+                <h3><i class="fas fa-th-large"></i> Image-Wise Results</h3>
+                <div class="image-wise-grid" id="imageWiseGrid">
+                </div>
+            </div>
+
+            <!-- Image Details Section (shown when clicking a card) -->
+            <div class="detail-section" id="imageDetailsSection" style="display: none;">
+                <button class="back-to-list" onclick="backToImageWiseResults()">
+                    <i class="fas fa-arrow-left"></i> Back to Results
+                </button>
+                <h3><i class="fas fa-image"></i> Detailed Image Analysis</h3>
+                <img id="detailImage" src="" alt="Test Image" class="image-preview" style="display: none; max-height: 400px; object-fit: contain;">
+                <div class="answer-comparison">
+                    <div class="answer-box" id="correctAnswerBox">
+                        <h4>Correct Answer</h4>
+                        <div class="answer-text" id="detailCorrectAnswer">-</div>
+                    </div>
+                    <div class="answer-box" id="selectedAnswerBox">
+                        <h4>Your Answer</h4>
+                        <div class="answer-text" id="detailSelectedAnswer">-</div>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Result:</span>
+                    <span class="detail-value" id="detailResult">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time Taken:</span>
+                    <span class="detail-value" id="detailTimeTaken">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal secondary" onclick="closeDetailsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentResults = [];
+        let currentDetailData = null;
+        let currentImageWiseResults = [];
+
+        $(document).ready(function () {
+            console.log('ColorblindnessResults page loaded');
+            loadAssessmentTypes();
+        });
+
+        function loadAssessmentTypes() {
+            const url = '/Admin/GetAllAssessmentTypes';
+            console.log('Loading assessment types from:', url);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    console.log('Assessment types response:', response);
+                    if (response.success && response.data) {
+                        const select = $('#assessmentType');
+                        select.empty();
+                        select.append('<option value="">-- Select Type --</option>');
+                        
+                        response.data.forEach(function (type) {
+                            console.log('Adding option:', type.atmCode, type.atmName);
+                            select.append(`<option value="${type.atmCode}">${type.atmName}</option>`);
+                        });
+                        console.log('Dropdown populated with ' + response.data.length + ' items');
+                    } else {
+                        console.error('Invalid response format:', response);
+                        showAlert('Failed to load assessment types', 'danger');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('AJAX Error - Status:', xhr.status, 'Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    showAlert('Error loading assessment types: ' + error, 'danger');
+                }
+            });
+        }
+
+        function searchResults() {
+            const assessmentType = $('#assessmentType').val();
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+
+            if (!assessmentType) {
+                showAlert('Please select an assessment type', 'warning');
+                return;
+            }
+
+            $('#loading').show();
+            $('#tableWrapper').hide();
+            $('#noData').hide();
+            $('#emptyState').hide();
+            $('#summaryStats').hide();
+
+            let url = `/Admin/GetColorblindnessResults?assessmentType=${encodeURIComponent(assessmentType)}`;
+            if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+            if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+
+            console.log('Fetching results from:', url);
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    $('#loading').hide();
+                    console.log('Search results response:', response);
+
+                    if (response.success && response.data && response.data.length > 0) {
+                        currentResults = response.data;
+                        displayResults(response.data);
+                        updateSummaryStats(response.data);
+                        $('#tableWrapper').show();
+                        $('#summaryStats').show();
+                        $('#noData').hide();
+                        $('#emptyState').hide();
+                    } else {
+                        $('#tableWrapper').hide();
+                        $('#noData').show();
+                        $('#emptyState').hide();
+                        $('#summaryStats').hide();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#loading').hide();
+                    console.error('Error loading results - Status:', xhr.status, 'Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    showAlert('Error loading results: ' + error, 'danger');
+                    $('#noData').show();
+                    $('#emptyState').hide();
+                }
+            });
+        }
+
+        function displayResults(results) {
+            const tbody = $('#resultsBody');
+            tbody.empty();
+
+            results.forEach(function (result, index) {
+                const sessionIdShort = result.sessionId ? result.sessionId.substring(0, 8) : 'N/A';
+                
+                // ✅ Format time properly in table
+                let timeDisplay = '';
+                if (result.averageTimePerQuestion < 60) {
+                    timeDisplay = result.averageTimePerQuestion.toFixed(1) + 's';
+                } else {
+                    const minutes = Math.floor(result.averageTimePerQuestion / 60);
+                    const seconds = Math.floor(result.averageTimePerQuestion % 60);
+                    timeDisplay = `${minutes}m ${seconds}s`;
+                }
+
+                // ✅ Calculate Pass/Fail based on COLORBLINDNESS_MAX_MISTAKES
+                const wrongAnswers = result.wrongAnswers ?? 0;
+                const isPassed = wrongAnswers <= globalMaxMistakes;
+                const passFailBadge = isPassed 
+                    ? '<span class="stat-badge" style="background: #d4edda; color: #155724; font-weight: 700;">✓ PASSED</span>'
+                    : '<span class="stat-badge" style="background: #f8d7da; color: #721c24; font-weight: 700;">✗ FAILED</span>';
+                
+                const row = `
+                    <tr>
+                        <td><code title="${escapeHtml(result.sessionId)}">${escapeHtml(sessionIdShort)}...</code></td>
+                        <td>${escapeHtml(result.assessmentType)}</td>
+                        <td>${result.totalQuestionsAttempted}</td>
+                        <td><strong style="color: #28a745;">${result.correctAnswers}</strong></td>
+                        <td><strong style="color: #dc3545;">${wrongAnswers}</strong></td>
+                        <td class="${result.accuracyPercentage >= 70 ? 'accuracy-high' : 'accuracy-low'}">
+                            ${result.accuracyPercentage.toFixed(1)}%
+                        </td>
+                        <td>${timeDisplay}</td>     
+                        <td>
+                            <span class="stat-badge ${result.testStatus === 'Completed' ? 'badge-passed' : 'badge-in-progress'}">
+                                ${escapeHtml(result.testStatus)}
+                            </span>
+                        </td>
+                        <td>${passFailBadge}</td>
+                        <td>
+                            <button class="btn-details" onclick="openDetailsModal(${index})">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function openDetailsModal(index) {
+            if (index < 0 || index >= currentResults.length) {
+                showAlert('Invalid result index', 'danger');
+                return;
+            }
+
+            const result = currentResults[index];
+            currentDetailData = result;
+
+            // Populate modal with session data
+            $('#detailSessionId').text(result.sessionId || '-');
+            $('#detailAssessmentType').text(result.assessmentType || '-');
+            $('#detailTotalAttempted').text(result.totalQuestionsAttempted || '-');
+            $('#detailAccuracy').text(result.accuracyPercentage.toFixed(2) + '%');
+            $('#detailTestStatus').text(result.testStatus || '-');
+
+            // Hide image details section initially
+            $('#imageDetailsSection').hide();
+
+            // Load image-wise results
+            loadImageWiseResults(result.sessionId);
+
+            // Show modal
+            $('#detailsModal').addClass('show');
+        }
+
+        function loadImageWiseResults(sessionId) {
+            $.ajax({
+                url: '/Admin/GetImageWiseColorblindnessResults?sessionId=' + encodeURIComponent(sessionId),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data && response.data.length > 0) {
+                        const testResult = response.data[0];
+                        displayImageWiseResultsGrid(testResult.imageWiseResults || []);
+                        $('#imageWiseSection').show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading image-wise results:', error);
+                    showAlert('Error loading image details', 'danger');
+                }
+            });
+        }
+
+        function displayImageWiseResultsGrid(results) {
+            const grid = $('#imageWiseGrid');
+            grid.empty();
+            currentImageWiseResults = results;
+
+            if (!results || results.length === 0) {
+                grid.html('<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #999;">No image data available</div>');
+                return;
+            }
+
+            results.forEach(function(result, idx) {
+                const statusClass = result.resultStatus === 'Correct' 
+                    ? 'status-correct'  
+                    : result.resultStatus === 'Skipped' 
+                    ? 'status-skipped' 
+                    : 'status-incorrect';
+
+                // Extract filename from imageUrl
+                let imageName = 'Image #' + (result.imageSequence || (idx + 1));
+                let imageFileName = 'N/A';
+                
+                if (result.imageUrl) {
+                    // Extract filename from path (handle both forward and backward slashes)
+                    const parts = result.imageUrl.split(/[\/\\]/);
+                    imageFileName = parts[parts.length - 1] || 'Unknown';
+                    imageName = imageFileName;
+                    
+                    // Debug logging
+                    console.log(`Image ${idx}: URL=${result.imageUrl}, FileName=${imageFileName}`);
+                }
+
+                // Build image HTML if URL exists
+                const imageHtml = result.imageUrl 
+                    ? `<img src="${result.imageUrl}" 
+                           alt="Test Image" 
+                           class="card-thumbnail-image" 
+                           style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid #dee2e6;" 
+                           >`
+                    : '<div style="width: 100%; height: 120px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; color: #999; border: 1px solid #dee2e6;"><i class="fas fa-image"></i> No Image</div>';
+
+                const card = `
+                    <div class="image-wise-card" onclick="viewImageDetail(${idx})" title="${escapeHtml(imageFileName)}">
+                        ${imageHtml}
+                        <div class="image-card-header">
+                            <span class="image-seq" style="font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${escapeHtml(imageName)}
+                            </span>
+                            <span class="image-status-badge ${statusClass}>
+                                ${result.resultStatus}
+                            </span>
+                        </div>
+                        <div class="card-info-row">
+                            <span class="card-info-label">Image ID:</span>
+                            <span class="card-info-value">${result.imageId}</span>
+                        </div>
+                        <div class="card-info-row">
+                            <span class="card-info-label">Correct:</span>
+                            <span class="card-info-value">${escapeHtml(result.correctAnswer || '-')}</span>
+                        </div>
+                        <div class="card-info-row">
+                            <span class="card-info-label">Your Answer:</span>
+                            <span class="card-info-value">${escapeHtml(result.selectedAnswer || 'Skipped')}</span>
+                        </div>
+                        <div class="card-info-row">
+                            <span class="card-info-label">Time:</span>
+                            <span class="card-info-value">${result.timeTakenSeconds}s</span>
+                        </div>
+                        <button class="card-action-btn">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                    </div>
+                `;
+                grid.append(card);
+            });
+        }
+
+        function viewImageDetail(imageIndex) {
+            if (!currentImageWiseResults || imageIndex < 0 || imageIndex >= currentImageWiseResults.length) {
+                showAlert('Invalid image index', 'danger');
+                return;
+            }
+
+            const imageResult = currentImageWiseResults[imageIndex];
+
+            // Update image detail section
+            $('#detailCorrectAnswer').text(imageResult.correctAnswer || 'Not specified');
+            $('#detailSelectedAnswer').text(imageResult.selectedAnswer || 'Skipped');
+
+            // Set result status with appropriate styling
+            let resultBadgeClass = '';
+            if (imageResult.resultStatus === 'Skipped') {
+                $('#selectedAnswerBox').removeClass().addClass('answer-box skipped');
+                $('#correctAnswerBox').removeClass().addClass('answer-box correct');
+                resultBadgeClass = 'status-skipped';
+            } else if (imageResult.resultStatus === 'Correct') {
+                $('#selectedAnswerBox').removeClass().addClass('answer-box correct');
+                $('#correctAnswerBox').removeClass().addClass('answer-box correct');
+                resultBadgeClass = 'status-correct';
+            } else {
+                $('#selectedAnswerBox').removeClass().addClass('answer-box incorrect');
+                $('#correctAnswerBox').removeClass().addClass('answer-box correct');
+                resultBadgeClass = 'status-incorrect';
+            }
+
+            $('#detailResult').html(`<span class="status-badge-large ${resultBadgeClass}">${imageResult.resultStatus}</span>`);
+            $('#detailTimeTaken').text(imageResult.timeTakenSeconds + ' seconds');
+
+            // Show image if URL exists
+            if (imageResult.imageUrl) {
+                $('#detailImage').attr('src', imageResult.imageUrl).show();
+            } else {
+                $('#detailImage').hide();
+            }
+
+            // Show image details section and hide image-wise grid
+            $('#imageWiseSection').hide();
+            $('#imageDetailsSection').show();
+        }
+
+        function backToImageWiseResults() {
+            $('#imageDetailsSection').hide();
+            $('#imageWiseSection').show();
+        }
+
+        function closeDetailsModal() {
+            $('#detailsModal').removeClass('show');
+            currentDetailData = null;
+        }
+
+        function updateSummaryStats(results) {
+            const totalTests = results.length;
+            const completedTests = results.filter(r => r.testStatus === 'Completed').length;
+            const avgAccuracy = (results.reduce((sum, r) => sum + r.accuracyPercentage, 0) / totalTests).toFixed(1);
+            
+            // ✅ FIXED: Properly calculate and format average time
+            const totalTimeAllTests = results.reduce((sum, r) => sum + r.averageTimePerQuestion, 0);
+            const avgTimePerQuestion = (totalTimeAllTests / totalTests).toFixed(2);
+            
+            // ✅ Format time display: if seconds, show as seconds; if greater than 60, show as minutes:seconds
+            let timeDisplay = '';
+            if (avgTimePerQuestion < 60) {
+                timeDisplay = avgTimePerQuestion + 's';
+            } else {
+                const minutes = Math.floor(avgTimePerQuestion / 60);
+                const seconds = Math.floor(avgTimePerQuestion % 60);
+                timeDisplay = `${minutes}m ${seconds}s`;
+            }
+
+            console.log('Summary Stats Calculation:', {
+                totalTests: totalTests,
+                completedTests: completedTests,
+                avgAccuracy: avgAccuracy,
+                avgTimePerQuestion: avgTimePerQuestion,
+                timeDisplay: timeDisplay
+            });
+
+            $('#totalTests').text(totalTests);
+            $('#completedTests').text(completedTests);
+            $('#avgAccuracy').text(avgAccuracy + '%');
+            $('#avgTime').text(timeDisplay);
+        }
+
+        function resetFilters() {
+            $('#assessmentType').val('');
+            $('#startDate').val('');
+            $('#endDate').val('');
+            $('#tableWrapper').hide();
+            $('#noData').hide();
+            $('#emptyState').show();
+            $('#summaryStats').hide();
+            currentResults = [];
+        }
+
+        function exportToExcel() {
+            const assessmentType = $('#assessmentType').val();
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+
+            console.log('Export parameters:', {
+                assessmentType: assessmentType,
+                startDate: startDate,
+                endDate: endDate,
+                dataCount: currentResults.length
+            });
+
+            if (!assessmentType) {
+                showAlert('Please select an assessment type', 'warning');
+                return;
+            }
+
+            if (currentResults.length === 0) {
+                showAlert('No data to export. Please run a search first.', 'warning');
+                return;
+            }
+
+            // Build URL with proper encoding
+            let url = `/Assessment/DownloadColorblindnessResultsExcel?assessmentType=${encodeURIComponent(assessmentType)}`;
+            if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+            if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+
+            console.log('Exporting to Excel URL:', url);
+            
+            try {
+                window.location.href = url;
+            } catch (error) {
+                console.error('Export error:', error);
+                showAlert('Error during export: ' + error.message, 'danger');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="margin-bottom: 15px;">
+                    <strong>${type === 'danger' ? 'Error' : type === 'warning' ? 'Warning' : 'Info'}:</strong> ${escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.results-card').prepend(alertHtml);
+            
+            setTimeout(() => {
+                $('.alert:first').fadeOut('fast', function() { $(this).remove(); });
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        $(document).click(function(event) {
+            const modal = $('#detailsModal');
+            if (event.target === modal[0]) {
+                closeDetailsModal();
+            }
+        });
+
+        // Close modal on Escape key
+        $(document).keydown(function(event) {
+            if (event.keyCode === 27) {
+                closeDetailsModal();
+            }
+        });
+    </script>
+}

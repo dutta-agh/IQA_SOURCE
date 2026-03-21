@@ -1,0 +1,549 @@
+@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Bulk Data Delete";
+}
+
+@section Styles {
+    <style>
+        .card-custom {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .delete-section {
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .preview-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .preview-item:last-child {
+            border-bottom: none;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .preview-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .danger-box {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .warning-text {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .tab-pane {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-trash-alt"></i> Bulk Data Delete</h2>
+        <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> Careful Operation</span>
+    </div>
+
+    <!-- Danger Alert -->
+    <div class="danger-box">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong> WARNING!</strong> Bulk delete operations are <strong>irreversible</strong>. Always review the preview before proceeding.
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="bulkDeleteTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="assessment-tab" data-bs-toggle="tab" data-bs-target="#assessment-content" type="button">
+                <i class="fas fa-graduation-cap"></i> By Assessment
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="imagegroup-tab" data-bs-toggle="tab" data-bs-target="#imagegroup-content" type="button">
+                <i class="fas fa-images"></i> By Image Set
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="bulkDeleteTabsContent">
+        <!-- Assessment Tab -->
+        <div class="tab-pane fade show active" id="assessment-content" role="tabpanel">
+            <div class="card-custom">
+                <h4><i class="fas fa-graduation-cap"></i> Delete Data by Assessment</h4>
+                <hr>
+
+                <form id="assessmentDeleteForm">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Assessment Code <span class="text-danger">*</span></label>
+                            <select class="form-select" id="assessmentCode" required onchange="previewAssessmentDelete()">
+                                <option value="">-- Select Assessment --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Image Set (Optional)</label>
+                            <select class="form-select" id="imageGroupCode" onchange="previewAssessmentDelete()">
+                                <option value="">-- All Image Sets --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="delete-section">
+                        <h6 class="mb-3"><i class="fas fa-check-circle"></i> Select data to delete:</h6>
+                        <div class="checkbox-group">
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delUserResponses" class="form-check-input" onchange="previewAssessmentDelete()">
+                                <label for="delUserResponses" class="form-check-label">User Responses</label>
+                            </div>
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delImageRatings" class="form-check-input" onchange="previewAssessmentDelete()">
+                                <label for="delImageRatings" class="form-check-label">Image Ratings</label>
+                            </div>
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delSpeedTestLogs" class="form-check-input" onchange="previewAssessmentDelete()">
+                                <label for="delSpeedTestLogs" class="form-check-label">Speed Test Logs</label>
+                            </div>
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delAssessmentImages" class="form-check-input" onchange="previewAssessmentDelete()">
+                                <label for="delAssessmentImages" class="form-check-label">Images</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Box -->
+                    <div class="preview-box" id="assessmentPreviewBox" style="display: none;">
+                        <h6 class="mb-3"><i class="fas fa-eye"></i> Preview - Records to be deleted:</h6>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-file-alt"></i> User Responses:</span>
+                            <span class="preview-value" id="previewUserResponses">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-star"></i> Image Ratings:</span>
+                            <span class="preview-value" id="previewImageRatings">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-tachometer-alt"></i> Speed Test Logs:</span>
+                            <span class="preview-value" id="previewSpeedTestLogs">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-image"></i> Images:</span>
+                            <span class="preview-value" id="previewImages">0</span>
+                        </div>
+                        <div class="preview-item" style="border-bottom: 2px solid #667eea;">
+                            <span class="preview-label"><strong>Total Records:</strong></span>
+                            <span class="preview-value"><strong id="previewTotal">0</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-warning me-2" onclick="previewAssessmentDelete()">
+                            <i class="fas fa-eye"></i> Generate Preview
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="confirmAssessmentDelete()" id="btnAssessmentDelete" disabled>
+                            <i class="fas fa-trash"></i> Delete Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Image Group Tab -->
+        <div class="tab-pane fade" id="imagegroup-content" role="tabpanel">
+            <div class="card-custom">
+                <h4><i class="fas fa-images"></i> Delete Data by Image Set</h4>
+                <hr>
+
+                <form id="imageGroupDeleteForm">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Image Set <span class="text-danger">*</span></label>
+                            <select class="form-select" id="imageGroupForDelete" required onchange="previewImageGroupDelete()">
+                                <option value="">-- Select Image Set --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assessment Type (Optional)</label>
+                            <input type="text" class="form-control" id="imageGroupAssessmentType" 
+                                   placeholder="e.g., IQ_TEST, VISION_TEST" onchange="previewImageGroupDelete()">
+                        </div>
+                    </div>
+
+                    <div class="delete-section">
+                        <h6 class="mb-3"><i class="fas fa-check-circle"></i> Select data to delete:</h6>
+                        <div class="checkbox-group">
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delGroupImages" class="form-check-input" onchange="previewImageGroupDelete()">
+                                <label for="delGroupImages" class="form-check-label">Images in Set</label>
+                            </div>
+                            <div class="custom-checkbox">
+                                <input type="checkbox" id="delGroupRatings" class="form-check-input" onchange="previewImageGroupDelete()">
+                                <label for="delGroupRatings" class="form-check-label">Related Ratings</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Box -->
+                    <div class="preview-box" id="imageGroupPreviewBox" style="display: none;">
+                        <h6 class="mb-3"><i class="fas fa-eye"></i> Preview - Records to be deleted:</h6>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-image"></i> Master Images:</span>
+                            <span class="preview-value" id="previewMasterImages">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-images"></i> Linked Images:</span>
+                            <span class="preview-value" id="previewLinkedImages">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label"><i class="fas fa-star"></i> Image Ratings:</span>
+                            <span class="preview-value" id="previewGroupRatings">0</span>
+                        </div>
+                        <div class="preview-item" style="border-bottom: 2px solid #667eea;">
+                            <span class="preview-label"><strong>Total Records:</strong></span>
+                            <span class="preview-value"><strong id="previewGroupTotal">0</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-warning me-2" onclick="previewImageGroupDelete()">
+                            <i class="fas fa-eye"></i> Generate Preview
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="confirmImageGroupDelete()" id="btnImageGroupDelete" disabled>
+                            <i class="fas fa-trash"></i> Delete Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let assessmentCodes = [];
+        let imageGroups = [];
+        let currentAssessmentPreview = null;
+        let currentImageGroupPreview = null;
+
+        $(document).ready(function() {
+            loadAssessmentCodes();
+            loadImageGroups();
+        });
+
+        function loadAssessmentCodes() {
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAssessmentCodesWithData'),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        assessmentCodes = response.data;
+                        const select = $('#assessmentCode');
+                        select.empty().append('<option value="">-- Select Assessment --</option>');
+                        assessmentCodes.forEach(code => {
+                            select.append(`<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`);
+                        });
+                        initSelect2($('#assessmentCode'));
+                    }
+                },
+                error: function() {
+                    showAlert('Error loading assessment codes', 'danger');
+                }
+            });
+        }
+
+        function loadImageGroups() {
+            $.ajax({
+                url: buildApiUrl('/Admin/GetImageGroupsForBulkDelete'),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        imageGroups = response.data;
+                        
+                        const select1 = $('#imageGroupCode');
+                        select1.empty().append('<option value="">-- All Image Sets --</option>');
+                        imageGroups.forEach(group => {
+                            select1.append(`<option value="${escapeHtml(group.code)}">${escapeHtml(group.name)} (${group.imageCount} images)</option>`);
+                        });
+                        
+                        const select2 = $('#imageGroupForDelete');
+                        select2.empty().append('<option value="">-- Select Image Set --</option>');
+                        imageGroups.forEach(group => {
+                            select2.append(`<option value="${escapeHtml(group.code)}">${escapeHtml(group.name)} (${group.imageCount} images)</option>`);
+                        });
+                        
+                        initSelect2([select1, select2]);
+                    }
+                },
+                error: function() {
+                    showAlert('Error loading image groups', 'danger');
+                }
+            });
+        }
+
+        function previewAssessmentDelete() {
+            const code = $('#assessmentCode').val();
+            if (!code) {
+                $('#assessmentPreviewBox').hide();
+                $('#btnAssessmentDelete').prop('disabled', true);
+                return;
+            }
+
+            const hasSelection = $('#delUserResponses').is(':checked') || 
+                                $('#delImageRatings').is(':checked') || 
+                                $('#delSpeedTestLogs').is(':checked') || 
+                                $('#delAssessmentImages').is(':checked');
+
+            if (!hasSelection) {
+                $('#assessmentPreviewBox').hide();
+                $('#btnAssessmentDelete').prop('disabled', true);
+                return;
+            }
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetBulkDeletePreview'),
+                type: 'GET',
+                data: {
+                    assessmentCode: code,
+                    groupCode: $('#imageGroupCode').val() || null
+                },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        currentAssessmentPreview = response.data;
+                        $('#previewUserResponses').text(response.data.userResponseCount || 0);
+                        $('#previewImageRatings').text(response.data.imageRatingCount || 0);
+                        $('#previewSpeedTestLogs').text(response.data.speedTestLogCount || 0);
+                        $('#previewImages').text((response.data.masterImagesCount || 0) + (response.data.linkedImagesCount || 0));
+                        
+                        const total = (response.data.userResponseCount || 0) + 
+                                     (response.data.imageRatingCount || 0) + 
+                                     (response.data.speedTestLogCount || 0) + 
+                                     (response.data.masterImagesCount || 0) + 
+                                     (response.data.linkedImagesCount || 0);
+                        $('#previewTotal').text(total);
+                        
+                        $('#assessmentPreviewBox').show();
+                        $('#btnAssessmentDelete').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error generating preview', 'danger');
+                }
+            });
+        }
+
+        function previewImageGroupDelete() {
+            const code = $('#imageGroupForDelete').val();
+            if (!code) {
+                $('#imageGroupPreviewBox').hide();
+                $('#btnImageGroupDelete').prop('disabled', true);
+                return;
+            }
+
+            const hasSelection = $('#delGroupImages').is(':checked') || 
+                                $('#delGroupRatings').is(':checked');
+
+            if (!hasSelection) {
+                $('#imageGroupPreviewBox').hide();
+                $('#btnImageGroupDelete').prop('disabled', true);
+                return;
+            }
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetBulkDeletePreview'),
+                type: 'GET',
+                data: {
+                    assessmentCode: code,
+                    groupCode: code
+                },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        currentImageGroupPreview = response.data;
+                        $('#previewMasterImages').text(response.data.masterImagesCount || 0);
+                        $('#previewLinkedImages').text(response.data.linkedImagesCount || 0);
+                        $('#previewGroupRatings').text(response.data.imageRatingCount || 0);
+                        
+                        const total = (response.data.masterImagesCount || 0) + 
+                                     (response.data.linkedImagesCount || 0) + 
+                                     (response.data.imageRatingCount || 0);
+                        $('#previewGroupTotal').text(total);
+                        
+                        $('#imageGroupPreviewBox').show();
+                        $('#btnImageGroupDelete').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error generating preview', 'danger');
+                }
+            });
+        }
+
+        function confirmAssessmentDelete() {
+            const total = parseInt($('#previewTotal').text());
+            if (total === 0) {
+                showAlert('No records selected for deletion', 'warning');
+                return;
+            }
+
+            showConfirmationModal(
+                'Confirm Bulk Delete',
+                `<strong>WARNING:</strong> You are about to permanently delete <strong>${total}</strong> records from assessment <strong>${escapeHtml($('#assessmentCode').val())}</strong>. This action CANNOT be undone.`,
+                executeAssessmentDelete,
+                'Delete Permanently',
+                'btn-danger'
+            );
+        }
+
+        function executeAssessmentDelete() {
+            const request = {
+                assessmentCode: $('#assessmentCode').val(),
+                imageGroupCode: $('#imageGroupCode').val() || null,
+                deleteUserResponses: $('#delUserResponses').is(':checked'),
+                deleteImageRatings: $('#delImageRatings').is(':checked'),
+                deleteSpeedTestLogs: $('#delSpeedTestLogs').is(':checked'),
+                deleteImages: $('#delAssessmentImages').is(':checked')
+            };
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/BulkDeleteByAssessmentAndGroup'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        showAlert(`Deletion complete: ${response.data.summary}`, 'success');
+                        $('#assessmentDeleteForm')[0].reset();
+                        $('#assessmentPreviewBox').hide();
+                        $('#btnAssessmentDelete').prop('disabled', true);
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error executing bulk delete', 'danger');
+                }
+            });
+        }
+
+        function confirmImageGroupDelete() {
+            const total = parseInt($('#previewGroupTotal').text());
+            if (total === 0) {
+                showAlert('No records selected for deletion', 'warning');
+                return;
+            }
+
+            showConfirmationModal(
+                'Confirm Bulk Delete',
+                `<strong>WARNING:</strong> You are about to permanently delete <strong>${total}</strong> records from image set <strong>${escapeHtml($('#imageGroupForDelete option:selected').text())}</strong>. This action CANNOT be undone.`,
+                executeImageGroupDelete,
+                'Delete Permanently',
+                'btn-danger'
+            );
+        }
+
+        function executeImageGroupDelete() {
+            const request = {
+                imageGroupCode: $('#imageGroupForDelete').val(),
+                assessmentType: $('#imageGroupAssessmentType').val() || null,
+                deleteImages: $('#delGroupImages').is(':checked'),
+                deleteRelatedRatings: $('#delGroupRatings').is(':checked')
+            };
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/BulkDeleteByImageGroup'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        showAlert(`Deletion complete: ${response.data.summary}`, 'success');
+                        $('#imageGroupDeleteForm')[0].reset();
+                        $('#imageGroupPreviewBox').hide();
+                        $('#btnImageGroupDelete').prop('disabled', true);
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error executing bulk delete', 'danger');
+                }
+            });
+        }
+    </script>
+}

@@ -1,17 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using IQA_SOURCE.Data;
+﻿using IQA_SOURCE.Data;
 using IQA_SOURCE.Models.Admin;
-using System.Text.Json;
+using IQA_SOURCE.Models.Colorblindness;
 using IQA_SOURCE.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using MySqlConnector;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.IO;
-using MySqlConnector;
 using System.Data;
+using System.IO;
+using System.Text.Json;
 using YourApp.Data;
 
-namespace IQA_SOURCE.Controllers                                                                                                                            
+namespace IQA_SOURCE.Controllers
 {
     public class AdminController : Controller
     {
@@ -32,6 +33,7 @@ namespace IQA_SOURCE.Controllers
         private readonly IBulkOperationsRepository _bulkOperationsRepository;
         private readonly IAdminUserRepository _adminUserRepository;
         private readonly IAdminMenuRepository _adminMenuRepository;
+        private readonly IColorblindnessRepository _colorblindnessRepository;
 
         public AdminController(
             IAdminRepository adminRepository,
@@ -50,7 +52,8 @@ namespace IQA_SOURCE.Controllers
             ILogger<AdminController> logger,
             IDbHelper dbHelper,
             IAdminUserRepository adminUserRepository,
-            IAdminMenuRepository adminMenuRepository)
+            IAdminMenuRepository adminMenuRepository,
+            IColorblindnessRepository colorblindnessRepository)
         {
             _adminRepository = adminRepository;
             _assessmentTypeRepository = assessmentTypeRepository;
@@ -69,6 +72,7 @@ namespace IQA_SOURCE.Controllers
             _dbHelper = dbHelper;
             _adminUserRepository = adminUserRepository;
             _adminMenuRepository = adminMenuRepository;
+            _colorblindnessRepository = colorblindnessRepository;
         }
 
         // Login Page
@@ -276,14 +280,14 @@ namespace IQA_SOURCE.Controllers
             {
                 var question = new QuestionMaster
                 {
-                    QId             = model.TryGetProperty("qsId",            out var qId)            ? qId.GetInt32()                                         : 0,
-                    QsCode          = model.TryGetProperty("qsCode",          out var qsCode)          ? qsCode.GetString()                                     : null,
-                    QsText          = model.TryGetProperty("qsText",          out var qsText)          ? qsText.GetString()                                     : null,
-                    QsType          = model.TryGetProperty("qsType",          out var qsType)          ? qsType.GetString()                                     : null,
-                    QsCategory      = model.TryGetProperty("qsCategory",      out var qsCategory)      ? qsCategory.GetString()                                 : null,
-                    QsMaxSelections = model.TryGetProperty("qsMaxSelections", out var qsMaxSelections) && qsMaxSelections.ValueKind != JsonValueKind.Null ? qsMaxSelections.GetInt32()  : (int?)null,
-                    QsOrderNo       = model.TryGetProperty("qsOrderNo",       out var qsOrderNo)       && qsOrderNo.ValueKind       != JsonValueKind.Null ? qsOrderNo.GetInt32()        : (int?)null,
-                    QsActive        = model.TryGetProperty("qsActive",        out var qsActive)        ? ConvertToIntActive(qsActive)                          : 1
+                    QId = model.TryGetProperty("qsId", out var qId) ? qId.GetInt32() : 0,
+                    QsCode = model.TryGetProperty("qsCode", out var qsCode) ? qsCode.GetString() : null,
+                    QsText = model.TryGetProperty("qsText", out var qsText) ? qsText.GetString() : null,
+                    QsType = model.TryGetProperty("qsType", out var qsType) ? qsType.GetString() : null,
+                    QsCategory = model.TryGetProperty("qsCategory", out var qsCategory) ? qsCategory.GetString() : null,
+                    QsMaxSelections = model.TryGetProperty("qsMaxSelections", out var qsMaxSelections) && qsMaxSelections.ValueKind != JsonValueKind.Null ? qsMaxSelections.GetInt32() : (int?)null,
+                    QsOrderNo = model.TryGetProperty("qsOrderNo", out var qsOrderNo) && qsOrderNo.ValueKind != JsonValueKind.Null ? qsOrderNo.GetInt32() : (int?)null,
+                    QsActive = model.TryGetProperty("qsActive", out var qsActive) ? ConvertToIntActive(qsActive) : 1
                 };
 
                 QuestionMasterResponse result = question.QId > 0
@@ -320,12 +324,12 @@ namespace IQA_SOURCE.Controllers
             {
                 var option = new QuestionOption
                 {
-                    QoId      = model.TryGetProperty("qoId",      out var qoId)      ? qoId.GetInt32()                                     : 0,
-                    QoQId     = model.TryGetProperty("qoQId",     out var qoQId)     ? qoQId.GetInt32()                                    : 0,
-                    QoText    = model.TryGetProperty("qoText",    out var qoText)    ? qoText.GetString()                                  : null,
-                    QoValue   = model.TryGetProperty("qoValue",   out var qoValue)   ? qoValue.GetString()                                 : null,
+                    QoId = model.TryGetProperty("qoId", out var qoId) ? qoId.GetInt32() : 0,
+                    QoQId = model.TryGetProperty("qoQId", out var qoQId) ? qoQId.GetInt32() : 0,
+                    QoText = model.TryGetProperty("qoText", out var qoText) ? qoText.GetString() : null,
+                    QoValue = model.TryGetProperty("qoValue", out var qoValue) ? qoValue.GetString() : null,
                     QoOrderNo = model.TryGetProperty("qoOrderNo", out var qoOrderNo) && qoOrderNo.ValueKind != JsonValueKind.Null ? qoOrderNo.GetInt32() : (int?)null,
-                    QoActive  = model.TryGetProperty("qoActive",  out var qoActive)  ? ConvertToIntActive(qoActive)                       : 1
+                    QoActive = model.TryGetProperty("qoActive", out var qoActive) ? ConvertToIntActive(qoActive) : 1
                 };
 
                 QuestionMasterResponse result = option.QoId > 0
@@ -354,7 +358,7 @@ namespace IQA_SOURCE.Controllers
         [HttpPost]
         [RequestSizeLimit(2147483648)]
         [RequestFormLimits(MultipartBodyLengthLimit = 2147483648, ValueCountLimit = 100000)]
-            public async Task<IActionResult> UploadImages([FromForm] string assessmentType, [FromForm] string groupCode, [FromForm] IFormFile[] files)
+        public async Task<IActionResult> UploadImages([FromForm] string assessmentType, [FromForm] string groupCode, [FromForm] IFormFile[] files)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -370,16 +374,16 @@ namespace IQA_SOURCE.Controllers
             try
             {
                 var uploadBatch = Guid.NewGuid().ToString();
-                var uploadPath  = Path.Combine(_imageSettings.BasePath, assessmentType);
+                var uploadPath = Path.Combine(_imageSettings.BasePath, assessmentType);
 
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
-                var masterImages   = new List<ImageMaster>();
-                var linkedImages   = new List<ImageLinked>();
+                var masterImages = new List<ImageMaster>();
+                var linkedImages = new List<ImageLinked>();
                 var skippedMasters = new List<string>();
-                var errors         = new List<string>();
-                var fileGroups     = files.GroupBy(f => GetBaseName(f.FileName)).ToList();
+                var errors = new List<string>();
+                var fileGroups = files.GroupBy(f => GetBaseName(f.FileName)).ToList();
 
                 foreach (var group in fileGroups)
                 {
@@ -387,7 +391,7 @@ namespace IQA_SOURCE.Controllers
                     if (masterFile == null) continue;
 
                     var masterFileName = Path.GetFileName(masterFile.FileName);
-                    var masterExists   = await _imageRepository.CheckDuplicateFileName(assessmentType, masterFileName);
+                    var masterExists = await _imageRepository.CheckDuplicateFileName(assessmentType, masterFileName);
 
                     if (masterExists)
                     {
@@ -398,7 +402,7 @@ namespace IQA_SOURCE.Controllers
                         foreach (var linkedFile in group.Where(f => !IsMasterImage(f.FileName)))
                         {
                             var linkedFileName = Path.GetFileName(linkedFile.FileName);
-                            var linkedExists   = await _imageRepository.CheckLinkedImageExists(existingMaster.ImId, linkedFileName);
+                            var linkedExists = await _imageRepository.CheckLinkedImageExists(existingMaster.ImId, linkedFileName);
                             if (linkedExists) continue;
 
                             try
@@ -407,9 +411,9 @@ namespace IQA_SOURCE.Controllers
                                 using (var stream = new FileStream(linkedFilePath, FileMode.Create))
                                     await linkedFile.CopyToAsync(stream);
 
-                                var linkedMetadata               = await _metadataService.ExtractMetadata(linkedFilePath);
-                                var (qualityLevel, qualityType)  = ParseQualityInfo(linkedFileName);
-                                var webPath                      = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
+                                var linkedMetadata = await _metadataService.ExtractMetadata(linkedFilePath);
+                                var (qualityLevel, qualityType) = ParseQualityInfo(linkedFileName);
+                                var webPath = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
 
                                 linkedImages.Add(BuildLinkedImage(existingMaster.ImId, linkedFileName, webPath, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch, groupCode));
                             }
@@ -428,7 +432,7 @@ namespace IQA_SOURCE.Controllers
                                 await masterFile.CopyToAsync(stream);
 
                             var metadata = await _metadataService.ExtractMetadata(masterFilePath);
-                            var webPath  = $"{_imageSettings.WebBasePath}/{assessmentType}/{masterFileName}";
+                            var webPath = $"{_imageSettings.WebBasePath}/{assessmentType}/{masterFileName}";
                             masterImages.Add(BuildMasterImage(assessmentType, masterFileName, webPath, masterFile.Length, metadata, uploadBatch, groupCode));
 
                             foreach (var linkedFile in group.Where(f => !IsMasterImage(f.FileName)))
@@ -440,9 +444,9 @@ namespace IQA_SOURCE.Controllers
                                     using (var stream = new FileStream(linkedFilePath, FileMode.Create))
                                         await linkedFile.CopyToAsync(stream);
 
-                                    var linkedMetadata              = await _metadataService.ExtractMetadata(linkedFilePath);
+                                    var linkedMetadata = await _metadataService.ExtractMetadata(linkedFilePath);
                                     var (qualityLevel, qualityType) = ParseQualityInfo(linkedFileName);
-                                    var webPath1                    = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
+                                    var webPath1 = $"{_imageSettings.WebBasePath}/{assessmentType}/{linkedFileName}";
 
                                     linkedImages.Add(BuildLinkedImage(0, linkedFileName, webPath1, linkedFile.Length, linkedMetadata, qualityLevel, qualityType, uploadBatch, groupCode));
                                 }
@@ -463,7 +467,7 @@ namespace IQA_SOURCE.Controllers
                 if (masterImages.Count > 0 || linkedImages.Count > 0)
                 {
                     result = await _imageRepository.SaveImages(masterImages, linkedImages, userId);
-                    result.Data.SkippedMasterImages   = skippedMasters.Count;
+                    result.Data.SkippedMasterImages = skippedMasters.Count;
                     result.Data.SkippedMasterFileNames = skippedMasters;
                     if (errors.Count > 0)
                     {
@@ -476,15 +480,15 @@ namespace IQA_SOURCE.Controllers
                     result = new ImageUploadResponse
                     {
                         OutputCode = 1,
-                        OutputMsg  = "No new images to upload. All master images already exist.",
-                        Data       = new ImageUploadResult
+                        OutputMsg = "No new images to upload. All master images already exist.",
+                        Data = new ImageUploadResult
                         {
-                            TotalFiles             = files.Length,
-                            MasterImagesUploaded   = 0,
-                            LinkedImagesUploaded   = 0,
-                            SkippedMasterImages    = skippedMasters.Count,
+                            TotalFiles = files.Length,
+                            MasterImagesUploaded = 0,
+                            LinkedImagesUploaded = 0,
+                            SkippedMasterImages = skippedMasters.Count,
                             SkippedMasterFileNames = skippedMasters,
-                            ErrorMessages          = errors
+                            ErrorMessages = errors
                         }
                     };
                 }
@@ -492,8 +496,8 @@ namespace IQA_SOURCE.Controllers
                 var msg = new System.Text.StringBuilder();
                 if (result.Data.MasterImagesUploaded > 0) msg.Append($"{result.Data.MasterImagesUploaded} master image(s) uploaded. ");
                 if (result.Data.LinkedImagesUploaded > 0) msg.Append($"{result.Data.LinkedImagesUploaded} linked image(s) uploaded. ");
-                if (result.Data.SkippedMasterImages  > 0) msg.Append($"{result.Data.SkippedMasterImages} master image(s) skipped (already exist). ");
-                if (errors.Count                     > 0) msg.Append($"{errors.Count} error(s) occurred. ");
+                if (result.Data.SkippedMasterImages > 0) msg.Append($"{result.Data.SkippedMasterImages} master image(s) skipped (already exist). ");
+                if (errors.Count > 0) msg.Append($"{errors.Count} error(s) occurred. ");
                 result.OutputMsg = msg.ToString().Trim();
 
                 return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
@@ -522,7 +526,7 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _imageRepository.GetImagesByAssessmentType(assessmentType, userId);
-            
+
             // ✅ FIX: Enrich images with group names
             if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
             {
@@ -544,7 +548,7 @@ namespace IQA_SOURCE.Controllers
                     }
                 }
             }
-            
+
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
@@ -558,7 +562,7 @@ namespace IQA_SOURCE.Controllers
             try
             {
                 var result = await _imageRepository.GetImagesByAssessmentTypeAndGroup(assessmentType, groupCode, userId);
-                
+
                 // ✅ FIX: Enrich images with group names (same logic as dashboard)
                 if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
                 {
@@ -581,7 +585,7 @@ namespace IQA_SOURCE.Controllers
                         }
                     }
                 }
-                
+
                 return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
             }
             catch (Exception ex)
@@ -628,26 +632,26 @@ namespace IQA_SOURCE.Controllers
                         try
                         {
                             var metadata = await _metadataService.ExtractMetadata(image.ImFilePath);
-                            image.ImWidth              = metadata.Width;
-                            image.ImHeight             = metadata.Height;
-                            image.ImFormat             = metadata.Format;
-                            image.ImColorSpace         = metadata.ColorSpace;
-                            image.ImBitDepth           = metadata.BitDepth;
-                            image.ImDpiX               = metadata.DpiX;
-                            image.ImDpiY               = metadata.DpiY;
-                            image.ImExifData           = JsonSerializer.Serialize(metadata.ExifData);
-                            image.ImCameraMake         = metadata.CameraMake;
-                            image.ImCameraModel        = metadata.CameraModel;
-                            image.ImLensModel          = metadata.LensModel;
-                            image.ImFocalLength        = metadata.FocalLength;
-                            image.ImAperture           = metadata.Aperture;
-                            image.ImShutterSpeed       = metadata.ShutterSpeed;
-                            image.ImIso                = metadata.Iso;
-                            image.ImFlash              = metadata.Flash;
-                            image.ImExposureMode       = metadata.ExposureMode;
-                            image.ImWhiteBalance       = metadata.WhiteBalance;
-                            image.ImDateTaken          = metadata.DateTaken;
-                            image.ImOrientation        = metadata.Orientation;
+                            image.ImWidth = metadata.Width;
+                            image.ImHeight = metadata.Height;
+                            image.ImFormat = metadata.Format;
+                            image.ImColorSpace = metadata.ColorSpace;
+                            image.ImBitDepth = metadata.BitDepth;
+                            image.ImDpiX = metadata.DpiX;
+                            image.ImDpiY = metadata.DpiY;
+                            image.ImExifData = JsonSerializer.Serialize(metadata.ExifData);
+                            image.ImCameraMake = metadata.CameraMake;
+                            image.ImCameraModel = metadata.CameraModel;
+                            image.ImLensModel = metadata.LensModel;
+                            image.ImFocalLength = metadata.FocalLength;
+                            image.ImAperture = metadata.Aperture;
+                            image.ImShutterSpeed = metadata.ShutterSpeed;
+                            image.ImIso = metadata.Iso;
+                            image.ImFlash = metadata.Flash;
+                            image.ImExposureMode = metadata.ExposureMode;
+                            image.ImWhiteBalance = metadata.WhiteBalance;
+                            image.ImDateTaken = metadata.DateTaken;
+                            image.ImOrientation = metadata.Orientation;
                             image.ImCompressionQuality = metadata.CompressionQuality;
                         }
                         catch (Exception ex)
@@ -674,14 +678,14 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _dashboardRepository.GetDashboardStats(userId);
-            
+
             // ✅ FIX: Enrich dashboard stats with group names
             if (result.OutputCode == 1 && result.Data != null)
             {
                 // Get all image groups for mapping
                 var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
                 var groupsMap = groupsResult.Data?
-                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
                     ?? new Dictionary<string, string>();
 
                 // Enrich assessment image summaries with group names
@@ -721,14 +725,14 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _imageRepository.GetImagesWithAuditTrail(assessmentType, userId);
-            
+
             // Enrich result data with group names
             if (result.OutputCode == 1 && result.Data != null)
             {
                 // Get all image groups
                 var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
                 var groupsMap = groupsResult.Data?
-                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
                     ?? new Dictionary<string, string>();
 
                 // Add group names to each image
@@ -738,7 +742,7 @@ namespace IQA_SOURCE.Controllers
                     {
                         image.ImGroupName = groupName;
                     }
-                    
+
                     if (image.LinkedImages != null)
                     {
                         foreach (var linked in image.LinkedImages)
@@ -763,14 +767,14 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var (outputCode, outputMsg, data) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
-            
+
             // Enrich data with group names if available
             if (outputCode == 1 && data != null && data.Count > 0)
             {
                 // Get all image groups
                 var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
                 var groupsMap = groupsResult.Data?
-                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
                     ?? new Dictionary<string, string>();
 
                 // Add group names to each rating - using master group code
@@ -849,11 +853,11 @@ namespace IQA_SOURCE.Controllers
                 }
 
                 var workbook = new XSSFWorkbook();
-                var sheet    = workbook.CreateSheet("Speed Test Logs");
+                var sheet = workbook.CreateSheet("Speed Test Logs");
 
-                var headerRow   = sheet.CreateRow(0);
+                var headerRow = sheet.CreateRow(0);
                 var headerStyle = workbook.CreateCellStyle();
-                var headerFont  = workbook.CreateFont();
+                var headerFont = workbook.CreateFont();
                 headerFont.IsBold = true;
                 headerStyle.SetFont(headerFont);
 
@@ -934,6 +938,28 @@ namespace IQA_SOURCE.Controllers
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetImageWiseColorblindnessResults(string sessionId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrEmpty(sessionId))
+                return Json(new { success = false, message = "Session ID is required" });
+
+            try
+            {
+                var result = await _colorblindnessRepository.GetColorblindnessResultsBySessionId(sessionId, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving image-wise results for session: {SessionId}", sessionId);
+                return Json(new { success = false, message = $"Error retrieving results: {ex.Message}" });
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> UpsertSystemCheckParam([FromBody] SystemCheckParam model)
         {
@@ -946,7 +972,7 @@ namespace IQA_SOURCE.Controllers
 
             var result = await _systemCheckParamRepository.UpsertParam(model, userId);
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
-        }
+        }   
 
         // Question Answers View
         [HttpGet]
@@ -966,7 +992,7 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _questionAnswerRepository.GetAllQuestionAnswers(userId);
-            
+
             // Enrich with image group names for question answers
             if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
             {
@@ -1018,7 +1044,7 @@ namespace IQA_SOURCE.Controllers
                 return Json(new { success = false, message = "Unauthorized" });
 
             var result = await _questionAnswerRepository.GetQuestionAnswersByCode(assessmentCode, userId);
-            
+
             // Enrich with image group names for question answers
             if (result.OutputCode == 1 && result.Data != null && result.Data.Count > 0)
             {
@@ -1065,6 +1091,14 @@ namespace IQA_SOURCE.Controllers
 
             try
             {
+                // ── Fetch global params for colorblindness thresholds ────────────────────
+                var paramsResult = await _systemCheckParamRepository.GetAllParams(userId);
+                var globalParams = paramsResult.Data ?? new List<SystemCheckParam>();
+                
+                int maxMistakes = int.TryParse(
+                    globalParams.FirstOrDefault(p => p.ScpParamCode == "COLORBLINDNESS_MAX_MISTAKES")?.ScpParamValue, 
+                    out var mm) ? mm : 2;
+
                 var responseData = await _questionAnswerRepository.GetQuestionAnswersForExcel(assessmentCode, userId);
                 if (responseData.Count == 0)
                 {
@@ -1072,9 +1106,9 @@ namespace IQA_SOURCE.Controllers
                     return RedirectToAction("QuestionAnswers");
                 }
 
-                var questionsQuery   = await _questionMasterRepository.GetAllQuestions(userId);
-                var questions        = questionsQuery.Data.Where(q => q.QsActive == 1).OrderBy(q => q.QsOrderNo).ToList();
-                var respondedCodes   = responseData.Select(r => r.QuestionCode).ToHashSet();
+                var questionsQuery = await _questionMasterRepository.GetAllQuestions(userId);
+                var questions = questionsQuery.Data.Where(q => q.QsActive == 1).OrderBy(q => q.QsOrderNo).ToList();
+                var respondedCodes = responseData.Select(r => r.QuestionCode).ToHashSet();
                 var orderedQuestions = questions.Where(q => respondedCodes.Contains(q.QsCode)).ToList();
 
                 var sessionGroups = responseData
@@ -1088,12 +1122,14 @@ namespace IQA_SOURCE.Controllers
                         AnswersByQuestion = g.ToDictionary(r => r.QuestionCode ?? "", r => r.SelectedOptions ?? "")
                     }).ToList();
 
-                var workbook    = new XSSFWorkbook();
-                var sheet       = workbook.CreateSheet($"QuestionAnswers_{assessmentCode}");
+                var workbook = new XSSFWorkbook();
+                
+                // ── Sheet 1: Question Answers ────────────────────────────────────────────
+                var sheet = workbook.CreateSheet($"QuestionAnswers_{assessmentCode}");
                 var headerStyle = CreateHeaderStyle(workbook);
-                var dataStyle   = CreateDataStyle(workbook);
-                var altStyle    = CreateAltRowStyle(workbook);
-                var headerRow   = sheet.CreateRow(0);
+                var dataStyle = CreateDataStyle(workbook);
+                var altStyle = CreateAltRowStyle(workbook);
+                var headerRow = sheet.CreateRow(0);
 
                 string[] fixedHeaders = ["Session ID", "IP Address", "Submit Time"];
                 for (int i = 0; i < fixedHeaders.Length; i++)
@@ -1113,17 +1149,17 @@ namespace IQA_SOURCE.Controllers
                 int rowIndex = 1;
                 foreach (var session in sessionGroups)
                 {
-                    var row   = sheet.CreateRow(rowIndex);
+                    var row = sheet.CreateRow(rowIndex);
                     var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
                     row.CreateCell(0).SetCellValue(session.SessionId ?? ""); row.GetCell(0).CellStyle = style;
-                    row.CreateCell(1).SetCellValue(session.IpAddress  ?? ""); row.GetCell(1).CellStyle = style;
+                    row.CreateCell(1).SetCellValue(session.IpAddress ?? ""); row.GetCell(1).CellStyle = style;
                     row.CreateCell(2).SetCellValue(session.SubmitTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""); row.GetCell(2).CellStyle = style;
 
                     for (int i = 0; i < orderedQuestions.Count; i++)
                     {
-                        var qCode     = orderedQuestions[i].QsCode ?? "";
+                        var qCode = orderedQuestions[i].QsCode ?? "";
                         var cellValue = session.AnswersByQuestion.TryGetValue(qCode, out var csv) ? csv : "";
-                        var cell      = row.CreateCell(fixedHeaders.Length + i);
+                        var cell = row.CreateCell(fixedHeaders.Length + i);
                         cell.SetCellValue(cellValue);
                         cell.CellStyle = style;
                     }
@@ -1137,16 +1173,14 @@ namespace IQA_SOURCE.Controllers
                     if (sheet.GetColumnWidth(i) > 15000) sheet.SetColumnWidth(i, 15000);
                 }
 
-                // Image Ratings sheet — destructure the tuple return
+                // ── Sheet 2: Image Ratings ────────────────────────────────────────────────
                 var (irCode, irMsg, irData) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
 
-                // Get all image groups for mapping
                 var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
                 var groupsMap = groupsResult.Data?
-                    .ToDictionary(g => g.IgCode, g => g.IgName) 
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
                     ?? new Dictionary<string, string>();
 
-                // Enrich data with group names
                 if (irData != null && irData.Count > 0)
                 {
                     foreach (var rating in irData)
@@ -1161,10 +1195,10 @@ namespace IQA_SOURCE.Controllers
                     }
                 }
 
-                var irSheet     = workbook.CreateSheet("Image Ratings");
-                var irHdrStyle  = CreateHeaderStyle(workbook);
+                var irSheet = workbook.CreateSheet("Image Ratings");
+                var irHdrStyle = CreateHeaderStyle(workbook);
                 var irDataStyle = CreateDataStyle(workbook);
-                var irAltStyle  = CreateAltRowStyle(workbook);
+                var irAltStyle = CreateAltRowStyle(workbook);
 
                 string[] irHeaders = {
                     "Session ID", "Image Group", "Assessment", "IP Address", "Rated At",
@@ -1185,29 +1219,27 @@ namespace IQA_SOURCE.Controllers
                 int irRowIdx = 1;
                 foreach (var row in irData)
                 {
-                    var r     = irSheet.CreateRow(irRowIdx);
+                    var r = irSheet.CreateRow(irRowIdx);
                     var style = irRowIdx % 2 == 0 ? irAltStyle : irDataStyle;
-                    r.CreateCell(0).SetCellValue(row.SessionId ?? "");         r.GetCell(0).CellStyle  = style;
-                    r.CreateCell(1).SetCellValue(row.GroupName ?? "N/A");      r.GetCell(1).CellStyle  = style;  // IMAGE GROUP NAME (NEW)
-                    r.CreateCell(2).SetCellValue(row.AssessmentCode ?? "");    r.GetCell(2).CellStyle  = style;
-                    r.CreateCell(3).SetCellValue(row.IpAddress ?? "");         r.GetCell(3).CellStyle  = style;
+                    r.CreateCell(0).SetCellValue(row.SessionId ?? ""); r.GetCell(0).CellStyle = style;
+                    r.CreateCell(1).SetCellValue(row.GroupName ?? "N/A"); r.GetCell(1).CellStyle = style;
+                    r.CreateCell(2).SetCellValue(row.AssessmentCode ?? ""); r.GetCell(2).CellStyle = style;
+                    r.CreateCell(3).SetCellValue(row.IpAddress ?? ""); r.GetCell(3).CellStyle = style;
                     r.CreateCell(4).SetCellValue(row.RatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""); r.GetCell(4).CellStyle = style;
-                    r.CreateCell(5).SetCellValue(row.MasterImageName ?? "");   r.GetCell(5).CellStyle  = style;
+                    r.CreateCell(5).SetCellValue(row.MasterImageName ?? ""); r.GetCell(5).CellStyle = style;
                     r.CreateCell(6).SetCellValue(row.MasterWidth.HasValue && row.MasterHeight.HasValue ? $"{row.MasterWidth} x {row.MasterHeight}" : ""); r.GetCell(6).CellStyle = style;
                     r.CreateCell(7).SetCellValue(row.MasterDpiX.HasValue ? $"{Math.Round(row.MasterDpiX.Value)} x {Math.Round(row.MasterDpiY ?? 0)}" : ""); r.GetCell(7).CellStyle = style;
-                    r.CreateCell(8).SetCellValue(row.MasterFormat ?? "");      r.GetCell(8).CellStyle  = style;
-                    // Main image (Sort) rating columns
+                    r.CreateCell(8).SetCellValue(row.MasterFormat ?? ""); r.GetCell(8).CellStyle = style;
                     r.CreateCell(9).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRating.Value.ToString() : ""); r.GetCell(9).CellStyle = style;
-                    r.CreateCell(10).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRatingLabel : "");              r.GetCell(10).CellStyle = style;
-                    // Linked image columns
-                    r.CreateCell(11).SetCellValue(row.LinkedImageName ?? "");   r.GetCell(11).CellStyle = style;
+                    r.CreateCell(10).SetCellValue(row.MasterImageRating.HasValue ? row.MasterImageRatingLabel : ""); r.GetCell(10).CellStyle = style;
+                    r.CreateCell(11).SetCellValue(row.LinkedImageName ?? ""); r.GetCell(11).CellStyle = style;
                     r.CreateCell(12).SetCellValue(row.LinkedWidth.HasValue && row.LinkedHeight.HasValue ? $"{row.LinkedWidth} x {row.LinkedHeight}" : ""); r.GetCell(12).CellStyle = style;
                     r.CreateCell(13).SetCellValue(row.LinkedDpiX.HasValue ? $"{Math.Round(row.LinkedDpiX.Value)} x {Math.Round(row.LinkedDpiY ?? 0)}" : ""); r.GetCell(13).CellStyle = style;
-                    r.CreateCell(14).SetCellValue(row.LinkedFormat ?? "");       r.GetCell(14).CellStyle = style;
+                    r.CreateCell(14).SetCellValue(row.LinkedFormat ?? ""); r.GetCell(14).CellStyle = style;
                     r.CreateCell(15).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(15).CellStyle = style;
-                    r.CreateCell(16).SetCellValue(row.LinkedQualityType  ?? ""); r.GetCell(16).CellStyle = style;
-                    r.CreateCell(17).SetCellValue(row.QualityRating);            r.GetCell(17).CellStyle = style;
-                    r.CreateCell(18).SetCellValue(row.QualityRatingLabel);       r.GetCell(18).CellStyle = style;
+                    r.CreateCell(16).SetCellValue(row.LinkedQualityType ?? ""); r.GetCell(16).CellStyle = style;
+                    r.CreateCell(17).SetCellValue(row.QualityRating); r.GetCell(17).CellStyle = style;
+                    r.CreateCell(18).SetCellValue(row.QualityRatingLabel); r.GetCell(18).CellStyle = style;
                     irRowIdx++;
                 }
 
@@ -1215,6 +1247,73 @@ namespace IQA_SOURCE.Controllers
                 {
                     irSheet.AutoSizeColumn(i);
                     if (irSheet.GetColumnWidth(i) > 15000) irSheet.SetColumnWidth(i, 15000);
+                }
+
+                // ── Sheet 3: Colorblindness Test Results (with param filtering) ──────────
+                var cbResult = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentCode, userId);
+                
+                if (cbResult.OutputCode == 1 && cbResult.Data != null && cbResult.Data.Count > 0)
+                {
+                    var cbSheet = workbook.CreateSheet("Colorblindness Results");
+                    var cbHdrStyle = CreateHeaderStyle(workbook);
+                    var cbDataStyle = CreateDataStyle(workbook);
+                    var cbAltStyle = CreateAltRowStyle(workbook);
+                    var cbFailStyle = workbook.CreateCellStyle();
+                    cbFailStyle.FillForegroundColor = IndexedColors.Red.Index;
+                    cbFailStyle.FillPattern = FillPattern.SolidForeground;
+                    var failFont = workbook.CreateFont();
+                    failFont.Color = IndexedColors.White.Index;
+                    failFont.IsBold = true;
+                    cbFailStyle.SetFont(failFont);
+                    cbFailStyle.Alignment = HorizontalAlignment.Center;
+                    cbFailStyle.VerticalAlignment = VerticalAlignment.Center;
+
+                    string[] cbHeaders = {
+                        "Session ID", "Assessment Type", "IP Address", "Test DateTime",
+                        "Total Questions", "Correct Answers", "Wrong Answers", "Score (%)",
+                        "Colorblind Type", "Status", "Max Mistakes Allowed", "Notes"
+                    };
+                    
+                    var cbHeaderRow = cbSheet.CreateRow(0);
+                    for (int i = 0; i < cbHeaders.Length; i++)
+                    {
+                        var cell = cbHeaderRow.CreateCell(i);
+                        cell.SetCellValue(cbHeaders[i]);
+                        cell.CellStyle = cbHdrStyle;
+                    }
+                    cbSheet.CreateFreezePane(0, 1);
+
+                    int cbRowIdx = 1;
+                    foreach (var cbData in cbResult.Data)
+                    {
+                        // ✅ Calculate pass/fail based on COLORBLINDNESS_MAX_MISTAKES
+                        int mistakes = cbData.WrongAnswers;
+                        bool isPassed = mistakes <= maxMistakes;
+
+                        var cbRow = cbSheet.CreateRow(cbRowIdx);
+                        var cbStyle = !isPassed ? cbFailStyle : (cbRowIdx % 2 == 0 ? cbAltStyle : cbDataStyle);
+                                    
+                        cbRow.CreateCell(0).SetCellValue(cbData.SessionId ?? ""); cbRow.GetCell(0).CellStyle = cbStyle;
+                        cbRow.CreateCell(1).SetCellValue(cbData.AssessmentType ?? ""); cbRow.GetCell(1).CellStyle = cbStyle;
+                        cbRow.CreateCell(2).SetCellValue(cbData.IpAddress ?? ""); cbRow.GetCell(2).CellStyle = cbStyle;
+                        cbRow.CreateCell(3).SetCellValue(cbData.TestDateTime.ToString("yyyy-MM-dd HH:mm:ss")); cbRow.GetCell(3).CellStyle = cbStyle;
+                        cbRow.CreateCell(4).SetCellValue(cbData.TotalQuestions); cbRow.GetCell(4).CellStyle = cbStyle;
+                        cbRow.CreateCell(5).SetCellValue(cbData.CorrectAnswers); cbRow.GetCell(5).CellStyle = cbStyle;
+                        cbRow.CreateCell(6).SetCellValue(mistakes); cbRow.GetCell(6).CellStyle = cbStyle;
+                        cbRow.CreateCell(7).SetCellValue(cbData.TotalQuestions > 0 ? $"{((cbData.CorrectAnswers * 100) / cbData.TotalQuestions):F2}%" : "0%"); cbRow.GetCell(7).CellStyle = cbStyle;
+                        cbRow.CreateCell(8).SetCellValue(cbData.ColorblindType ?? "Normal"); cbRow.GetCell(8).CellStyle = cbStyle;
+                        cbRow.CreateCell(9).SetCellValue(isPassed ? "PASSED" : "FAILED"); cbRow.GetCell(9).CellStyle = cbStyle;
+                        cbRow.CreateCell(10).SetCellValue(maxMistakes); cbRow.GetCell(10).CellStyle = cbStyle;
+                        cbRow.CreateCell(11).SetCellValue(cbData.Notes ?? ""); cbRow.GetCell(11).CellStyle = cbStyle;
+                        
+                        cbRowIdx++;
+                    }
+
+                    for (int i = 0; i < cbHeaders.Length; i++)
+                    {
+                        cbSheet.AutoSizeColumn(i);
+                        if (cbSheet.GetColumnWidth(i) > 15000) cbSheet.SetColumnWidth(i, 15000);
+                    }
                 }
 
                 using var memoryStream = new MemoryStream();
@@ -1236,67 +1335,67 @@ namespace IQA_SOURCE.Controllers
         private ImageMaster BuildMasterImage(string assessmentType, string fileName, string webPath, long fileSize, dynamic meta, string uploadBatch, string groupCode) =>
             new()
             {
-                ImAssessmentType   = assessmentType,
-                ImGroupCode        = groupCode,  // NEW: Add group code
-                ImFileName         = fileName,
-                ImFilePath         = webPath,
-                ImFileSize         = fileSize,
-                ImWidth            = meta.Width,
-                ImHeight           = meta.Height,
-                ImFormat           = meta.Format,
-                ImColorSpace       = meta.ColorSpace,
-                ImBitDepth         = meta.BitDepth,
-                ImDpiX             = meta.DpiX,
-                ImDpiY             = meta.DpiY,
-                ImExifData         = JsonSerializer.Serialize(meta.ExifData),
-                ImCameraMake       = meta.CameraMake,
-                ImCameraModel      = meta.CameraModel,
-                ImLensModel        = meta.LensModel,
-                ImFocalLength      = meta.FocalLength,
-                ImAperture         = meta.Aperture,
-                ImShutterSpeed     = meta.ShutterSpeed,
-                ImIso              = meta.Iso,
-                ImFlash            = meta.Flash,
-                ImExposureMode     = meta.ExposureMode,
-                ImWhiteBalance     = meta.WhiteBalance,
-                ImDateTaken        = meta.DateTaken,
-                ImOrientation      = meta.Orientation,
+                ImAssessmentType = assessmentType,
+                ImGroupCode = groupCode,  // NEW: Add group code
+                ImFileName = fileName,
+                ImFilePath = webPath,
+                ImFileSize = fileSize,
+                ImWidth = meta.Width,
+                ImHeight = meta.Height,
+                ImFormat = meta.Format,
+                ImColorSpace = meta.ColorSpace,
+                ImBitDepth = meta.BitDepth,
+                ImDpiX = meta.DpiX,
+                ImDpiY = meta.DpiY,
+                ImExifData = JsonSerializer.Serialize(meta.ExifData),
+                ImCameraMake = meta.CameraMake,
+                ImCameraModel = meta.CameraModel,
+                ImLensModel = meta.LensModel,
+                ImFocalLength = meta.FocalLength,
+                ImAperture = meta.Aperture,
+                ImShutterSpeed = meta.ShutterSpeed,
+                ImIso = meta.Iso,
+                ImFlash = meta.Flash,
+                ImExposureMode = meta.ExposureMode,
+                ImWhiteBalance = meta.WhiteBalance,
+                ImDateTaken = meta.DateTaken,
+                ImOrientation = meta.Orientation,
                 ImCompressionQuality = meta.CompressionQuality,
-                ImUploadBatch      = uploadBatch
+                ImUploadBatch = uploadBatch
             };
 
         private ImageLinked BuildLinkedImage(int masterId, string fileName, string webPath, long fileSize, dynamic meta, string qualityLevel, string qualityType, string uploadBatch, string groupCode) =>
             new()
             {
-                IlMasterId         = masterId,
-                IlGroupCode        = groupCode,  // NEW: Add group code
-                IlFileName         = fileName,
-                IlFilePath         = webPath,
-                IlFileSize         = fileSize,
-                IlWidth            = meta.Width,
-                IlHeight           = meta.Height,
-                IlFormat           = meta.Format,
-                IlColorSpace       = meta.ColorSpace,
-                IlBitDepth         = meta.BitDepth,
-                IlDpiX             = meta.DpiX,
-                IlDpiY             = meta.DpiY,
-                IlExifData         = JsonSerializer.Serialize(meta.ExifData),
-                IlCameraMake       = meta.CameraMake,
-                IlCameraModel      = meta.CameraModel,
-                IlLensModel        = meta.LensModel,
-                IlFocalLength      = meta.FocalLength,
-                IlAperture         = meta.Aperture,
-                IlShutterSpeed     = meta.ShutterSpeed,
-                IlIso              = meta.Iso,
-                IlFlash            = meta.Flash,
-                IlExposureMode     = meta.ExposureMode,
-                IlWhiteBalance     = meta.WhiteBalance,
-                IlDateTaken        = meta.DateTaken,
-                IlOrientation      = meta.Orientation,
+                IlMasterId = masterId,
+                IlGroupCode = groupCode,  // NEW: Add group code
+                IlFileName = fileName,
+                IlFilePath = webPath,
+                IlFileSize = fileSize,
+                IlWidth = meta.Width,
+                IlHeight = meta.Height,
+                IlFormat = meta.Format,
+                IlColorSpace = meta.ColorSpace,
+                IlBitDepth = meta.BitDepth,
+                IlDpiX = meta.DpiX,
+                IlDpiY = meta.DpiY,
+                IlExifData = JsonSerializer.Serialize(meta.ExifData),
+                IlCameraMake = meta.CameraMake,
+                IlCameraModel = meta.CameraModel,
+                IlLensModel = meta.LensModel,
+                IlFocalLength = meta.FocalLength,
+                IlAperture = meta.Aperture,
+                IlShutterSpeed = meta.ShutterSpeed,
+                IlIso = meta.Iso,
+                IlFlash = meta.Flash,
+                IlExposureMode = meta.ExposureMode,
+                IlWhiteBalance = meta.WhiteBalance,
+                IlDateTaken = meta.DateTaken,
+                IlOrientation = meta.Orientation,
                 IlCompressionQuality = meta.CompressionQuality,
-                IlQualityLevel     = qualityLevel,
-                IlQualityType      = qualityType,
-                IlUploadBatch      = uploadBatch
+                IlQualityLevel = qualityLevel,
+                IlQualityType = qualityType,
+                IlUploadBatch = uploadBatch
             };
 
         private string GetBaseName(string fileName)
@@ -1328,44 +1427,44 @@ namespace IQA_SOURCE.Controllers
         {
             JsonValueKind.String => activeElement.GetString()?.ToUpper() is "Y" or "YES" or "TRUE" or "1" ? 1 : 0,
             JsonValueKind.Number => activeElement.GetInt32(),
-            JsonValueKind.True   => 1,
-            _                    => 1
+            JsonValueKind.True => 1,
+            _ => 1
         };
 
         private static ICellStyle CreateHeaderStyle(XSSFWorkbook workbook)
         {
             var style = workbook.CreateCellStyle();
-            var font  = workbook.CreateFont();
+            var font = workbook.CreateFont();
             font.IsBold = true; font.Color = IndexedColors.White.Index; font.FontHeightInPoints = 11;
             style.SetFont(font);
             style.FillForegroundColor = IndexedColors.DarkBlue.Index;
-            style.FillPattern         = FillPattern.SolidForeground;
-            style.Alignment           = HorizontalAlignment.Center;
-            style.VerticalAlignment   = VerticalAlignment.Center;
-            style.BorderBottom        = BorderStyle.Medium; style.BorderTop = BorderStyle.Medium;
-            style.BorderLeft          = BorderStyle.Thin;   style.BorderRight = BorderStyle.Thin;
+            style.FillPattern = FillPattern.SolidForeground;
+            style.Alignment = HorizontalAlignment.Center;
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderBottom = BorderStyle.Medium; style.BorderTop = BorderStyle.Medium;
+            style.BorderLeft = BorderStyle.Thin; style.BorderRight = BorderStyle.Thin;
             return style;
         }
 
         private static ICellStyle CreateDataStyle(XSSFWorkbook workbook)
         {
             var style = workbook.CreateCellStyle();
-            var font  = workbook.CreateFont(); font.FontHeightInPoints = 10; style.SetFont(font);
+            var font = workbook.CreateFont(); font.FontHeightInPoints = 10; style.SetFont(font);
             style.VerticalAlignment = VerticalAlignment.Center;
             style.BorderBottom = BorderStyle.Thin; style.BorderTop = BorderStyle.Thin;
-            style.BorderLeft   = BorderStyle.Thin; style.BorderRight = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin; style.BorderRight = BorderStyle.Thin;
             return style;
         }
 
         private static ICellStyle CreateAltRowStyle(XSSFWorkbook workbook)
         {
             var style = workbook.CreateCellStyle();
-            var font  = workbook.CreateFont(); font.FontHeightInPoints = 10; style.SetFont(font);
+            var font = workbook.CreateFont(); font.FontHeightInPoints = 10; style.SetFont(font);
             style.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
-            style.FillPattern         = FillPattern.SolidForeground;
-            style.VerticalAlignment   = VerticalAlignment.Center;
+            style.FillPattern = FillPattern.SolidForeground;
+            style.VerticalAlignment = VerticalAlignment.Center;
             style.BorderBottom = BorderStyle.Thin; style.BorderTop = BorderStyle.Thin;
-            style.BorderLeft   = BorderStyle.Thin; style.BorderRight = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin; style.BorderRight = BorderStyle.Thin;
             return style;
         }
 
@@ -1383,13 +1482,13 @@ namespace IQA_SOURCE.Controllers
             {
                 // Try to get from session first, fallback to "Anonymous" if not available
                 var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
-                
+
                 _logger.LogInformation($"GetAllImageGroups called with userId: {userId}");
-                
+
                 var result = await _imageGroupRepository.GetAllImageGroups(userId);
-                
+
                 _logger.LogInformation($"GetAllImageGroups returned {result.Data?.Count ?? 0} groups. Success: {result.OutputCode == 1}");
-                
+
                 return Json(new
                 {
                     success = result.OutputCode == 1,
@@ -1400,11 +1499,11 @@ namespace IQA_SOURCE.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading image groups");
-                return Json(new 
-                { 
-                    success = false, 
-                    message = $"Error: {ex.Message}", 
-                    data = new List<ImageGroup>() 
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error: {ex.Message}",
+                    data = new List<ImageGroup>()
                 });
             }
         }
@@ -1467,12 +1566,18 @@ namespace IQA_SOURCE.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> BulkDeleteImagesByGroup([FromBody] BulkDeleteByGroupRequest request)
+        public async Task<IActionResult> BulkDeleteImagesByGroup([FromBody] BulkDeleteImageGroupRequest request)
         {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(request.ImageGroupCode))
+                return Json(new { success = false, message = "Image group code is required" });
+
             try
             {
-                var userId = HttpContext.Session.GetString("UserId") ?? "Anonymous";
-                var result = await _imageGroupRepository.BulkDeleteImagesByGroup(request.GroupCode, request.AssessmentType, userId);
+                var result = await _bulkOperationsRepository.BulkDeleteByImageGroup(request, userId);
                 return Json(new
                 {
                     success = result.OutputCode == 1,
@@ -1482,38 +1587,13 @@ namespace IQA_SOURCE.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Error in bulk delete by image group");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
-        // Bulk Operations
-        [HttpGet]
-        public IActionResult BulkOperations()
-        {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
-                return RedirectToAction("Login");
-
-            return View();
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAssessmentCodesWithData()
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
-                return Json(new { success = false, message = "Unauthorized" });
-
-            var (outputCode, outputMsg, data) = await _bulkOperationsRepository.GetAssessmentCodesWithData(userId);
-            return Json(new
-            {
-                success = outputCode == 1,
-                message = outputMsg,
-                data = data
-            });
-        }
-
         [HttpPost]
-        public async Task<IActionResult> BulkDeleteAssessmentData([FromBody] BulkDeleteAssessmentRequest request)
+        public async Task<IActionResult> BulkDeleteByAssessmentAndGroup([FromBody] BulkDeleteByAssessmentRequest request)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -1524,7 +1604,7 @@ namespace IQA_SOURCE.Controllers
 
             try
             {
-                var result = await _bulkOperationsRepository.BulkDeleteAssessmentData(request, userId);
+                var result = await _bulkOperationsRepository.BulkDeleteByAssessment(request, userId);
                 return Json(new
                 {
                     success = result.OutputCode == 1,
@@ -1534,12 +1614,13 @@ namespace IQA_SOURCE.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in bulk delete by assessment");
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAssessmentDataSummary(string assessmentCode)
+        public async Task<IActionResult> GetBulkDeletePreview(string assessmentCode, string? groupCode)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -1547,35 +1628,12 @@ namespace IQA_SOURCE.Controllers
 
             try
             {
-                // Get counts for each data type
-                var questionAnswersQuery = @"
-                    SELECT COUNT(*) as count FROM user_responses WHERE ur_assessment_code = @assessmentCode";
-                
-                var imageRatingsQuery = @"
-                    SELECT COUNT(*) as count FROM image_quality_ratings WHERE iqr_assessment_code = @assessmentCode";
-                
-                var speedTestQuery = @"
-                    SELECT COUNT(*) as count FROM speed_test_logs WHERE stl_assessment_code = @assessmentCode";
-
-                var parameters = new[] { new MySqlParameter("@assessmentCode", assessmentCode) };
-
-                var qaResult = await Task.Run(() => _dbHelper.ExecuteQuery(questionAnswersQuery, parameters));
-                var irResult = await Task.Run(() => _dbHelper.ExecuteQuery(imageRatingsQuery, parameters));
-                var stResult = await Task.Run(() => _dbHelper.ExecuteQuery(speedTestQuery, parameters));
-
-                var summary = new
-                {
-                    assessmentCode = assessmentCode,
-                    questionAnswers = qaResult.Rows.Count > 0 ? Convert.ToInt32(qaResult.Rows[0]["count"]) : 0,
-                    imageRatings = irResult.Rows.Count > 0 ? Convert.ToInt32(irResult.Rows[0]["count"]) : 0,
-                    speedTestLogs = stResult.Rows.Count > 0 ? Convert.ToInt32(stResult.Rows[0]["count"]) : 0
-                };
-
+                var (outputCode, outputMsg, data) = await _bulkOperationsRepository.GetBulkDeletePreview(assessmentCode, groupCode, userId);
                 return Json(new
                 {
-                    success = true,
-                    message = "Summary retrieved successfully",
-                    data = summary
+                    success = outputCode == 1,
+                    message = outputMsg,
+                    data = data
                 });
             }
             catch (Exception ex)
@@ -1584,9 +1642,117 @@ namespace IQA_SOURCE.Controllers
             }
         }
 
-        // ========== ADMIN USER MANAGEMENT ==========
         [HttpGet]
-        public IActionResult AdminUsers()
+        public async Task<IActionResult> GetImageGroupsForBulkDelete()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                var result = await _imageGroupRepository.GetAllImageGroups(userId);
+
+                // Enrich with count data
+                var enriched = new List<dynamic>();
+                if (result.OutputCode == 1 && result.Data != null)
+                {
+                    foreach (var group in result.Data)
+                    {
+                        var imageCount = await _imageRepository.GetImageCountByGroup(group.IgCode, userId);
+                        enriched.Add(new
+                        {
+                            code = group.IgCode,
+                            name = group.IgName,
+                            imageCount = imageCount
+                        });
+                    }
+                }
+
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = enriched
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult BulkDataDelete()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        // Add this method to the AdminController class
+        [HttpGet]
+        public async Task<IActionResult> GetUserMenus()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                var userRole = HttpContext.Session.GetString("UserRole") ?? "Operator";
+
+                var result = await _adminMenuRepository.GetMenusByRole(userRole, userId);
+
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading user menus");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkDeleteSpeedTestLogs([FromBody] BulkDeleteSpeedTestLogsRequest request)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(request.AssessmentCode))
+                return Json(new { success = false, message = "Assessment code is required" });
+
+            try
+            {
+                var result = await _speedTestRepository.BulkDeleteLogs(
+                    request.AssessmentCode,
+                    request.StartDate,
+                    request.EndDate,
+                    userId);
+
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in bulk delete speed test logs");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        // Colorblindness Assessment Management
+        [HttpGet]
+        public IActionResult ColorblindnessImages()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
                 return RedirectToAction("Login");
@@ -1595,55 +1761,89 @@ namespace IQA_SOURCE.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllAdminUsers()
+        public async Task<IActionResult> GetAllColorblindnessImages(string assessmentType)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            var result = await _adminUserRepository.GetAllAdminUsers(userId);
+            var result = await _colorblindnessRepository.GetAllColorblindnessImages(assessmentType, userId);
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveAdminUser([FromBody] AdminUser user)
+        public async Task<IActionResult> SaveColorblindnessImage([FromBody] ColorblindnessImage model)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            try
-            {
-                AdminUserResponse result;
-                if (!string.IsNullOrEmpty(user.AuId))
-                {
-                    result = await _adminUserRepository.UpdateAdminUser(user, userId);
-                }
-                else
-                {
-                    result = await _adminUserRepository.InsertAdminUser(user, userId);
-                }
+            if (string.IsNullOrWhiteSpace(model.AssessmentType))
+                return Json(new { success = false, message = "Assessment type is required" });
 
-                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Error: {ex.Message}" });
-            }
-        }
+            if (string.IsNullOrWhiteSpace(model.ImageUrl))
+                return Json(new { success = false, message = "Image URL is required" });
 
-        [HttpPost]
-        public async Task<IActionResult> DeleteAdminUser([FromBody] string auId)
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
-                return Json(new { success = false, message = "Unauthorized" });
+            if (string.IsNullOrWhiteSpace(model.CorrectAnswer))
+                return Json(new { success = false, message = "Correct answer is required" });
 
-            var result = await _adminUserRepository.DeleteAdminUser(auId, userId);
+            var result = await _colorblindnessRepository.SaveColorblindnessImage(model, userId);
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
         }
 
-        // ========== ADMIN MENU MANAGEMENT ==========
+        [HttpPost]
+        public async Task<IActionResult> DeleteColorblindnessImage([FromBody] int imageId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _colorblindnessRepository.DeleteColorblindnessImage(imageId, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+        }
+
+        // Colorblindness Test Results
+        [HttpGet]
+        public IActionResult ColorblindnessResults()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetColorblindnessResults(string assessmentType, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            ColorblindnessTestResultResponse result;
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                result = await _colorblindnessRepository.GetColorblindnessResultsByDateRange(assessmentType, startDate.Value, endDate.Value, userId);
+            }
+            else
+            {
+                result = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentType, userId);
+            }
+
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetColorblindnessResultsBySession(string sessionId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            var result = await _colorblindnessRepository.GetColorblindnessResultsBySessionId(sessionId, userId);
+            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+        }
+
+        // ── Admin Menu Management ────────────────────────────────────────────
         [HttpGet]
         public IActionResult AdminMenus()
         {
@@ -1660,12 +1860,53 @@ namespace IQA_SOURCE.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            var result = await _adminMenuRepository.GetAllAdminMenus(userId);
-            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            try
+            {
+                var result = await _adminMenuRepository.GetAllAdminMenus(userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data ?? new List<AdminMenu>()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading admin menus");
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveAdminMenu([FromBody] AdminMenu menu)
+        public async Task<IActionResult> SaveAdminMenu([FromBody] AdminMenu model)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(model.AmName))
+                return Json(new { success = false, message = "Menu name is required" });
+
+            try
+            {
+                var result = model.AmId > 0
+                    ? await _adminMenuRepository.UpdateAdminMenu(model, userId)
+                    : await _adminMenuRepository.InsertAdminMenu(model, userId);
+
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAdminMenu([FromBody] int menuId)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -1673,33 +1914,17 @@ namespace IQA_SOURCE.Controllers
 
             try
             {
-                AdminMenuResponse result;
-                if (menu.AmId > 0)
+                var result = await _adminMenuRepository.DeleteAdminMenu(menuId, userId);
+                return Json(new
                 {
-                    result = await _adminMenuRepository.UpdateAdminMenu(menu, userId);
-                }
-                else
-                {
-                    result = await _adminMenuRepository.InsertAdminMenu(menu, userId);
-                }
-
-                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"Error: {ex.Message}" });
+                return Json(new { success = false, message = ex.Message });
             }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteAdminMenu([FromBody] int amId)
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
-                return Json(new { success = false, message = "Unauthorized" });
-
-            var result = await _adminMenuRepository.DeleteAdminMenu(amId, userId);
-            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
         }
 
         [HttpGet]
@@ -1709,57 +1934,65 @@ namespace IQA_SOURCE.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            var result = await _adminMenuRepository.GetMenuRoleAccess(menuId, userId);
-            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            try
+            {
+                var result = await _adminMenuRepository.GetMenuRoleAccess(menuId, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg,
+                    data = result.Data ?? new List<MenuRoleAccess>()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading menu role access");
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> SaveMenuRoleAccess([FromBody] List<MenuRoleAccess> roleAccess)
         {
             var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty( userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            var result = await _adminMenuRepository.SaveMenuRoleAccess(roleAccess, userId);
-            return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
-        }
-
-        // Get menus for current user based on their role
-        [HttpGet]
-        public async Task<IActionResult> GetUserMenus()
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            var userRole = HttpContext.Session.GetString("UserRole") ?? "Operator";
-            
-            if (string.IsNullOrEmpty(userId))
-                return Json(new { success = false, message = "Unauthorized", data = new List<object>() });
+            if (roleAccess == null || roleAccess.Count == 0)
+                return Json(new { success = false, message = "No role access data provided" });
 
             try
             {
-                var menus = await _adminMenuRepository.GetMenusByUserRole(userRole);
-                return Json(new 
-                { 
-                    success = true, 
-                    message = $"Retrieved {menus.Count} menus for role {userRole}", 
-                    data = menus 
+                var result = await _adminMenuRepository.SaveMenuRoleAccess(roleAccess, userId);
+                return Json(new
+                {
+                    success = result.OutputCode == 1,
+                    message = result.OutputMsg
                 });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"Error: {ex.Message}", data = new List<object>() });
+                return Json(new { success = false, message = ex.Message });
             }
         }
-    }
+        public class FolderProcessRequest
+        {
+            public string FolderPath { get; set; }
+            public string AssessmentType { get; set; }
+        }
 
-    public class FolderProcessRequest
-    {
-        public string FolderPath   { get; set; }
-        public string AssessmentType { get; set; }
-    }
+        public class BulkDeleteByGroupRequest
+        {
+            public string ImageGroupCode { get; set; }
+            public string AssessmentType { get; set; }
+        }
 
-    public class BulkDeleteByGroupRequest
-    {
-        public string GroupCode      { get; set; }
-        public string AssessmentType { get; set; }
+        public class BulkDeleteSpeedTestLogsRequest
+        {
+            public string AssessmentCode { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
+        }
+
     }
 }

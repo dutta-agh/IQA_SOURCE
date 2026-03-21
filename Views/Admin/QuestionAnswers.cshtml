@@ -24,6 +24,9 @@ ViewData["Title"] = "User Responses";
     .btn-excel { background-color: #1D6F42; color: white; border: none; }
     .btn-excel:hover { background-color: #155230; color: white; }
     .btn-excel:disabled { background-color: #6c757d; }
+    .btn-delete-qa { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none; }
+    .btn-delete-qa:hover { background: linear-gradient(135deg, #f093fb, #f5576c); opacity: 0.9; color: white; }
+    .btn-delete-qa:disabled { background-color: #6c757d; }
     .group-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; background: #e7f3ff; color: #0066cc; font-size: 0.85rem; font-weight: 500; }
 </style>
 }
@@ -83,6 +86,13 @@ ViewData["Title"] = "User Responses";
             <i class="fas fa-file-excel"></i> Download Excel
         </button>
         <small class="text-muted d-block mt-1" id="downloadHint">Select assessment</small>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-delete-qa w-100" id="btnDeleteQA" onclick="openDeleteQAModal()" disabled
+                title="Delete question answers by assessment and level">
+            <i class="fas fa-trash"></i> Delete Q&A
+        </button>
+        <small class="text-muted d-block mt-1" id="deleteHint">Select assessment</small>
     </div>
 </div>
 </div>
@@ -188,6 +198,45 @@ ViewData["Title"] = "User Responses";
         </div>
     </div>
 </div>
+</div>
+
+<!-- Delete Q&A Modal -->
+<div class="modal fade" id="deleteQAModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none;">
+                <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Delete Question Answers</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-filter"></i> Assessment Type</label>
+                    <select class="form-select" id="deleteQAAssessment">
+                        <option value="">-- Select Assessment Type --</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-layer-group"></i> Set Level / Image Group (Optional)</label>
+                    <select class="form-select" id="deleteQAGroup">
+                        <option value="">-- All Set Levels --</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">Leave empty to delete all Q&A for the assessment</small>
+                </div>
+                <div id="deleteQAPreview" style="display: none;">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle"></i> Preview:</strong>
+                        <div id="deletePreviewStats" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteQA()">
+                    <i class="fas fa-trash"></i> Delete Answers
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -306,19 +355,31 @@ ViewData["Title"] = "User Responses";
         const ac   = $('#assessmentFilter').val();
         const btn  = document.getElementById('btnDownloadExcel');
         const hint = document.getElementById('downloadHint');
+        const delBtn = document.getElementById('btnDeleteQA');
+        const delHint = document.getElementById('deleteHint');
         const $groupFilter = $('#groupFilter');
 
         if (ac) {
             btn.disabled     = false;
             btn.title        = 'Download consolidated Excel for selected assessment';
             hint.textContent = '';
+            
+            delBtn.disabled  = false;
+            delBtn.title     = 'Delete question answers for selected assessment';
+            delHint.textContent = '';
 
             // Load groups for this assessment
             loadGroupsForAssessment(ac);
+            loadDeleteQAAssessmentAndGroups();
         } else {
             btn.disabled     = true;
             btn.title        = 'Select an assessment to enable download';
             hint.textContent = 'Select assessment';
+            
+            delBtn.disabled  = true;
+            delBtn.title     = 'Select an assessment to enable deletion';
+            delHint.textContent = 'Select assessment';
+            
             qaTable.clear().draw();
             irTable.clear().draw();
             allQA = []; allIR = [];
@@ -330,37 +391,37 @@ ViewData["Title"] = "User Responses";
         }
     }
 
-           async function loadGroupsForAssessment(assessmentCode) {
-            try {
-                // Fetch all image groups (including inactive)
-                const res = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
-                const json = await res.json();
+    async function loadGroupsForAssessment(assessmentCode) {
+        try {
+            // Fetch all image groups (including inactive)
+            const res = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
+            const json = await res.json();
 
-                if (json.success && json.data) {
-                    assessmentGroups[assessmentCode] = json.data;
+            if (json.success && json.data) {
+                assessmentGroups[assessmentCode] = json.data;
 
-                    // Populate group dropdown
-                    const $groupFilter = $('#groupFilter');
-                    $groupFilter.empty().append(new Option('Select Group…', ''));
+                // Populate group dropdown
+                const $groupFilter = $('#groupFilter');
+                $groupFilter.empty().append(new Option('Select Group…', ''));
 
-                    json.data.forEach(g => {
-                        // ✅ Add status indicator for inactive groups
-                        const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
-                        $groupFilter.append(new Option(g.igName + status, g.igName));
-                    });
+                json.data.forEach(g => {
+                    // ✅ Add status indicator for inactive groups
+                    const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
+                    $groupFilter.append(new Option(g.igName + status, g.igName));
+                });
 
-                    $groupFilter.prop('disabled', false);
-                    $groupFilter.closest('.col-md-2').find('small').text('(Optional) Filter by group');
+                $groupFilter.prop('disabled', false);
+                $groupFilter.closest('.col-md-2').find('small').text('(Optional) Filter by group');
 
-                    // Wire change event
-                    $groupFilter.off('change').on('change', function () {
-                        loadAll();
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading groups:', error);
+                // Wire change event
+                $groupFilter.off('change').on('change', function () {
+                    loadAll();
+                });
             }
+        } catch (error) {
+            console.error('Error loading groups:', error);
         }
+    }
 
     function applyQAStatusFilter() {
         const status   = document.getElementById('statusFilter').value;
@@ -417,6 +478,136 @@ ViewData["Title"] = "User Responses";
             btn.disabled  = false;
             btn.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel';
         }, 3000);
+    }
+
+    /* ════════════════════════════════════════
+       DELETE Q&A FUNCTIONS
+    ════════════════════════════════════════ */
+    function openDeleteQAModal() {
+        const modal = new bootstrap.Modal(document.getElementById('deleteQAModal'));
+        modal.show();
+    }
+
+    async function loadDeleteQAAssessmentAndGroups() {
+        try {
+            // Load assessment types
+            const aRes = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+            const aJson = await aRes.json();
+            
+            if (aJson.success && aJson.data) {
+                const sel = $('#deleteQAAssessment');
+                sel.find('option').not(':first').remove();
+                aJson.data.forEach(a => {
+                    const $option = $('<option></option>')
+                        .attr('value', a.atmCode)
+                        .text(a.atmName);
+                    sel.append($option);
+                });
+            }
+
+            // Load groups
+            const gRes = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
+            const gJson = await gRes.json();
+            
+            if (gJson.success && gJson.data) {
+                const sel = $('#deleteQAGroup');
+                sel.find('option').not(':first').remove();
+                gJson.data.forEach(g => {
+                    const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
+                    const $option = $('<option></option>')
+                        .attr('value', g.igCode)
+                        .text(g.igName + status);
+                    sel.append($option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading delete Q&A options:', error);
+        }
+    }
+
+    function getDeleteQAPreview() {
+        const assessmentCode = $('#deleteQAAssessment').val();
+        const groupCode = $('#deleteQAGroup').val();
+
+        if (!assessmentCode) {
+            $('#deleteQAPreview').hide();
+            return;
+        }
+
+        console.log('Getting delete preview for:', { assessmentCode, groupCode });
+        
+        // Calculate from current data
+        let qaToDelete = allQA;
+        let irToDelete = allIR;
+
+        if (groupCode) {
+            qaToDelete = allQA.filter(qa => qa.groupName === $('#deleteQAGroup').find('option:selected').text().split(' [')[0]);
+            irToDelete = allIR.filter(ir => ir.groupName === $('#deleteQAGroup').find('option:selected').text().split(' [')[0]);
+        }
+
+        const statsHtml = `
+            <div><strong>Question Answer Records:</strong> ${qaToDelete.length}</div>
+            <div><strong>Image Rating Records:</strong> ${irToDelete.length}</div>
+            <div><strong>Total Records to Delete:</strong> ${qaToDelete.length + irToDelete.length}</div>
+        `;
+
+        $('#deletePreviewStats').html(statsHtml);
+        $('#deleteQAPreview').show();
+    }
+
+    $('#deleteQAAssessment').on('change', getDeleteQAPreview);
+    $('#deleteQAGroup').on('change', getDeleteQAPreview);
+
+    function confirmDeleteQA() {
+        const assessmentCode = $('#deleteQAAssessment').val();
+        const groupCode = $('#deleteQAGroup').val();
+
+        if (!assessmentCode) {
+            showAlert('Please select an assessment type', 'warning');
+            return;
+        }
+
+        const message = groupCode 
+            ? `Are you sure you want to delete all question answers for assessment "${assessmentCode}" and set level "${$('#deleteQAGroup').find('option:selected').text()}"? This action cannot be undone.`
+            : `Are you sure you want to delete all question answers for assessment "${assessmentCode}"? This action cannot be undone.`;
+
+        if (!confirm(message)) {
+            return;
+        }
+
+        showLoader();
+        const request = {
+            assessmentCode: assessmentCode,
+            setLevel: groupCode || null
+        };
+
+        $.ajax({
+            url: buildApiUrl('/Admin/BulkDeleteQuestionAnswers'),
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(request),
+            dataType: 'json',
+            success: function (res) {
+                hideLoader();
+                if (res && res.success) {
+                    showAlert(`Successfully deleted question answers: ${res.message}`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteQAModal')).hide();
+                    
+                    // Refresh if we have assessment loaded
+                    const currentAssessment = $('#assessmentFilter').val();
+                    if (currentAssessment === assessmentCode) {
+                        loadAll();
+                    }
+                } else {
+                    showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
+                }
+            },
+            error: function (xhr, status, error) {
+                hideLoader();
+                console.error('Error deleting question answers:', error);
+                showAlert('Error deleting question answers. Please try again.', 'danger');
+            }
+        });
     }
 
     async function viewQADetails(rowIdx) {
