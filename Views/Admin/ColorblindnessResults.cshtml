@@ -23,7 +23,7 @@
         }
 
         .filters-section {
-            background: #f8f9fa;            
+            background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
@@ -41,22 +41,22 @@
             min-width: 180px;
         }
 
-        .filter-item label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.85rem;
-        }
+            .filter-item label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: 600;
+                color: #495057;
+                font-size: 0.85rem;
+            }
 
-        .filter-item input,
-        .filter-item select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.85rem;
-        }
+            .filter-item input,
+            .filter-item select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 0.85rem;
+            }
 
         .action-buttons {
             display: flex;
@@ -64,47 +64,48 @@
             flex-wrap: wrap;
         }
 
-        .action-buttons button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
+            .action-buttons button {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.85rem;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+            }
 
         .btn-search {
             background: #667eea;
             color: white;
         }
 
-        .btn-search:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
+            .btn-search:hover {
+                background: #5568d3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
 
         .btn-reset {
             background: #6c757d;
             color: white;
         }
 
-        .btn-reset:hover {
-            background: #5a6268;
-        }
+            .btn-reset:hover {
+                background: #5a6268;
+            }
 
         .btn-export {
-            background: #28a745;
-            color: white;
+            border: 2px solid #28a745;
+            color: #28a745;
+            background: transparent;
         }
 
-        .btn-export:hover {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        }
+            .btn-export:hover {
+                background: #f0f9f6;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            }
 
         .results-table {
             width: 100%;
@@ -113,25 +114,25 @@
             font-size: 0.85rem;
         }
 
-        .results-table thead {
-            background: #667eea;
-            color: white;
-        }
+            .results-table thead {
+                background: #667eea;
+                color: white;
+            }
 
-        .results-table th,
-        .results-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
+            .results-table th,
+            .results-table td {
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
 
-        .results-table tbody tr:hover {
-            background: #f5f5f5;
-        }
+            .results-table tbody tr:hover {
+                background: #f5f5f5;
+            }
 
-        .results-table tbody tr:nth-child(even) {
-            background: #f9f9f9;
-        }
+            .results-table tbody tr:nth-child(even) {
+                background: #f9f9f9;
+            }
 
         .stat-badge {
             display: inline-block;
@@ -184,8 +185,13 @@
         }
 
         @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .summary-stats {
@@ -203,32 +209,32 @@
             text-align: center;
         }
 
-        .stat-card h4 {
-            margin: 0 0 8px 0;
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
+            .stat-card h4 {
+                margin: 0 0 8px 0;
+                font-size: 0.8rem;
+                opacity: 0.9;
+            }
 
-        .stat-card .value {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
+            .stat-card .value {
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
 
         .empty-state {
             text-align: center;
             padding: 40px 20px;
         }
 
-        .empty-state i {
-            font-size: 3rem;
-            opacity: 0.3;
-            margin-bottom: 12px;
-        }
+            .empty-state i {
+                font-size: 3rem;
+                opacity: 0.3;
+                margin-bottom: 12px;
+            }
 
-        .empty-state p {
-            color: #6c757d;
-            font-size: 0.95rem;
-        }
+            .empty-state p {
+                color: #6c757d;
+                font-size: 0.95rem;
+            }
 
         .table-wrapper {
             overflow-x: auto;
@@ -238,11 +244,10 @@
             border: 1px solid #ddd;
         }
 
-        .table-wrapper table {
-            margin: 0;
-        }
+            .table-wrapper table {
+                margin: 0;
+            }
 
-        /* Details Button */
         .btn-details {
             background: #0d6efd;
             color: white;
@@ -254,12 +259,11 @@
             transition: all 0.3s ease;
         }
 
-        .btn-details:hover {
-            background: #0b5ed7;
-            transform: scale(1.05);
-        }
+            .btn-details:hover {
+                background: #0b5ed7;
+                transform: scale(1.05);
+            }
 
-        /* Modal Styles - UPDATED WIDTH */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -271,15 +275,15 @@
             padding: 20px;
         }
 
-        .modal-overlay.show {
-            display: flex;
-        }
+            .modal-overlay.show {
+                display: flex;
+            }
 
         .modal-content {
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            max-width: 75vw;
+            max-width: 90vw !important;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -291,6 +295,7 @@
                 transform: translateY(-50px);
                 opacity: 0;
             }
+
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -310,10 +315,10 @@
             z-index: 10;
         }
 
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.3rem;
-        }
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.3rem;
+            }
 
         .modal-close {
             background: none;
@@ -324,9 +329,9 @@
             transition: all 0.3s ease;
         }
 
-        .modal-close:hover {
-            transform: rotate(90deg);
-        }
+            .modal-close:hover {
+                transform: rotate(90deg);
+            }
 
         .modal-body {
             padding: 25px;
@@ -336,20 +341,20 @@
             margin-bottom: 20px;
         }
 
-        .detail-section h3 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin: 0 0 12px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+            .detail-section h3 {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #1a202c;
+                margin: 0 0 12px 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
 
-        .detail-section h3 i {
-            color: #667eea;
-            font-size: 1.1rem;
-        }
+                .detail-section h3 i {
+                    color: #667eea;
+                    font-size: 1.1rem;
+                }
 
         .detail-row {
             display: flex;
@@ -359,9 +364,9 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
-        .detail-row:last-child {
-            border-bottom: none;
-        }
+            .detail-row:last-child {
+                border-bottom: none;
+            }
 
         .detail-label {
             font-weight: 600;
@@ -375,7 +380,6 @@
             word-break: break-word;
         }
 
-        /* Image-Wise Grid Styles */
         .image-wise-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -393,11 +397,11 @@
             position: relative;
         }
 
-        .image-wise-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-            transform: translateY(-2px);
-        }
+            .image-wise-card:hover {
+                border-color: #667eea;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                transform: translateY(-2px);
+            }
 
         .image-seq {
             font-weight: 700;
@@ -440,9 +444,9 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
-        .card-info-row:last-child {
-            border-bottom: none;
-        }
+            .card-info-row:last-child {
+                border-bottom: none;
+            }
 
         .card-info-label {
             font-weight: 600;
@@ -470,9 +474,9 @@
             transition: all 0.3s ease;
         }
 
-        .card-action-btn:hover {
-            background: #5568d3;
-        }
+            .card-action-btn:hover {
+                background: #5568d3;
+            }
 
         .image-preview {
             width: 100%;
@@ -484,10 +488,10 @@
             transition: all 0.3s ease;
         }
 
-        .image-preview:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
+            .image-preview:hover {
+                border-color: #667eea;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            }
 
         .answer-comparison {
             display: grid;
@@ -502,55 +506,55 @@
             text-align: center;
         }
 
-        .answer-box h4 {
-            margin: 0 0 8px 0;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+            .answer-box h4 {
+                margin: 0 0 8px 0;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
 
-        .answer-box.correct {
-            background: #d4edda;
-            border: 2px solid #28a745;
-        }
+            .answer-box.correct {
+                background: #d4edda;
+                border: 2px solid #28a745;
+            }
 
-        .answer-box.correct h4 {
-            color: #155724;
-        }
+                .answer-box.correct h4 {
+                    color: #155724;
+                }
 
-        .answer-box.correct .answer-text {
-            color: #155724;
-            font-weight: 600;
-        }
+                .answer-box.correct .answer-text {
+                    color: #155724;
+                    font-weight: 600;
+                }
 
-        .answer-box.incorrect {
-            background: #f8d7da;
-            border: 2px solid #dc3545;
-        }
+            .answer-box.incorrect {
+                background: #f8d7da;
+                border: 2px solid #dc3545;
+            }
 
-        .answer-box.incorrect h4 {
-            color: #721c24;
-        }
+                .answer-box.incorrect h4 {
+                    color: #721c24;
+                }
 
-        .answer-box.incorrect .answer-text {
-            color: #721c24;
-            font-weight: 600;
-        }
+                .answer-box.incorrect .answer-text {
+                    color: #721c24;
+                    font-weight: 600;
+                }
 
-        .answer-box.skipped {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-        }
+            .answer-box.skipped {
+                background: #fff3cd;
+                border: 2px solid #ffc107;
+            }
 
-        .answer-box.skipped h4 {
-            color: #856404;
-        }
+                .answer-box.skipped h4 {
+                    color: #856404;
+                }
 
-        .answer-box.skipped .answer-text {
-            color: #856404;
-            font-style: italic;
-        }
+                .answer-box.skipped .answer-text {
+                    color: #856404;
+                    font-style: italic;
+                }
 
         .answer-text {
             font-size: 0.9rem;
@@ -605,18 +609,18 @@
             transition: all 0.3s ease;
         }
 
-        .btn-modal:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-        }
+            .btn-modal:hover {
+                background: #5568d3;
+                transform: translateY(-2px);
+            }
 
-        .btn-modal.secondary {
-            background: #6c757d;
-        }
+            .btn-modal.secondary {
+                background: #6c757d;
+            }
 
-        .btn-modal.secondary:hover {
-            background: #5a6268;
-        }
+                .btn-modal.secondary:hover {
+                    background: #5a6268;
+                }
 
         .back-to-list {
             background: #6c757d;
@@ -630,14 +634,15 @@
             margin-bottom: 15px;
         }
 
-        .back-to-list:hover {
-            background: #5a6268;
-        }
+            .back-to-list:hover {
+                background: #5a6268;
+            }
 
         @@media (max-width: 1200px) {
             .modal-content {
                 max-width: 90vw;
             }
+
             .image-wise-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
@@ -647,6 +652,7 @@
             .modal-content {
                 max-width: 95vw;
             }
+
             .image-wise-grid {
                 grid-template-columns: 1fr;
             }
@@ -659,8 +665,9 @@
         <h2><i class="fas fa-chart-bar"></i> Colorblindness Test Results</h2>
     </div>
 
+    <!-- Search Section -->
     <div class="filters-section">
-        <h5><i class="fas fa-filter"></i> Filters</h5>
+        <h5><i class="fas fa-search"></i> Search & Filter Results</h5>
         <div class="filter-group">
             <div class="filter-item">
                 <label for="assessmentType">Assessment Type:</label>
@@ -669,11 +676,11 @@
                 </select>
             </div>
             <div class="filter-item">
-                <label for="startDate">Start Date:</label>
+                <label for="startDate">Start Date (Optional):</label>
                 <input type="date" id="startDate" class="form-control">
             </div>
             <div class="filter-item">
-                <label for="endDate">End Date:</label>
+                <label for="endDate">End Date (Optional):</label>
                 <input type="date" id="endDate" class="form-control">
             </div>
             <div class="action-buttons">
@@ -684,7 +691,7 @@
                     <i class="fas fa-redo"></i> Reset
                 </button>
                 <button class="btn-export" onclick="exportToExcel()">
-                    <i class="fas fa-download"></i> Export
+                    <i class="fas fa-download"></i> Download Excel
                 </button>
             </div>
         </div>
@@ -748,7 +755,7 @@
     </div>
 </div>
 
-<!-- Details Modal - UPDATED -->
+<!-- Details Modal -->
 <div class="modal-overlay" id="detailsModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -788,7 +795,7 @@
                 </div>
             </div>
 
-            <!-- Image Details Section (shown when clicking a card) -->
+            <!-- Image Details Section -->
             <div class="detail-section" id="imageDetailsSection" style="display: none;">
                 <button class="back-to-list" onclick="backToImageWiseResults()">
                     <i class="fas fa-arrow-left"></i> Back to Results
@@ -826,16 +833,44 @@
         let currentResults = [];
         let currentDetailData = null;
         let currentImageWiseResults = [];
+        let globalMaxMistakes = 2;
 
         $(document).ready(function () {
             console.log('ColorblindnessResults page loaded');
+            loadSystemParameters();
             loadAssessmentTypes();
         });
 
+        function loadSystemParameters() {
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllSystemCheckParams'),
+                type: 'GET',
+                success: function(response) {
+                    console.log('System parameters response:', response);
+                    if (response.success && response.data) {
+                        const maxMistakesParam = response.data.find(p =>
+                            p.scpParamCode === 'COLORBLINDNESS_MAX_MISTAKES' ||
+                            p.ScpParamCode === 'COLORBLINDNESS_MAX_MISTAKES'
+                        );
+                        if (maxMistakesParam) {
+                            globalMaxMistakes = parseInt(
+                                maxMistakesParam.scpParamValue || maxMistakesParam.ScpParamValue
+                            ) || 2;
+                            console.log('Loaded Global Max Mistakes:', globalMaxMistakes);
+                        }
+                    }
+                },
+                error: function(error) {
+                    console.error('Error loading system parameters:', error);
+                    console.log('Using default globalMaxMistakes:', globalMaxMistakes);
+                }
+            });
+        }
+
         function loadAssessmentTypes() {
-            const url = '/Admin/GetAllAssessmentTypes';
+            const url = buildApiUrl('/Admin/GetAllAssessmentTypes');
             console.log('Loading assessment types from:', url);
-            
+
             $.ajax({
                 url: url,
                 type: 'GET',
@@ -845,7 +880,7 @@
                         const select = $('#assessmentType');
                         select.empty();
                         select.append('<option value="">-- Select Type --</option>');
-                        
+
                         response.data.forEach(function (type) {
                             console.log('Adding option:', type.atmCode, type.atmName);
                             select.append(`<option value="${type.atmCode}">${type.atmName}</option>`);
@@ -880,7 +915,7 @@
             $('#emptyState').hide();
             $('#summaryStats').hide();
 
-            let url = `/Admin/GetColorblindnessResults?assessmentType=${encodeURIComponent(assessmentType)}`;
+            let url = buildApiUrl(`/Admin/GetColorblindnessResults?assessmentType=${encodeURIComponent(assessmentType)}`);
             if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
             if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
 
@@ -925,8 +960,7 @@
 
             results.forEach(function (result, index) {
                 const sessionIdShort = result.sessionId ? result.sessionId.substring(0, 8) : 'N/A';
-                
-                // ✅ Format time properly in table
+
                 let timeDisplay = '';
                 if (result.averageTimePerQuestion < 60) {
                     timeDisplay = result.averageTimePerQuestion.toFixed(1) + 's';
@@ -936,24 +970,23 @@
                     timeDisplay = `${minutes}m ${seconds}s`;
                 }
 
-                // ✅ Calculate Pass/Fail based on COLORBLINDNESS_MAX_MISTAKES
                 const wrongAnswers = result.wrongAnswers ?? 0;
                 const isPassed = wrongAnswers <= globalMaxMistakes;
-                const passFailBadge = isPassed 
+                const passFailBadge = isPassed
                     ? '<span class="stat-badge" style="background: #d4edda; color: #155724; font-weight: 700;">✓ PASSED</span>'
                     : '<span class="stat-badge" style="background: #f8d7da; color: #721c24; font-weight: 700;">✗ FAILED</span>';
-                
+
                 const row = `
                     <tr>
                         <td><code title="${escapeHtml(result.sessionId)}">${escapeHtml(sessionIdShort)}...</code></td>
                         <td>${escapeHtml(result.assessmentType)}</td>
-                        <td>${result.totalQuestionsAttempted}</td>
+                        <td>${result.totalQuestions ?? '-'}</td>
                         <td><strong style="color: #28a745;">${result.correctAnswers}</strong></td>
                         <td><strong style="color: #dc3545;">${wrongAnswers}</strong></td>
                         <td class="${result.accuracyPercentage >= 70 ? 'accuracy-high' : 'accuracy-low'}">
                             ${result.accuracyPercentage.toFixed(1)}%
                         </td>
-                        <td>${timeDisplay}</td>     
+                        <td>${timeDisplay}</td>
                         <td>
                             <span class="stat-badge ${result.testStatus === 'Completed' ? 'badge-passed' : 'badge-in-progress'}">
                                 ${escapeHtml(result.testStatus)}
@@ -980,26 +1013,20 @@
             const result = currentResults[index];
             currentDetailData = result;
 
-            // Populate modal with session data
             $('#detailSessionId').text(result.sessionId || '-');
             $('#detailAssessmentType').text(result.assessmentType || '-');
-            $('#detailTotalAttempted').text(result.totalQuestionsAttempted || '-');
+            $('#detailTotalAttempted').text(result.totalQuestions || '-');
             $('#detailAccuracy').text(result.accuracyPercentage.toFixed(2) + '%');
             $('#detailTestStatus').text(result.testStatus || '-');
 
-            // Hide image details section initially
             $('#imageDetailsSection').hide();
-
-            // Load image-wise results
             loadImageWiseResults(result.sessionId);
-
-            // Show modal
             $('#detailsModal').addClass('show');
         }
 
         function loadImageWiseResults(sessionId) {
             $.ajax({
-                url: '/Admin/GetImageWiseColorblindnessResults?sessionId=' + encodeURIComponent(sessionId),
+                url: buildApiUrl(`/Admin/GetImageWiseColorblindnessResults?sessionId=${encodeURIComponent(sessionId)}`),
                 type: 'GET',
                 success: function(response) {
                     if (response.success && response.data && response.data.length > 0) {
@@ -1026,34 +1053,25 @@
             }
 
             results.forEach(function(result, idx) {
-                const statusClass = result.resultStatus === 'Correct' 
-                    ? 'status-correct'  
-                    : result.resultStatus === 'Skipped' 
-                    ? 'status-skipped' 
+                const statusClass = result.resultStatus === 'Correct'
+                    ? 'status-correct'
+                    : result.resultStatus === 'Skipped'
+                    ? 'status-skipped'
                     : 'status-incorrect';
 
-                // Extract filename from imageUrl
                 let imageName = 'Image #' + (result.imageSequence || (idx + 1));
                 let imageFileName = 'N/A';
-                
+
                 if (result.imageUrl) {
-                    // Extract filename from path (handle both forward and backward slashes)
                     const parts = result.imageUrl.split(/[\/\\]/);
                     imageFileName = parts[parts.length - 1] || 'Unknown';
                     imageName = imageFileName;
-                    
-                    // Debug logging
                     console.log(`Image ${idx}: URL=${result.imageUrl}, FileName=${imageFileName}`);
                 }
 
-                // Build image HTML if URL exists
-                const imageHtml = result.imageUrl 
-                    ? `<img src="${result.imageUrl}" 
-                           alt="Test Image" 
-                           class="card-thumbnail-image" 
-                           style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid #dee2e6;" 
-                           >`
-                    : '<div style="width: 100%; height: 120px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; color: #999; border: 1px solid #dee2e6;"><i class="fas fa-image"></i> No Image</div>';
+                const imageHtml = result.imageUrl
+                    ? `<img src="${result.imageUrl}" alt="Test Image" class="card-thumbnail-image" style="width: 100%; height: auto; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid #dee2e6;" />`
+                    : '<div style="width: 100%; height: auto; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; color: #999; border: 1px solid #dee2e6;"><i class="fas fa-image"></i> No Image</div>';
 
                 const card = `
                     <div class="image-wise-card" onclick="viewImageDetail(${idx})" title="${escapeHtml(imageFileName)}">
@@ -1062,7 +1080,7 @@
                             <span class="image-seq" style="font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 ${escapeHtml(imageName)}
                             </span>
-                            <span class="image-status-badge ${statusClass}>
+                            <span class="image-status-badge ${statusClass}">
                                 ${result.resultStatus}
                             </span>
                         </div>
@@ -1099,11 +1117,9 @@
 
             const imageResult = currentImageWiseResults[imageIndex];
 
-            // Update image detail section
             $('#detailCorrectAnswer').text(imageResult.correctAnswer || 'Not specified');
             $('#detailSelectedAnswer').text(imageResult.selectedAnswer || 'Skipped');
 
-            // Set result status with appropriate styling
             let resultBadgeClass = '';
             if (imageResult.resultStatus === 'Skipped') {
                 $('#selectedAnswerBox').removeClass().addClass('answer-box skipped');
@@ -1122,14 +1138,12 @@
             $('#detailResult').html(`<span class="status-badge-large ${resultBadgeClass}">${imageResult.resultStatus}</span>`);
             $('#detailTimeTaken').text(imageResult.timeTakenSeconds + ' seconds');
 
-            // Show image if URL exists
             if (imageResult.imageUrl) {
                 $('#detailImage').attr('src', imageResult.imageUrl).show();
             } else {
                 $('#detailImage').hide();
             }
 
-            // Show image details section and hide image-wise grid
             $('#imageWiseSection').hide();
             $('#imageDetailsSection').show();
         }
@@ -1148,12 +1162,10 @@
             const totalTests = results.length;
             const completedTests = results.filter(r => r.testStatus === 'Completed').length;
             const avgAccuracy = (results.reduce((sum, r) => sum + r.accuracyPercentage, 0) / totalTests).toFixed(1);
-            
-            // ✅ FIXED: Properly calculate and format average time
+
             const totalTimeAllTests = results.reduce((sum, r) => sum + r.averageTimePerQuestion, 0);
             const avgTimePerQuestion = (totalTimeAllTests / totalTests).toFixed(2);
-            
-            // ✅ Format time display: if seconds, show as seconds; if greater than 60, show as minutes:seconds
+
             let timeDisplay = '';
             if (avgTimePerQuestion < 60) {
                 timeDisplay = avgTimePerQuestion + 's';
@@ -1162,14 +1174,6 @@
                 const seconds = Math.floor(avgTimePerQuestion % 60);
                 timeDisplay = `${minutes}m ${seconds}s`;
             }
-
-            console.log('Summary Stats Calculation:', {
-                totalTests: totalTests,
-                completedTests: completedTests,
-                avgAccuracy: avgAccuracy,
-                avgTimePerQuestion: avgTimePerQuestion,
-                timeDisplay: timeDisplay
-            });
 
             $('#totalTests').text(totalTests);
             $('#completedTests').text(completedTests);
@@ -1190,35 +1194,22 @@
 
         function exportToExcel() {
             const assessmentType = $('#assessmentType').val();
-            const startDate = $('#startDate').val();
-            const endDate = $('#endDate').val();
-
-            console.log('Export parameters:', {
-                assessmentType: assessmentType,
-                startDate: startDate,
-                endDate: endDate,
-                dataCount: currentResults.length
-            });
 
             if (!assessmentType) {
                 showAlert('Please select an assessment type', 'warning');
                 return;
             }
 
-            if (currentResults.length === 0) {
-                showAlert('No data to export. Please run a search first.', 'warning');
-                return;
-            }
+            let url = buildApiUrl(`/Admin/DownloadColorblindnessResultsExcel?assessmentType=${encodeURIComponent(assessmentType)}`);
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
 
-            // Build URL with proper encoding
-            let url = `/Assessment/DownloadColorblindnessResultsExcel?assessmentType=${encodeURIComponent(assessmentType)}`;
             if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
             if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
 
-            console.log('Exporting to Excel URL:', url);
-            
             try {
                 window.location.href = url;
+                showAlert('Excel file downloaded successfully!', 'success');
             } catch (error) {
                 console.error('Export error:', error);
                 showAlert('Error during export: ' + error.message, 'danger');
@@ -1245,13 +1236,12 @@
                 </div>
             `;
             $('.results-card').prepend(alertHtml);
-            
+
             setTimeout(() => {
                 $('.alert:first').fadeOut('fast', function() { $(this).remove(); });
             }, 5000);
         }
 
-        // Close modal when clicking outside
         $(document).click(function(event) {
             const modal = $('#detailsModal');
             if (event.target === modal[0]) {
@@ -1259,7 +1249,6 @@
             }
         });
 
-        // Close modal on Escape key
         $(document).keydown(function(event) {
             if (event.keyCode === 27) {
                 closeDetailsModal();

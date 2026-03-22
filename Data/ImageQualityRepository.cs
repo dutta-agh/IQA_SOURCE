@@ -134,6 +134,7 @@ namespace IQA_SOURCE.Data
                         INNER JOIN image_master im2 ON im2.im_id = iqr.iqr_im_id
                         WHERE iqr.iqr_session_id = @sessionId
                         AND iqr.iqr_assessment_code = @assessmentCode
+                        AND iqr.iqr_il_id <> 0
                         AND im2.im_active = 1
                         AND (im2.im_group_code = '' OR im2.im_group_code IS NULL OR EXISTS (
                             SELECT 1 FROM image_groups ig3 
@@ -419,15 +420,10 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                var query = @"
-                    SELECT 
-                        COUNT(DISTINCT im.im_id) as total_sets,
-                        COUNT(DISTINCT iqr.iqr_im_id) as completed_sets
+                // ✅ FIXED: Get TOTAL sets (independent of ratings)
+                var totalQuery = @"
+                    SELECT COUNT(DISTINCT im.im_id) as total_sets
                     FROM image_master im
-                    LEFT JOIN tbl_image_quality_ratings iqr 
-                        ON im.im_id = iqr.iqr_im_id 
-                        AND iqr.iqr_session_id = @sessionId
-                        AND iqr.iqr_assessment_code = @assessmentCode
                     WHERE im.im_assessment_type = @assessmentCode
                     AND im.im_active = 1
                     AND (im.im_group_code = '' OR im.im_group_code IS NULL OR EXISTS (
@@ -437,21 +433,30 @@ namespace IQA_SOURCE.Data
                         AND ig.ig_active = 'Y'
                     ))";
 
+                // ✅ FIXED: Get COMPLETED sets (only those that have been rated with il_id <> 0)
+                var completedQuery = @"
+                    SELECT COUNT(DISTINCT iqr.iqr_im_id) as completed_sets
+                    FROM tbl_image_quality_ratings iqr
+                    WHERE iqr.iqr_session_id = @sessionId
+                    AND iqr.iqr_assessment_code = @assessmentCode
+                    AND iqr.iqr_il_id <> 0";  // ✅ Only count ratings with actual linked images
+
                 var parameters = new[]
                 {
                     new MySqlParameter("@sessionId",      sessionId),
                     new MySqlParameter("@assessmentCode", assessmentCode)
                 };
 
-                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var totalResult = await Task.Run(() => _dbHelper.ExecuteQuery(totalQuery, parameters));
+                var completedResult = await Task.Run(() => _dbHelper.ExecuteQuery(completedQuery, parameters));
 
                 int totalSets = 0, completedSets = 0;
-                if (result.Rows.Count > 0)
-                {
-                    var row       = result.Rows[0];
-                    totalSets     = row["total_sets"]     != DBNull.Value ? Convert.ToInt32(row["total_sets"])     : 0;
-                    completedSets = row["completed_sets"] != DBNull.Value ? Convert.ToInt32(row["completed_sets"]) : 0;
-                }
+                
+                if (totalResult.Rows.Count > 0 && totalResult.Rows[0]["total_sets"] != DBNull.Value)
+                    totalSets = Convert.ToInt32(totalResult.Rows[0]["total_sets"]);
+                
+                if (completedResult.Rows.Count > 0 && completedResult.Rows[0]["completed_sets"] != DBNull.Value)
+                    completedSets = Convert.ToInt32(completedResult.Rows[0]["completed_sets"]);
 
                 var completedIdsResult = await GetCompletedRawImageSetIds(sessionId, assessmentCode, userCode);
 
@@ -466,7 +471,7 @@ namespace IQA_SOURCE.Data
 
                 progress.IsCompleted = progress.TotalSets > 0 && progress.CompletedSets >= progress.TotalSets;
 
-                _logger.LogInformation($"Progress: {completedSets}/{totalSets} completed for session {sessionId} from active group");
+                _logger.LogInformation($"Progress: {completedSets}/{totalSets} raw image sets completed for session {sessionId}");
                 return (1, "Success", progress);
             }
             catch (Exception ex)

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IQA")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f49cab550db72dd99a43dc7f5dd5f8c096f2caca")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a77db300b5c16a9fa37d9ab44b9553ea65599e27")]
 [assembly: System.Reflection.AssemblyProductAttribute("IQA")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IQA")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

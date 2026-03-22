@@ -181,6 +181,7 @@
             width: 100%;
             align-items: center;
             flex-shrink: 0;
+            justify-content:space-between;
         }
 
         .options-top {
@@ -189,7 +190,7 @@
             width: 100%;
             justify-content: center;
             flex-wrap: wrap;
-            max-width: 500px;
+            max-width: 100px;
         }
 
         .options-bottom {
@@ -197,7 +198,7 @@
             gap: 8px;
             width: 100%;
             justify-content: center;
-            max-width: 500px;
+            max-width: 100px;
         }
 
         .option-btn {
@@ -466,7 +467,7 @@
 
 <div class="colorblindness-container">
     <!-- Header -->
-    <div class="test-header">
+    <div class="test-header d-none">
         <div style="display:flex;justify-content:space-between">
             <h1 class="test-title">
                 <i class="fas fa-eye"></i> Colorblindness Test
@@ -478,10 +479,7 @@
                 </div>
             </div>
         </div>
-        <div>
-            <span style="font-size: 0.55rem;">For viewing original test template owner click this link: <a href="https://colour-blindness.com/colour-blindness-tests/ishihara-colour-test-plates/" target="_blank">Link</a></span>
-
-        </div>
+        
     </div>
 
     <!-- Main Content -->
@@ -514,6 +512,9 @@
             </div>
 
             <div class="status-message d-none" style="display:none;" id="statusMessage"></div>
+            <div>
+                <span style="font-size: 0.55rem;">Reference: https://colour-blindness.com/colour-blindness-tests/ishihara-colour-test-plates/</span>
+            </div>
         </div>
     </div>
 </div>
@@ -536,6 +537,7 @@
         let timerInterval = null;
         let imageAnswered = false;
         let skippedCount = 0;
+        let testInProgress = true;
 
         document.addEventListener('DOMContentLoaded', function () {
             loadImages();
@@ -556,8 +558,9 @@
 
                     if (!data.success || !data.data || data.data.length === 0) {
                         showAlert('No colorblindness test images available', 'warning');
+                        testInProgress = false;
                         setTimeout(() => {
-                            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                            navigateTo(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest')); // ✅ FIXED: Use navigateTo
                         }, 3000);
                         return;
                     }
@@ -571,8 +574,9 @@
                     hideLoader();
                     console.error('Error loading images:', err);
                     showAlert('Error loading test images: ' + err.message, 'danger');
+                    testInProgress = false;
                     setTimeout(() => {
-                        window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                        navigateTo(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest')); // ✅ FIXED: Use navigateTo
                     }, 3000);
                 });
         }
@@ -624,92 +628,84 @@
             imgObj.src = image.imageUrl;
         }
 
-        function renderOptions(image) {
+                function renderOptions(image) {
             const container = document.getElementById('optionsContainer');
             container.innerHTML = '';
 
-            let options = [];
-            if (Array.isArray(image.options)) {
-                options = image.options;
-            } else if (typeof image.options === 'string') {
-                options = image.options.split(',').map(o => o.trim()).filter(o => o);
-            }
+            // ✅ FIXED: Get options from the API response
+            let options = image.options || [];
+            const correctAnswer = (image.correctAnswer || '').trim();
+            const cantReadOption = 'Can\'t Read';
 
-            if (options.length === 0) {
-                options = ['Option A', 'Option B', 'Can\'t Read'];
-            }
+            // Debug logging
+            console.log('Image Data:', {
+                correctAnswer: image.correctAnswer,
+                options: image.options,
+                allImageKeys: Object.keys(image)
+            });
 
-            const cantReadOption = options.find(opt => opt.toLowerCase().includes('can\'t read'));
-            const otherOptions = options.filter(opt => !opt.toLowerCase().includes('can\'t read'));
+            // Step 1: Filter out "Can't Read" option
+            const mainOptions = options.filter(opt => {
+                const trimmedOpt = (opt || '').trim();
+                return trimmedOpt && trimmedOpt.toLowerCase() !== 'can\'t read';
+            });
 
-            const shuffledOptions = otherOptions.sort(() => Math.random() - 0.5);
+            // Step 2: Shuffle the remaining options
+            const shuffledOptions = mainOptions.sort(() => Math.random() - 0.5);
 
+            // Step 3: Create top buttons with shuffled options
             const topDiv = document.createElement('div');
             topDiv.className = 'options-top';
 
-            const topOptionsCount = Math.min(2, shuffledOptions.length);
-            for (let i = 0; i < topOptionsCount; i++) {
+            shuffledOptions.forEach((option) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'option-btn';
-                btn.textContent = shuffledOptions[i];
-                btn.onclick = () => selectOption(i, shuffledOptions[i], image);
+                btn.textContent = option;  // ✅ Use the actual option value as label
+                btn.onclick = () => selectOption(option, image);
                 topDiv.appendChild(btn);
-            }
+            });
 
             container.appendChild(topDiv);
 
-            if (shuffledOptions.length > 2) {
-                for (let i = topOptionsCount; i < shuffledOptions.length; i++) {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'option-btn';
-                    btn.textContent = shuffledOptions[i];
-                    btn.onclick = () => selectOption(i, shuffledOptions[i], image);
-                    topDiv.appendChild(btn);
-                }
-            }
+            // Step 4: Always show "Can't Read" at the bottom
+            const bottomDiv = document.createElement('div');
+            bottomDiv.className = 'options-bottom';
 
-            if (cantReadOption) {
-                const bottomDiv = document.createElement('div');
-                bottomDiv.className = 'options-bottom';
+            const cantReadBtn = document.createElement('button');
+            cantReadBtn.type = 'button';
+            cantReadBtn.className = 'option-btn cant-read-btn';
+            cantReadBtn.textContent = cantReadOption;
+            cantReadBtn.onclick = () => selectOption(cantReadOption, image);
+            bottomDiv.appendChild(cantReadBtn);
 
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'option-btn cant-read-btn';
-                btn.textContent = cantReadOption;
-                btn.onclick = () => selectOption(shuffledOptions.length, cantReadOption, image);
-                bottomDiv.appendChild(btn);
-
-                container.appendChild(bottomDiv);
-            }
+            container.appendChild(bottomDiv);
         }
-
-        function selectOption(index, option, image) {
+        function selectOption(option, image) {
             if (imageAnswered) return;
 
             imageAnswered = true;
             stopTimer();
 
             const buttons = document.querySelectorAll('.option-btn');
-            buttons.forEach((btn, i) => {
-                if (i === index) {
+            buttons.forEach((btn) => {
+                if (btn.textContent.trim() === option.trim()) {
                     btn.classList.add('selected');
-                    btn.disabled = true;
-                } else {
-                    btn.disabled = true;
                 }
+                btn.disabled = true;
             });
 
             const timeTaken = timeLimit - timeRemaining;
+            const correctAnswer = (image.correctAnswer || '').trim();
+            
             responses.push({
                 sessionId: sessionId,
                 assessmentType: assessmentType,
-                imageId: image.ciId || image.imageId || image.id,
+                imageId: image.imageId || image.id,
                 selectedAnswer: option,
-                correctAnswer: image.ciCorrectAnswer || image.correctAnswer,
+                correctAnswer: correctAnswer,
                 timeTakenSeconds: timeTaken,
-                isCorrect: option === (image.ciCorrectAnswer || image.correctAnswer)
+                isCorrect: option === correctAnswer
             });
 
             setTimeout(() => {
@@ -765,12 +761,14 @@
             statusMsg.innerHTML = '<i class="fas fa-fast-forward"></i> Skipped';
 
             const image = images[currentImageIndex];
+            const correctAnswer = (image.correctAnswer || '').trim();
+            
             responses.push({
                 sessionId: sessionId,
                 assessmentType: assessmentType,
-                imageId: image.ciId || image.imageId || image.id,
+                imageId: image.imageId || image.id,
                 selectedAnswer: null,
-                correctAnswer: image.ciCorrectAnswer || image.correctAnswer,
+                correctAnswer: correctAnswer,
                 timeTakenSeconds: timeLimit,
                 isCorrect: false,
                 skipped: true
@@ -810,11 +808,13 @@
                     hideLoader();
 
                     if (data.success) {
+                        testInProgress = false;
                         showThankYouMessage();
                     } else {
                         showAlert('Error submitting responses: ' + (data.message || 'Unknown error'), 'danger');
+                        testInProgress = false;
                         setTimeout(() => {
-                            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                            navigateTo(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest')); // ✅ FIXED: Use navigateTo
                         }, 2000);
                     }
                 })
@@ -822,6 +822,7 @@
                     hideLoader();
                     console.error('Submit error:', err);
                     showAlert('Network error. Please try again.', 'danger');
+                    testInProgress = false;
                 });
         }
 
@@ -832,9 +833,9 @@
                     <div class="thankyou-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <h2 class="thankyou-title">Colorblindness Test Complete!</h2>
+                    <h2 class="thankyou-title">Completed!</h2>
                     <p class="thankyou-message">
-                        Thank you for completing the Colorblindness Test. Next, You'll be redirected to check Device & Internet Bandwidth.'
+                        Thank you for completing the Colorblindness Test. Next, You'll be redirected to check Device & Internet Bandwidth.
                     </p>
                     <div class="thankyou-redirect">
                         Redirecting in <span id="redirectCountdown">3</span>s...
@@ -860,7 +861,7 @@
         }
 
         function continueToNextPage() {
-            window.location.href = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+            navigateTo(buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest')); // ✅ FIXED: Use navigateTo
         }
 
         function showLoader(message) {

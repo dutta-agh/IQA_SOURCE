@@ -69,7 +69,14 @@ namespace IQA_SOURCE.Controllers
             // Set flag indicating user accessed index page
             _sessionService.SetSessionData("HasIndexAccess", true);
 
-            // Validate assessment type exists and is available
+            // ✅ CRITICAL: Initialize assessment type early, even if empty
+            // This ensures it's available for subsequent requests
+            if (string.IsNullOrEmpty(assessmentType))
+            {
+                assessmentType = _sessionService.GetAssessmentType();
+            }
+
+            // Validate assessment type exists and is available 
             if (!string.IsNullOrEmpty(assessmentType))
             {
                 var result = await _assessmentTypeRepository.GetAssessmentTypeByCode(assessmentType, "Anonymous");
@@ -103,30 +110,32 @@ namespace IQA_SOURCE.Controllers
                     return View("AssessmentNotAvailable");
                 }
 
-                // Store assessment type in session
+                // ✅ CRITICAL: Store assessment type in session IMMEDIATELY after validation
+                // This ensures it persists across all subsequent requests
                 _sessionService.SetAssessmentType(assessmentType);
+                
+                _logger.LogInformation($"Assessment type '{assessmentType}' set in session for SessionId: {sessionId}");
+
                 ViewBag.AssessmentType = assessmentType;
                 ViewBag.AssessmentName = assessment.AtmName;
                 ViewBag.AssessmentDuration = assessment.AtmDurationMinutes;
             }
             else
             {
-                // Try to get from session as fallback
-                var sessionAssessmentType = _sessionService.GetAssessmentType();
-                if (!string.IsNullOrEmpty(sessionAssessmentType))
-                {
-                    ViewBag.AssessmentType = sessionAssessmentType;
-                    assessmentType = sessionAssessmentType;
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "No assessment type specified.";
-                    return View("AssessmentNotFound");
-                }
+                // ✅ No assessment type provided - this is still a valid scenario
+                // User might be accessing the index page without a specific assessment
+                _logger.LogInformation($"Index page accessed without assessment type for SessionId: {sessionId}");
+                TempData["ErrorMessage"] = "No assessment type specified.";
+                return View("AssessmentNotFound");
             }
 
-            // Pass session ID to view
+            // ✅ Pass both sessionId and assessmentCode to view so JavaScript can use them
             ViewBag.SessionId = sessionId;
+            ViewBag.AssessmentCode = assessmentType;
+            
+            // ✅ Log what we're passing to the view
+            _logger.LogInformation($"Index view rendered - SessionId: {sessionId}, AssessmentCode: {assessmentType}");
+            
             return View();
         }
 
@@ -623,6 +632,11 @@ namespace IQA_SOURCE.Controllers
                     // Get progress after submission
                     var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, submission.AssessmentCode, "Anonymous");
 
+                    // ✅ FIXED: Check if ALL sets are completed (CompletedSets >= TotalSets)
+                    var isCompleted = progressResult.Data.CompletedSets >= progressResult.Data.TotalSets;
+
+                    _logger.LogInformation($"Image quality rating submitted - SessionId: {sessionId}, CompletedSets: {progressResult.Data.CompletedSets}, TotalSets: {progressResult.Data.TotalSets}, IsCompleted: {isCompleted}");
+
                     return Json(new
                     {
                         success = true,
@@ -631,7 +645,7 @@ namespace IQA_SOURCE.Controllers
                         {
                             completedSets = progressResult.Data.CompletedSets,
                             totalSets = progressResult.Data.TotalSets,
-                            isCompleted = progressResult.Data.IsCompleted
+                            isCompleted = isCompleted
                         }
                     });
                 }
@@ -647,23 +661,44 @@ namespace IQA_SOURCE.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetImageAssessmentProgress()
+        public async Task<IActionResult> GetImageAssessmentProgress(string sessionId = null, string assessmentCode = null)
         {
             try
             {
-                var sessionId = _sessionService.GetOrCreateSessionId();
-                var assessmentCode = _sessionService.GetAssessmentType();
+                // ✅ FIX: Accept parameters as explicit fallback for session
+                var actualSessionId = !string.IsNullOrEmpty(sessionId) 
+                    ? sessionId 
+                    : _sessionService.GetOrCreateSessionId();
+                    
+                var actualAssessmentCode = !string.IsNullOrEmpty(assessmentCode) 
+                    ? assessmentCode 
+                    : _sessionService.GetAssessmentType();
 
-                if (string.IsNullOrEmpty(assessmentCode))
+                // ✅ Log what we received and what we're using
+                _logger.LogInformation(
+                    $"GetImageAssessmentProgress called - Params: sessionId={sessionId}, assessmentCode={assessmentCode} | Using: sessionId={actualSessionId}, assessmentCode={actualAssessmentCode}");
+
+                // ✅ Validate we have required values
+                if (string.IsNullOrEmpty(actualSessionId))
                 {
-                    return Json(new { success = false, message = "No assessment code found in session" });
+                    _logger.LogWarning("GetImageAssessmentProgress: No session ID found");
+                    return Json(new { success = false, message = "Session ID not found" });
                 }
 
-                var result = await _imageQualityRepository.GetAssessmentProgress(sessionId, assessmentCode, "Anonymous");
+                if (string.IsNullOrEmpty(actualAssessmentCode))
+                {
+                    _logger.LogWarning($"GetImageAssessmentProgress: No assessment code found for session {actualSessionId}");
+                    return Json(new { success = false, message = "Assessment code not found. Please start the assessment from the beginning." });
+                }
+
+                var result = await _imageQualityRepository.GetAssessmentProgress(actualSessionId, actualAssessmentCode, "Anonymous");
+
+                _logger.LogInformation(
+                    $"GetImageAssessmentProgress success - SessionId: {actualSessionId}, AssessmentCode: {actualAssessmentCode}, CompletedSets: {result.Data?.CompletedSets}, TotalSets: {result.Data?.TotalSets}");
 
                 return Json(new
                 {
-                    success = true,
+                    success = result.OutputCode == 1,
                     data = result.Data
                 });
             }
@@ -765,6 +800,9 @@ namespace IQA_SOURCE.Controllers
                     return RedirectToAction("Index");
                 }
 
+                // ✅ CRITICAL: Always set in session, even if already set
+                _sessionService.SetAssessmentType(assessmentCode);
+
                 _logger.LogInformation("Sort assessment started - SessionId: {SessionId}, AssessmentCode: {Code}", sessionId, assessmentCode);
 
                 var assessmentTypeResult = await _assessmentTypeRepository.GetAssessmentTypeByCode(assessmentCode, "Anonymous");
@@ -776,7 +814,6 @@ namespace IQA_SOURCE.Controllers
 
                 var assessmentName = assessmentTypeResult.Data.First().AtmName;
 
-                // Reuse existing method — picks a random master image not yet rated in this session
                 var imageSetResult = await _imageQualityRepository.GetNextRandomRawImageSet(sessionId, assessmentCode, "Anonymous");
 
                 if (imageSetResult.OutputCode == 0 || imageSetResult.Data == null)
@@ -797,7 +834,6 @@ namespace IQA_SOURCE.Controllers
 
                 var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, assessmentCode, "Anonymous");
 
-                // Build the shuffled pool: raw image + all linked images, identity hidden
                 var rawItem = new SortImageItem
                 {
                     ImageId    = 0,
@@ -814,7 +850,6 @@ namespace IQA_SOURCE.Controllers
                     ImageLabel = li.LiImageLabel
                 }).ToList();
 
-                // Combine then shuffle — user cannot tell which is raw
                 var allImages = linkedItems.Append(rawItem)
                                            .OrderBy(_ => Random.Shared.Next())
                                            .ToList();
@@ -830,6 +865,9 @@ namespace IQA_SOURCE.Controllers
                     TotalSets        = progressResult.Data.TotalSets,
                     IsCompleted      = progressResult.Data.IsCompleted
                 };
+
+                // ✅ Log what we're passing to view
+                _logger.LogInformation($"SortAssessment view - SessionId: {sessionId}, AssessmentCode: {assessmentCode}");
 
                 return View(viewModel);
             }
@@ -859,16 +897,6 @@ namespace IQA_SOURCE.Controllers
                 if (submission.Ratings.Any(r => r.Rating < 1 || r.Rating > 5))
                     return Json(new { success = false, message = "All ratings must be between 1 and 5" });
 
-                // Enforce uniqueness — no two images may share the same rating
-                var duplicates = submission.Ratings
-                    .GroupBy(r => r.Rating)
-                    .Where(g => g.Count() > 1)
-                    .Select(g => g.Key)
-                    .ToList();
-
-                if (duplicates.Count > 0)
-                    return Json(new { success = false, message = $"Rating value(s) {string.Join(", ", duplicates)} assigned to more than one image. Each rating must be unique." });
-
                 var ipAddress = !string.IsNullOrWhiteSpace(submission.IpAddress)
                     ? submission.IpAddress
                     : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
@@ -883,7 +911,16 @@ namespace IQA_SOURCE.Controllers
 
                 if (result.OutputCode == 1)
                 {
+                    // ✅ FIXED: Get progress to check for MORE images
                     var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, submission.AssessmentCode, "Anonymous");
+
+                    // ✅ CRITICAL FIX: Check if there are MORE unrated images available
+                    // CompletedSets < TotalSets means there are still images to rate
+                    var hasMoreImages = progressResult.Data.CompletedSets < progressResult.Data.TotalSets;
+
+                    _logger.LogInformation(
+                        "Sort ratings submitted - SessionId: {SessionId}, RawImageSetId: {RisId}, CompletedSets: {Completed}, TotalSets: {Total}, HasMoreImages: {HasMore}",
+                        sessionId, submission.RawImageSetId, progressResult.Data.CompletedSets, progressResult.Data.TotalSets, hasMoreImages);
 
                     return Json(new
                     {
@@ -892,8 +929,8 @@ namespace IQA_SOURCE.Controllers
                         data = new
                         {
                             completedSets = progressResult.Data.CompletedSets,
-                                totalSets = progressResult.Data.TotalSets,
-                            isCompleted = progressResult.Data.IsCompleted
+                            totalSets = progressResult.Data.TotalSets,
+                            hasMoreImages = hasMoreImages  // ✅ Return TRUE if more images exist
                         }
                     });
                 }
@@ -970,7 +1007,7 @@ namespace IQA_SOURCE.Controllers
                             imageId = img.CbImageId,
                             imageUrl = img.ImageUrl,
                             options = img.Options,
-                            correctAnswer = img.Options.First() // The first item is the correct answer before shuffling
+                            correctAnswer = img.CorrectAnswer // The first item is the correct answer before shuffling
                         }).ToList()
                     });
                 }
@@ -1056,275 +1093,6 @@ namespace IQA_SOURCE.Controllers
                     message = $"Error: {ex.Message}"
                 });
             }
-        }
-
-        // ── Colorblindness Test Results Download ────────────────────────────
-        [HttpGet]
-        public async Task<IActionResult> DownloadColorblindnessResultsExcel(string assessmentType, DateTime? startDate = null, DateTime? endDate = null)
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            try
-            {
-                // Validate assessmentType parameter
-                if (string.IsNullOrWhiteSpace(assessmentType))
-                {
-                    TempData["ErrorMessage"] = "Assessment type is required. Please select an assessment type and try again.";
-                    return RedirectToAction("ColorblindnessResults", "Admin");
-                }
-
-                _logger.LogInformation($"DownloadColorblindnessResultsExcel called with assessmentType: {assessmentType}, startDate: {startDate}, endDate: {endDate}");
-
-                ColorblindnessTestResultResponse result;
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    _logger.LogInformation($"Fetching results by date range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
-                    result = await _colorblindnessRepository.GetColorblindnessResultsByDateRange(assessmentType, startDate.Value, endDate.Value, userId);
-                }
-                else
-                {
-                    _logger.LogInformation($"Fetching all results for assessment type: {assessmentType}");
-                    result = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentType, userId);
-                }
-
-                _logger.LogInformation($"Repository returned: OutputCode={result.OutputCode}, DataCount={result.Data?.Count ?? 0}, Message={result.OutputMsg}");
-
-                if (result.OutputCode != 1)
-                {
-                    TempData["ErrorMessage"] = $"Error retrieving data: {result.OutputMsg}";
-                    return RedirectToAction("ColorblindnessResults", "Admin");
-                }
-
-                if (result.Data == null || !result.Data.Any())
-                {
-                    TempData["ErrorMessage"] = $"No colorblindness test data found for assessment type '{assessmentType}'. Please check your filters and try again.";
-                    return RedirectToAction("ColorblindnessResults", "Admin");
-                }
-
-                var workbook = new XSSFWorkbook();
-
-                // Create Summary Sheet
-                CreateSummarySheet(workbook, result.Data);
-
-                // Create Image-Wise Details Sheet
-                CreateImageWiseSheet(workbook, result.Data);
-
-                // Write to memory stream
-                using var memoryStream = new MemoryStream();
-                workbook.Write(memoryStream);   
-                
-                _logger.LogInformation($"Excel file generated successfully for {result.Data.Count} records");
-                
-                return File(memoryStream.ToArray(),
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    $"ColorblindnessResults_{assessmentType}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating colorblindness results Excel file");
-                TempData["ErrorMessage"] = $"Error generating Excel file: {ex.Message}";
-                return RedirectToAction("ColorblindnessResults", "Admin");
-            }
-        }
-
-        private void CreateSummarySheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results)
-        {
-            var sheet = workbook.CreateSheet("Summary");
-
-            // Create styles
-            var headerStyle = CreateHeaderStyle(workbook);
-            var dataStyle = CreateDataStyle(workbook);
-            var altStyle = CreateAlternateRowStyle(workbook);
-
-            // Create header row
-            var headerRow = sheet.CreateRow(0);
-            string[] headers = {
-                "Session ID", "Assessment Type", "Total Questions Attempted",
-                "Correct Answers", "Incorrect Answers", "Can't Read Answers",
-                "Accuracy (%)", "Average Time Per Question (sec)", "Test Start Time",
-                "Test End Time", "IP Address", "Test Status"
-            };
-
-            for (int i = 0; i < headers.Length; i++)
-            {
-                var cell = headerRow.CreateCell(i);
-                cell.SetCellValue(headers[i]);
-                cell.CellStyle = headerStyle;
-            }
-
-            // Add data rows
-            int rowIndex = 1;
-            foreach (var testResult in results)
-            {
-                var row = sheet.CreateRow(rowIndex);
-                var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
-
-                row.CreateCell(0).SetCellValue(testResult.SessionId ?? "");
-                row.CreateCell(0).CellStyle = style;
-
-                row.CreateCell(1).SetCellValue(testResult.AssessmentType ?? "");
-                row.CreateCell(1).CellStyle = style;
-
-                row.CreateCell(2).SetCellValue(testResult.TotalQuestionsAttempted);
-                row.CreateCell(2).CellStyle = style;
-
-                row.CreateCell(3).SetCellValue(testResult.CorrectAnswers);
-                row.CreateCell(3).CellStyle = style;
-
-                row.CreateCell(4).SetCellValue(testResult.IncorrectAnswers);
-                row.CreateCell(4).CellStyle = style;
-
-                row.CreateCell(5).SetCellValue(testResult.CantReadAnswers);
-                row.CreateCell(5).CellStyle = style;
-
-                row.CreateCell(6).SetCellValue($"{testResult.AccuracyPercentage:F2}");
-                row.CreateCell(6).CellStyle = style;
-
-                row.CreateCell(7).SetCellValue($"{testResult.AverageTimePerQuestion:F2}");
-                row.CreateCell(7).CellStyle = style;
-
-                row.CreateCell(8).SetCellValue(testResult.TestStartTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                row.CreateCell(8).CellStyle = style;
-
-                row.CreateCell(9).SetCellValue(testResult.TestEndTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "");
-                row.CreateCell(9).CellStyle = style;
-
-                row.CreateCell(10).SetCellValue(testResult.IpAddress ?? "");
-                row.CreateCell(10).CellStyle = style;
-
-                row.CreateCell(11).SetCellValue(testResult.TestStatus ?? "");
-                row.CreateCell(11).CellStyle = style;
-
-                rowIndex++;
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < headers.Length; i++)
-            {
-                sheet.AutoSizeColumn(i);
-                if (sheet.GetColumnWidth(i) > 15000)
-                    sheet.SetColumnWidth(i, 15000);
-            }
-        }
-
-        private void CreateImageWiseSheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results)
-        {
-            var sheet = workbook.CreateSheet("Image-Wise Details");
-
-            var headerStyle = CreateHeaderStyle(workbook);
-            var dataStyle = CreateDataStyle(workbook);
-            var altStyle = CreateAlternateRowStyle(workbook);
-
-            // Create header row
-            var headerRow = sheet.CreateRow(0);
-            string[] headers = {
-                "Session ID", "Image Sequence", "Image ID",
-                "Correct Answer", "User Answer", "Result Status",
-                "Time Taken (sec)"
-            };
-
-            for (int i = 0; i < headers.Length; i++)
-            {
-                var cell = headerRow.CreateCell(i);
-                cell.SetCellValue(headers[i]);
-                cell.CellStyle = headerStyle;
-            }
-
-            // Add image-wise data
-            int rowIndex = 1;
-            foreach (var testResult in results)
-            {
-                if (testResult.ImageWiseResults != null && testResult.ImageWiseResults.Any())
-                {
-                    foreach (var imageResult in testResult.ImageWiseResults)
-                    {
-                        var row = sheet.CreateRow(rowIndex);
-                        var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
-
-                        row.CreateCell(0).SetCellValue(testResult.SessionId ?? "");
-                        row.CreateCell(0).CellStyle = style;
-
-                        row.CreateCell(1).SetCellValue(imageResult.ImageSequence);
-                        row.CreateCell(1).CellStyle = style;
-
-                        row.CreateCell(2).SetCellValue(imageResult.ImageId);
-                        row.CreateCell(2).CellStyle = style;
-
-                        row.CreateCell(3).SetCellValue(imageResult.CorrectAnswer ?? "");
-                        row.CreateCell(3).CellStyle = style;
-
-                        row.CreateCell(4).SetCellValue(imageResult.SelectedAnswer ?? "Skipped");
-                        row.CreateCell(4).CellStyle = style;
-
-                        row.CreateCell(5).SetCellValue(imageResult.ResultStatus ?? "");
-                        row.CreateCell(5).CellStyle = style;
-
-                        row.CreateCell(6).SetCellValue(imageResult.TimeTakenSeconds);
-                        row.CreateCell(6).CellStyle = style;
-
-                        rowIndex++;
-                    }
-                }
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < headers.Length; i++)
-            {
-                sheet.AutoSizeColumn(i);
-                if (sheet.GetColumnWidth(i) > 15000)
-                    sheet.SetColumnWidth(i, 15000);
-            }
-        }
-
-        private ICellStyle CreateHeaderStyle(XSSFWorkbook workbook)
-        {
-            var style = workbook.CreateCellStyle();
-            var font = workbook.CreateFont();
-            font.IsBold = true;
-            font.Color = IndexedColors.White.Index;
-            font.FontHeightInPoints = 11;
-            style.SetFont(font);
-            style.FillForegroundColor = IndexedColors.DarkBlue.Index;
-            style.FillPattern = FillPattern.SolidForeground;
-            style.Alignment = HorizontalAlignment.Center;
-            style.VerticalAlignment = VerticalAlignment.Center;
-            style.BorderBottom = BorderStyle.Medium;
-            style.BorderTop = BorderStyle.Medium;
-            style.BorderLeft = BorderStyle.Thin;
-            style.BorderRight = BorderStyle.Thin;
-            return style;
-        }
-
-        private ICellStyle CreateDataStyle(XSSFWorkbook workbook)
-        {
-            var style = workbook.CreateCellStyle();
-            var font = workbook.CreateFont();
-            font.FontHeightInPoints = 10;
-            style.SetFont(font);
-            style.VerticalAlignment = VerticalAlignment.Center;
-            style.BorderBottom = BorderStyle.Thin;
-            style.BorderTop = BorderStyle.Thin;
-            style.BorderLeft = BorderStyle.Thin;
-            style.BorderRight = BorderStyle.Thin;
-            return style;
-        }
-
-        private ICellStyle CreateAlternateRowStyle(XSSFWorkbook workbook)
-        {
-            var style = workbook.CreateCellStyle();
-            var font = workbook.CreateFont();
-            font.FontHeightInPoints = 10;
-            style.SetFont(font);
-            style.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
-            style.FillPattern = FillPattern.SolidForeground;
-            style.VerticalAlignment = VerticalAlignment.Center;
-            style.BorderBottom = BorderStyle.Thin;
-            style.BorderTop = BorderStyle.Thin;
-            style.BorderLeft = BorderStyle.Thin;
-            style.BorderRight = BorderStyle.Thin;
-            return style;
         }
     }
 }

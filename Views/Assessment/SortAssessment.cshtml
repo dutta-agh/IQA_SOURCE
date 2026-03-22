@@ -34,9 +34,9 @@
         /* ── Header (Enhanced) ──────────────────────────────────── */
         .header {
             background: white;
-            padding: 12px 24px;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 14px 28px;
+            border-bottom: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             flex-shrink: 0;
         }
 
@@ -44,25 +44,25 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
+            gap: 24px;
             max-width: 100%;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex: 1;
         }
 
         .header-icon {
             color: #4f46e5;
-            font-size: 1.25rem;
+            font-size: 1.4rem;
             flex-shrink: 0;
         }
 
         .header-title {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: #0f172a;
             margin: 0;
@@ -72,21 +72,21 @@
         .header-progress {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             background: linear-gradient(135deg, #eef2ff 0%, #f0f9ff 100%);
             color: #3730a3;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 0.75rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
             font-weight: 700;
-            border: 1px solid #c7d2fe;
+            border: 1.5px solid #c7d2fe;
             flex-shrink: 0;
         }
 
         .progress-dot {
             display: inline-block;
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             background: #4f46e5;
             border-radius: 50%;
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -108,55 +108,83 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 20px;
             position: relative;
             overflow: hidden;
         }
 
         .assessment-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr;
+            gap: 24px;
             width: 100%;
             height: 100%;
-            max-width: 1200px;
-            aspect-ratio: 16 / 9;
+            max-width: 1400px;
+            align-items: center;
         }
 
-        /* ── Corner positions ──────────────────────────────────────── */
+        /* ── Left column (2 images stacked) ──────────────────────────────────── */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            height: 100%;
+        }
+
+        /* ── Center column (reference image) ──────────────────────────────────── */
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        /* ── Right column (2 images stacked) ──────────────────────────────────── */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            height: 100%;
+        }
+
         .image-card.top-left {
-            grid-column: 1;
-            grid-row: 1;
-            align-self: start;
-            justify-self: start;
+            grid-column: unset;
+            grid-row: unset;
+            align-self: unset;
+            justify-self: unset;
         }
 
         .image-card.top-right {
-            grid-column: 3;
-            grid-row: 1;
-            align-self: start;
-            justify-self: end;
+            grid-column: unset;
+            grid-row: unset;
+            align-self: unset;
+            justify-self: unset;
         }
 
         .image-card.bottom-left {
-            grid-column: 1;
-            grid-row: 3;
-            align-self: end;
-            justify-self: start;
+            grid-column: unset;
+            grid-row: unset;
+            align-self: unset;
+            justify-self: unset;
         }
 
         .image-card.bottom-right {
-            grid-column: 3;
-            grid-row: 3;
-            align-self: end;
-            justify-self: end;
+            grid-column: unset;
+            grid-row: unset;
+            align-self: unset;
+            justify-self: unset;
         }
 
         /* ── Center reference ──────────────────────────────────────── */
         .reference-section {
-            grid-column: 2;
-            grid-row: 2;
+            grid-column: unset;
+            grid-row: unset;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -167,9 +195,9 @@
 
         .reference-card {
             background: white;
-            border-radius: 14px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border: 2px solid #e2e8f0;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -178,262 +206,277 @@
         }
 
             .reference-card:hover {
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
                 border-color: #cbd5e1;
-                transform: translateY(-3px);
+                transform: translateY(-4px);
             }
 
         .reference-header {
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            padding: 10px 14px;
+            padding: 12px 16px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             color: white;
             font-weight: 700;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
             .reference-header i {
-                font-size: 1rem;
+                font-size: 1.1rem;
             }
 
         .reference-image-container {
-            width: 220px;
-            height: 220px;
+            width: 280px;
+            height: 280px;
             background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             border-top: 1px solid #e5e7eb;
-            padding: 8px;
+            padding: 10px;
         }
 
             .reference-image-container img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                border-radius: 8px;
+                border-radius: 10px;
             }
 
-        /* ── Comparison cards (Modern) ──────────────────────────────────────────── */
+        /* ── Comparison cards (Improved Design) ──────────────────────────────────────────── */
         .image-card {
             background: white;
-            border-radius: 14px;
-            padding: 10px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+            border: 2px solid #e2e8f0;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            width: 160px;
+            gap: 8px;
+            width: 100%;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
             .image-card:hover {
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
                 border-color: #cbd5e1;
-                transform: translateY(-3px);
+                transform: translateY(-4px);
             }
 
             .image-card.rated {
                 border-color: #86efac;
                 background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
-                box-shadow: 0 4px 16px rgba(34, 197, 94, 0.12);
+                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.15);
             }
 
                 .image-card.rated::after {
                     content: '✓';
                     position: absolute;
-                    top: 4px;
-                    right: 4px;
+                    top: 6px;
+                    right: 6px;
                     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                     color: white;
-                    width: 22px;
-                    height: 22px;
+                    width: 26px;
+                    height: 26px;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 0.7rem;
+                    font-size: 0.8rem;
                     font-weight: 700;
-                    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
+                    box-shadow: 0 3px 8px rgba(34, 197, 94, 0.45);
                 }
 
         .image-filename {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             color: #64748b;
-            font-weight: 600;
+            font-weight: 700;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             letter-spacing: 0.2px;
+            text-transform: uppercase;
         }
 
             .image-filename i {
                 color: #94a3b8;
-                margin-right: 3px;
+                margin-right: 4px;
             }
 
         .image-container {
             width: 100%;
             height: auto;
             background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #e5e7eb;
+            border: 1.5px solid #e5e7eb;
         }
 
             .image-container img {
-                width: 100%;
+                width: 256px;
                 height: 100%;
-                object-fit: cover;
+                object-fit: initial;
             }
 
         .rating-section {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 8px;
         }
 
         .rating-title {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: #1e293b;
             text-align: center;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
-        /* ── Rating buttons (Modern) ──────────────────────────────────────── */
+        /* ── Rating buttons (7-point scale with labels) ──────────────────────────────────────── */
         .rating-buttons {
             display: flex;
-            justify-content: center;
-            gap: 1px;
+            flex-direction: row;
             flex-wrap: wrap;
-            row-gap: 2px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            width: 100%;
+        }
+
+        .rating-btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            min-width: 53px;
         }
 
         .rating-btn {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+            width: 100%;
+            height: 30px;
+            padding: 6px 0;
+            border-radius: 5px;
             border: 1.5px solid #d1d5db;
             background: white;
             color: #475569;
             font-weight: 700;
-            font-size: 0.55rem;
+            font-size: 0.65rem;
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
             position: relative;
-            flex-shrink: 0;
+            aspect-ratio: 1;
         }
 
             .rating-btn:hover:not(:disabled) {
                 border-color: #4f46e5;
                 background: #eef2ff;
-                transform: scale(1.1);
-                box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+                transform: scale(1.12);
+                box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
             }
 
             .rating-btn:disabled {
-                opacity: 0.3;
+                opacity: 0.25;
                 cursor: not-allowed;
                 background: #f9fafb;
             }
 
-            /* Active states with semantic colors */
+            /* Active states with semantic colors for 7-point scale */
             .rating-btn.active[data-score="-3"] {
                 background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                 border-color: #dc2626;
                 color: white;
-                box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
             }
 
             .rating-btn.active[data-score="-2"] {
                 background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
                 border-color: #ea580c;
                 color: white;
-                box-shadow: 0 3px 8px rgba(249, 115, 22, 0.35);
+                box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
             }
 
             .rating-btn.active[data-score="-1"] {
                 background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
                 border-color: #ca8a04;
                 color: white;
-                box-shadow: 0 3px 8px rgba(234, 179, 8, 0.35);
+                box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
             }
 
             .rating-btn.active[data-score="0"] {
                 background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
                 border-color: #4b5563;
                 color: white;
-                box-shadow: 0 3px 8px rgba(107, 114, 128, 0.35);
+                box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
             }
 
             .rating-btn.active[data-score="1"] {
                 background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
                 border-color: #65a30d;
                 color: white;
-                box-shadow: 0 3px 8px rgba(132, 204, 22, 0.35);
+                box-shadow: 0 4px 12px rgba(132, 204, 22, 0.4);
             }
 
             .rating-btn.active[data-score="2"] {
                 background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                 border-color: #16a34a;
                 color: white;
-                box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35);
+                box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
             }
 
             .rating-btn.active[data-score="3"] {
                 background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
                 border-color: #0891b2;
                 color: white;
-                box-shadow: 0 3px 8px rgba(6, 182, 212, 0.35);
+                box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
             }
+
+        .header {
+            display: none !important;
+        }
 
         .rating-label {
             font-size: 0.5rem;
             color: #94a3b8;
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
-            margin-top: 1px;
-            letter-spacing: 0.1px;
+            letter-spacing: 0.15px;
             line-height: 1.2;
+            width: 100%;
+            word-break: break-word;
         }
 
         /* ── Footer (Enhanced) ────────────────────────────────────────────────── */
         .footer {
             background: white;
-            padding: 12px 24px;
-            border-top: 1px solid #e2e8f0;
+            padding: 14px 28px;
+            border-top: 2px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
+            gap: 24px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
             flex-shrink: 0;
         }
 
         .footer-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .footer-status {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #0f172a;
         }
@@ -442,7 +485,7 @@
                 color: #059669;
                 display: flex;
                 align-items: center;
-                gap: 5px;
+                gap: 7px;
             }
 
                 .footer-status.ready::before {
@@ -450,42 +493,42 @@
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    width: 16px;
-                    height: 16px;
+                    width: 18px;
+                    height: 18px;
                     background: #059669;
                     color: white;
                     border-radius: 50%;
-                    font-size: 0.65rem;
+                    font-size: 0.7rem;
                     font-weight: 700;
                 }
 
         .footer-subtext {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: #64748b;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .submit-button {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
-            padding: 10px 24px;
-            font-size: 0.85rem;
+            padding: 11px 28px;
+            font-size: 0.9rem;
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
             white-space: nowrap;
             flex-shrink: 0;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
         }
 
             .submit-button:hover:not(:disabled) {
-                box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+                box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
                 transform: translateY(-2px);
                 background: linear-gradient(135deg, #059669 0%, #047857 100%);
             }
@@ -495,7 +538,7 @@
             }
 
             .submit-button:disabled {
-                opacity: 0.5;
+                opacity: 0.45;
                 cursor: not-allowed;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             }
@@ -518,31 +561,31 @@
 
         .fullscreen-prompt-box {
             background: white;
-            border-radius: 16px;
-            padding: 48px 56px;
+            border-radius: 18px;
+            padding: 52px 60px;
             text-align: center;
-            max-width: 480px;
+            max-width: 500px;
             width: 90%;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.25);
         }
 
             .fullscreen-prompt-box .fs-icon {
-                font-size: 3.5rem;
+                font-size: 3.8rem;
                 color: #4f46e5;
-                margin-bottom: 16px;
+                margin-bottom: 18px;
             }
 
             .fullscreen-prompt-box h3 {
                 color: #0f172a;
-                font-size: 1.5rem;
+                font-size: 1.6rem;
                 font-weight: 700;
-                margin-bottom: 12px;
+                margin-bottom: 14px;
             }
 
             .fullscreen-prompt-box p {
                 color: #64748b;
-                font-size: 1rem;
-                margin-bottom: 28px;
+                font-size: 1.05rem;
+                margin-bottom: 30px;
                 line-height: 1.6;
             }
 
@@ -550,37 +593,37 @@
             background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             border: none;
-            padding: 12px 36px;
+            padding: 13px 40px;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
         }
 
             .fs-enter-btn:hover {
-                box-shadow: 0 12px 24px rgba(79, 70, 229, 0.4);
+                box-shadow: 0 14px 28px rgba(79, 70, 229, 0.45);
                 transform: translateY(-2px);
             }
 
         .fs-toast {
             position: fixed;
-            top: 16px;
-            right: 16px;
+            top: 18px;
+            right: 18px;
             z-index: 19000;
             background: #1e293b;
             color: white;
             border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 0.85rem;
+            padding: 13px 18px;
+            font-size: 0.9rem;
             font-weight: 600;
             display: none;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            gap: 9px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
             cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
             .fs-toast.show {
@@ -628,24 +671,24 @@
 
         .thankyou-content {
             background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-            border-radius: 20px;
-            padding: 60px 80px;
+            border-radius: 22px;
+            padding: 68px 88px;
             text-align: center;
-            max-width: 600px;
+            max-width: 630px;
             width: 90%;
-            box-shadow: 0 25px 50px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 28px 60px rgba(79, 70, 229, 0.35);
         }
 
         .thankyou-icon {
-            font-size: 4.5rem;
+            font-size: 5rem;
             color: #22c55e;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         @@keyframes scaleIn {
             from {
-                transform: scale(0.5);
+                transform: scale(0.4);
                 opacity: 0;
             }
 
@@ -657,43 +700,59 @@
 
         .thankyou-content h2 {
             color: white;
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 700;
-            margin: 0 0 16px 0;
+            margin: 0 0 18px 0;
         }
 
         .thankyou-content p {
             color: #f0f9ff;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             line-height: 1.8;
-            margin: 0 0 32px 0;
+            margin: 0 0 35px 0;
         }
 
         .redirect-message {
             color: #dbeafe;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
         }
 
         .redirect-timer {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.18);
+            padding: 7px 14px;
             border-radius: 20px;
-            margin-left: 8px;
+            margin-left: 10px;
             font-weight: 700;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.35);
         }
 
         /* ── Responsive ────────────────────────────────────────────── */
         @@media (max-width: 1500px) {
             .assessment-grid {
-                gap: 10px;
-                max-width: 1000px;
+                gap: 12px;
+                max-width: 1100px;
             }
 
             .image-card {
-                width: 150px;
+                width: 100%;
+            }
+
+            .reference-image-container {
+                width: 256px;
+                height: auto;
+            }
+        }
+
+        @@media (max-width: 1200px) {
+            .assessment-grid {
+                gap: 10px;
+                max-width: 950px;
+            }
+
+            .image-card {
+                width: 100%;
             }
 
             .image-container {
@@ -701,40 +760,8 @@
             }
 
             .reference-image-container {
-                width: 200px;
-                height: 200px;
-            }
-
-            .rating-btn {
-                width: 18px;
-                height: 18px;
-                font-size: 0.5rem;
-            }
-        }
-
-        @@media (max-width: 1200px) {
-            .assessment-grid {
-                gap: 8px;
-                max-width: 900px;
-            }
-
-            .image-card {
-                width: 140px;
-            }
-
-            .image-container {
-                height: 80px;
-            }
-
-            .reference-image-container {
-                width: 180px;
-                height: 180px;
-            }
-
-            .rating-btn {
-                width: 18px;
-                height: 18px;
-                font-size: 0.5rem;
+                width: 256px;
+                height: auto;
             }
         }
 
@@ -742,7 +769,7 @@
             .assessment-grid {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto;
-                gap: 12px;
+                gap: 14px;
                 max-width: 100%;
                 aspect-ratio: auto;
             }
@@ -750,7 +777,7 @@
             .image-card {
                 grid-column: 1 !important;
                 justify-self: center;
-                width: 200px;
+                width: 100%;
             }
 
             .reference-section {
@@ -760,7 +787,7 @@
 
             .footer {
                 flex-direction: column;
-                gap: 12px;
+                gap: 14px;
             }
 
             .submit-button {
@@ -783,7 +810,7 @@
     </div>
 </div>
 
-<div class="fs-toast" id="fsToast" onclick="reEnterFullscreen()" title="Click to re-enter full screen">
+<div class="fs-toast" id="fsToast" onclick="re EnterFullscreen()" title="Click to re-enter full screen">
     <i class="fas fa-expand-arrows-alt"></i> Click to re-enter full screen
 </div>
 
@@ -791,113 +818,134 @@
     <!-- Main Assessment Area -->
     <div class="main-content">
         <div class="assessment-grid">
-            <!-- Top-Left -->
-            @if (ratableImages.Count > 0)
-            {
-                var img = ratableImages[0];
-                <div class="image-card top-left" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
-                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
-                    <div class="rating-section">
-                        <div class="rating-title">Quality</div>
-                        <div class="rating-buttons">
-                            @for (int s = -3; s <= 3; s++)
-                            {
-                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
-                            }
+            <!-- Left Column (Top-Left + Bottom-Left) -->
+            <div class="left-column">
+                <!-- Top-Left -->
+                @if (ratableImages.Count > 0)
+                {
+                    var img = ratableImages[0];
+                    <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                        <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                        <div class="rating-section">
+                            <div class="rating-title">Quality Rating</div>
+                            <div class="rating-buttons">
+                                @for (int s = -3; s <= 3; s++)
+                                {
+                                    <div class="rating-btn-wrapper">
+                                        <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                                        <div class="rating-label">@GetRatingLabel(s)</div>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
                     </div>
-                </div>
-            }
+                }
 
-            <!-- Top-Right -->
-            @if (ratableImages.Count > 1)
-            {
-                var img = ratableImages[1];
-                <div class="image-card top-right" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
-                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
-                    <div class="rating-section">
-                        <div class="rating-title">Quality</div>
-                        <div class="rating-buttons">
-                            @for (int s = -3; s <= 3; s++)
-                            {
-                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
-                            }
+                <!-- Bottom-Left -->
+                @if (ratableImages.Count > 2)
+                {
+                    var img = ratableImages[2];
+                    <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                        <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                        <div class="rating-section">
+                            <div class="rating-title">Quality Rating</div>
+                            <div class="rating-buttons">
+                                @for (int s = -3; s <= 3; s++)
+                                {
+                                    <div class="rating-btn-wrapper">
+                                        <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                                        <div class="rating-label">@GetRatingLabel(s)</div>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
                     </div>
-                </div>
-            }
+                }
+            </div>
 
-            <!-- Center Reference -->
-            @if (rawImage != null)
-            {
-                <div class="reference-section">
+            <!-- Center Column (Reference Image) ✅ FIXED -->
+            <div class="center-column">
+                @if (rawImage != null)
+                {
                     <div class="reference-card">
                         <div class="reference-header">
-                            <i class="fas fa-star"></i> Reference
+                            <i class="fas fa-star"></i> Reference(Raw) Image
                         </div>
                         <div class="reference-image-container">
                             <img src="@rawImage.ImagePath" alt="Reference Image" loading="eager">
                         </div>
                     </div>
-                </div>
-            }
 
-            <!-- Bottom-Left -->
-            @if (ratableImages.Count > 2)
-            {
-                var img = ratableImages[2];
-                <div class="image-card bottom-left" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
-                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
-                    <div class="rating-section">
-                        <div class="rating-title">Quality</div>
-                        <div class="rating-buttons">
-                            @for (int s = -3; s <= 3; s++)
-                            {
-                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
-                            }
+                    <div style="position: absolute;
+        bottom: 3%;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+        border-radius: 10px;
+        overflow: hidden;">
+                        <div class="footer">
+                            <div class="footer-info">
+                                <div class="footer-status ready" id="footerStatus">All images rated in this set</div>
+                                <div class="footer-subtext">Raw Image Set <span id="footerSubtext"></div>
+                            </div>
+                            <button type="button" class="submit-button" id="submitButton" onclick="submitAll()" disabled>
+                                <i class="fas fa-check"></i> Submit Ratings
+                            </button>
                         </div>
-                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
                     </div>
-                </div>
-            }
+                }
+            </div>
 
-            <!-- Bottom-Right -->
-            @if (ratableImages.Count > 3)
-            {
-                var img = ratableImages[3];
-                <div class="image-card bottom-right" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                    <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
-                    <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
-                    <div class="rating-section">
-                        <div class="rating-title">Quality</div>
-                        <div class="rating-buttons">
-                            @for (int s = -3; s <= 3; s++)
-                            {
-                                <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
-                            }
+            <!-- Right Column (Top-Right + Bottom-Right) -->
+            <div class="right-column">
+                <!-- Top-Right -->
+                @if (ratableImages.Count > 1)
+                {
+                    var img = ratableImages[1];
+                    <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                        <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                        <div class="rating-section">
+                            <div class="rating-title">Quality Rating</div>
+                            <div class="rating-buttons">
+                                @for (int s = -3; s <= 3; s++)
+                                {
+                                    <div class="rating-btn-wrapper">
+                                        <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                                        <div class="rating-label">@GetRatingLabel(s)</div>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <div class="rating-label">−3 Worse • 0 Same • 3 Better</div>
                     </div>
-                </div>
-            }
+                }
+
+                <!-- Bottom-Right -->
+                @if (ratableImages.Count > 3)
+                {
+                    var img = ratableImages[3];
+                    <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
+                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                        <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
+                        <div class="rating-section">
+                            <div class="rating-title">Quality Rating</div>
+                            <div class="rating-buttons">
+                                @for (int s = -3; s <= 3; s++)
+                                {
+                                    <div class="rating-btn-wrapper">
+                                        <button type="button" class="rating-btn" id="btn-@img.ImageId-@img.IsRawImage.ToString().ToLower()-@s" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()" data-score="@s" onclick="setRating(@img.ImageId, @img.IsRawImage.ToString().ToLower(), @s)" title="@GetRatingLabel(s)">@s</button>
+                                        <div class="rating-label">@GetRatingLabel(s)</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-        <div class="footer-info">
-            <div class="footer-status" id="footerStatus">Rate all @ratableImages.Count images to submit</div>
-            <div class="footer-subtext" id="footerSubtext">0 of @ratableImages.Count rated – @ratableImages.Count remaining</div>
-        </div>
-        <button type="button" class="submit-button" id="submitButton" onclick="submitAll()" disabled>
-            <i class="fas fa-check"></i> Submit Ratings
-        </button>
-    </div>
+
 </div>
 
 <!-- Thank-you Modal -->
@@ -914,6 +962,9 @@
 
 @section Scripts {
     <script>
+        // ✅ FIX #1: Use sessionId and assessmentCode in API call
+        // ✅ FIX #2: Only show thank you modal when ALL sets are completed, not after each set
+        
         const sessionId = '@Model.SessionId';
         const assessmentCode = '@Model.AssessmentCode';
         const rawImageSetId = @Model.RawImage.RisId;
@@ -921,8 +972,12 @@
         const FS_KEY = 'iqa_fs_granted';
 
         const ratings = new Map();
-        const takenRatings = new Set();
         let clientIpAddress = '';
+        
+        // ✅ Track session-wide completion state
+        let totalAssessmentSets = 0;
+        let completedAssessmentSets = 0;
+        let currentSetNumber = 1;
 
         document.addEventListener('DOMContentLoaded', function () {
             fetch('https://api.ipify.org?format=json')
@@ -930,6 +985,7 @@
                 .then(d => { clientIpAddress = d.ip || ''; })
                 .catch(() => {});
 
+            // ✅ Initialize ratings for ratable images (not the reference image)
             document.querySelectorAll('[data-image-id][data-is-raw]').forEach(card => {
                 const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
                 ratings.set(key, null);
@@ -937,6 +993,7 @@
 
             initFullscreen();
             updateSubmitInfo();
+            loadAssessmentProgress();
         });
 
         function makeKey(imageId, isRaw) {
@@ -949,25 +1006,18 @@
 
             if (prev === score) {
                 ratings.set(key, null);
-                takenRatings.delete(score);
                 clearCardButtons(imageId, isRaw);
                 updateCardState(imageId, isRaw);
-                refreshAllDisabledStates();
                 updateSubmitInfo();
                 return;
             }
 
-            if (prev !== null) takenRatings.delete(prev);
-
             ratings.set(key, score);
-            takenRatings.add(score);
-
             clearCardButtons(imageId, isRaw);
             const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
             if (btn) btn.classList.add('active');
 
             updateCardState(imageId, isRaw);
-            refreshAllDisabledStates();
             updateSubmitInfo();
         }
 
@@ -983,20 +1033,13 @@
             if (card) card.classList.toggle('rated', ratings.get(makeKey(imageId, isRaw)) !== null);
         }
 
-        function refreshAllDisabledStates() {
-            document.querySelectorAll('button[data-image-id][data-is-raw][data-score]').forEach(btn => {
-                const key = makeKey(btn.dataset.imageId, btn.dataset.isRaw);
-                const score = parseInt(btn.dataset.score);
-                btn.disabled = takenRatings.has(score) && ratings.get(key) !== score;
-            });
-        }
-
+        // ✅ UPDATED: Show only progress (completed of total sets)
         function updateSubmitInfo() {
             const ratedCount = [...ratings.values()].filter(v => v !== null).length;
             const remaining = totalImages - ratedCount;
 
-            document.getElementById('footerSubtext').textContent = `${ratedCount} of ${totalImages} rated – ${remaining} remaining`;
-
+            // ✅ Only update the individual image rating count internally
+            // But don't display it in footer
             const footerStatus = document.getElementById('footerStatus');
             const submitButton = document.getElementById('submitButton');
 
@@ -1019,13 +1062,25 @@
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
             const ratingList = [];
+
+            // ✅ Convert -3 to +3 scale to 1-5 scale
             ratings.forEach((score, key) => {
                 const [imageId, isRawStr] = key.split('|');
+                // Linear mapping: -3 to +3 → 1 to 5
+                const convertedRating = Math.round(((score + 3) / 6) * 4 + 1);
+                
                 ratingList.push({
                     imageId: parseInt(imageId),
                     isRawImage: isRawStr === 'true',
-                    rating: score
+                    rating: convertedRating
                 });
+            });
+
+            // ✅ Add reference image with rating 3 (middle value)
+            ratingList.push({
+                imageId: @Model.RawImage.RisId,
+                isRawImage: true,
+                rating: 3 // Middle value for reference
             });
 
             try {
@@ -1040,14 +1095,46 @@
                 });
 
                 const data = await response.json();
+                
                 if (data.success) {
-                    showThankYouModal();
+                    console.log('Submission successful. Response data:', data);
+                    console.log('Has more images:', data.data?.hasMoreImages);
+                    
+                    // ✅ FIX: Disable leave site prompt BEFORE redirecting
+                    window.disableLeavePrompt?.();
+                    
+                    // ✅ FIX: Check if there are MORE images to rate
+                    // Only show thank you modal if NO more images exist (ALL sets completed)
+                    if (data.data && data.data.hasMoreImages === false) {
+                        // ✅ ALL sets completed - show thank you modal
+                        console.log('All sets completed. Showing thank you modal.');
+                        showThankYouModal();
+                    } else if (data.data && data.data.hasMoreImages === true) {
+                        // ✅ More images exist - load next set with session preservation
+                        console.log('More images available. Loading next set...');
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        // ✅ FIX: Use direct assignment instead of location.href to avoid prompt
+                        window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                    } else {
+                        // ✅ Fallback: If hasMoreImages is undefined, check completedSets vs totalSets
+                        console.log('hasMoreImages not provided. Checking progress...');
+                        if (data.data?.completedSets >= data.data?.totalSets) {
+                            console.log('All sets completed (from progress check). Showing thank you modal.');
+                            showThankYouModal();
+                        } else {
+                            console.log('More sets available (from progress check). Loading next set...');
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            // ✅ FIX: Use direct assignment instead of location.href to avoid prompt
+                            window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                        }
+                    }
                 } else {
                     alert('Error: ' + data.message);
                     submitButton.disabled = false;
                     submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
                 }
             } catch (error) {
+                console.error('Network error:', error);
                 alert('Network error. Please try again.');
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
@@ -1114,6 +1201,40 @@
             requestFullscreenSilently();
             document.getElementById('fsToast').classList.remove('show');
         }
+
+        // ✅ FIX: Pass sessionId and assessmentCode to GetImageAssessmentProgress
+        async function loadAssessmentProgress() {
+            try {
+                const response = await fetch(buildApiUrl(`/Assessment/GetImageAssessmentProgress?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`), {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    totalAssessmentSets = data.data.totalSets;
+                    completedAssessmentSets = data.data.completedSets;
+                    currentSetNumber = completedAssessmentSets + 1;
+
+                    // ✅ Update footer display with current progress
+                    document.getElementById('footerSubtext').textContent = `${completedAssessmentSets} of ${totalAssessmentSets} sets completed`;
+                    // document.getElementById('totalSets').textContent = totalAssessmentSets;
+                    
+                    console.log(`Progress: ${completedAssessmentSets}/${totalAssessmentSets} raw image sets completed`);
+                    console.log(`Currently on set: ${currentSetNumber}`);
+                } else {
+                    // ✅ Fallback if API fails - show 0 of total
+                    document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
+                    // document.getElementById('totalSets').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading progress:', error);
+                // ✅ Show default on error
+                document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
+                // document.getElementById('totalSets').textContent = '0';
+            }
+        }
     </script>
 }
 
@@ -1122,13 +1243,13 @@
     {
         return score switch
         {
-            -3 => "Much worse",
+            -3 => "Much Worse",
             -2 => "Worse",
-            -1 => "Slightly worse",
-            0 => "The same",
-            1 => "Slightly better",
+            -1 => "Slightly Worse",
+            0 => "Same",
+            1 => "Slightly Better",
             2 => "Better",
-            3 => "Much better",
+            3 => "Much Better",
             _ => ""
         };
     }

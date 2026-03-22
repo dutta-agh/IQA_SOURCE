@@ -2,6 +2,12 @@ using System.Text.Json.Serialization;
 
 namespace IQA_SOURCE.Models.Admin
 {
+
+    public class ChangePasswordModel
+    {
+        public string UserId { get; set; }
+        public string NewPassword { get; set; }
+    }
     public class AdminUser
     {
         [JsonPropertyName("auId")]

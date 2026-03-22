@@ -918,7 +918,11 @@
                 if (data.data.isCompleted) {
                     showThankYouModal();
                 } else {
-                    navigateTo(buildApiUrl('/Assessment/ImageAssessment?assessmentCode=' + assessmentCode));
+                    // ✅ FIX #1: Include BOTH sessionId AND assessmentCode in URL
+                    // ✅ FIX #2: Wait 500ms for database commit to be fully indexed before redirect
+                    // ✅ FIX #3: Use URLEncoded query parameters for safe URL construction
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    navigateTo(buildApiUrl(`/Assessment/ImageAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
                 }
 
             } catch (error) {

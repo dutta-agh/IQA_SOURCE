@@ -234,7 +234,7 @@ namespace IQA_SOURCE.Data
                     {
                         correctAnswer,
                         row["incorrect_option_1"]?.ToString() ?? "",
-                        row["incorrect_option_2"]?.ToString() ?? "",
+                       
                         row["cant_read_option"]?.ToString() ?? "Can't Read"
                     };
                     
@@ -244,7 +244,7 @@ namespace IQA_SOURCE.Data
                         ImageSequence = Convert.ToInt32(row["image_sequence"]),
                         ImageUrl = row["image_url"]?.ToString() ?? "",
                         CorrectAnswer = correctAnswer,
-                        Options = options.OrderBy(_ => Guid.NewGuid()).ToList() // Shuffle options
+                        Options = options
                     };
                     images.Add(image);
                 }
@@ -388,7 +388,8 @@ namespace IQA_SOURCE.Data
                         session_id, assessment_type,
                         COUNT(*) as total_attempted,
                         SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as incorrect_answers,
+                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as wrong_answers,
+                        SUM(CASE WHEN selected_answer IS NULL OR selected_answer = '' THEN 1 ELSE 0 END) as skipped_answers,
                         SUM(CASE WHEN selected_answer = 'Can''t Read' THEN 1 ELSE 0 END) as cant_read_answers,
                         AVG(time_taken_seconds) as avg_time,
                         MIN(response_time) as start_time,
@@ -412,16 +413,18 @@ namespace IQA_SOURCE.Data
                     {
                         SessionId = row["session_id"]?.ToString() ?? "",
                         AssessmentType = row["assessment_type"]?.ToString() ?? "",
-                        TotalQuestionsAttempted = totalAttempted,
+                        TotalQuestions = totalAttempted,
                         CorrectAnswers = correctAnswers,
-                        IncorrectAnswers = Convert.ToInt32(row["incorrect_answers"] ?? 0),
+                        WrongAnswers = Convert.ToInt32(row["wrong_answers"] ?? 0),
+                        SkippedQuestions = Convert.ToInt32(row["skipped_answers"] ?? 0),
                         CantReadAnswers = Convert.ToInt32(row["cant_read_answers"] ?? 0),
                         AccuracyPercentage = accuracy,
                         AverageTimePerQuestion = row["avg_time"] != DBNull.Value ? Convert.ToDouble(row["avg_time"]) : 0,
-                        TestStartTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
+                        TestDateTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
                         TestEndTime = row["end_time"] != DBNull.Value ? (DateTime?)row["end_time"] : null,
                         IpAddress = row["ip_address"]?.ToString() ?? "",
-                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress"
+                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress",
+                        IsPassed = accuracy >= 80
                     });
                 }
 
@@ -452,7 +455,8 @@ namespace IQA_SOURCE.Data
                         session_id, assessment_type,
                         COUNT(*) as total_attempted,
                         SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as incorrect_answers,
+                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as wrong_answers,
+                        SUM(CASE WHEN selected_answer IS NULL OR selected_answer = '' THEN 1 ELSE 0 END) as skipped_answers,
                         SUM(CASE WHEN selected_answer = 'Can''t Read' THEN 1 ELSE 0 END) as cant_read_answers,
                         AVG(time_taken_seconds) as avg_time,
                         MIN(response_time) as start_time,
@@ -477,16 +481,18 @@ namespace IQA_SOURCE.Data
                     {
                         SessionId = row["session_id"]?.ToString() ?? "",
                         AssessmentType = row["assessment_type"]?.ToString() ?? "",
-                        TotalQuestionsAttempted = totalAttempted,
+                        TotalQuestions = totalAttempted,
                         CorrectAnswers = correctAnswers,
-                        IncorrectAnswers = Convert.ToInt32(row["incorrect_answers"] ?? 0),
+                        WrongAnswers = Convert.ToInt32(row["wrong_answers"] ?? 0),
+                        SkippedQuestions = Convert.ToInt32(row["skipped_answers"] ?? 0),
                         CantReadAnswers = Convert.ToInt32(row["cant_read_answers"] ?? 0),
                         AccuracyPercentage = accuracy,
                         AverageTimePerQuestion = row["avg_time"] != DBNull.Value ? Convert.ToDouble(row["avg_time"]) : 0,
-                        TestStartTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
+                        TestDateTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
                         TestEndTime = row["end_time"] != DBNull.Value ? (DateTime?)row["end_time"] : null,
                         IpAddress = row["ip_address"]?.ToString() ?? "",
-                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress"
+                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress",
+                        IsPassed = accuracy >= 80
                     });
                 }
 
@@ -517,7 +523,8 @@ namespace IQA_SOURCE.Data
                         session_id, assessment_type,
                         COUNT(*) as total_attempted,
                         SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as incorrect_answers,
+                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as wrong_answers,
+                        SUM(CASE WHEN selected_answer IS NULL OR selected_answer = '' THEN 1 ELSE 0 END) as skipped_answers,
                         SUM(CASE WHEN selected_answer = 'Can''t Read' THEN 1 ELSE 0 END) as cant_read_answers,
                         AVG(time_taken_seconds) as avg_time,
                         MIN(response_time) as start_time,
@@ -549,16 +556,18 @@ namespace IQA_SOURCE.Data
                     {
                         SessionId = row["session_id"]?.ToString() ?? "",
                         AssessmentType = row["assessment_type"]?.ToString() ?? "",
-                        TotalQuestionsAttempted = totalAttempted,
+                        TotalQuestions = totalAttempted,
                         CorrectAnswers = correctAnswers,
-                        IncorrectAnswers = Convert.ToInt32(row["incorrect_answers"] ?? 0),
+                        WrongAnswers = Convert.ToInt32(row["wrong_answers"] ?? 0),
+                        SkippedQuestions = Convert.ToInt32(row["skipped_answers"] ?? 0),
                         CantReadAnswers = Convert.ToInt32(row["cant_read_answers"] ?? 0),
                         AccuracyPercentage = accuracy,
                         AverageTimePerQuestion = row["avg_time"] != DBNull.Value ? Convert.ToDouble(row["avg_time"]) : 0,
-                        TestStartTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
+                        TestDateTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
                         TestEndTime = row["end_time"] != DBNull.Value ? (DateTime?)row["end_time"] : null,
                         IpAddress = row["ip_address"]?.ToString() ?? "",
-                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress"
+                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress",
+                        IsPassed = accuracy >= 80
                     });
                 }
 
@@ -589,7 +598,8 @@ namespace IQA_SOURCE.Data
                         session_id, assessment_type,
                         COUNT(*) as total_attempted,
                         SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as incorrect_answers,
+                        SUM(CASE WHEN is_correct = 0 AND selected_answer != 'Can''t Read' THEN 1 ELSE 0 END) as wrong_answers,
+                        SUM(CASE WHEN selected_answer IS NULL OR selected_answer = '' THEN 1 ELSE 0 END) as skipped_answers,
                         SUM(CASE WHEN selected_answer = 'Can''t Read' THEN 1 ELSE 0 END) as cant_read_answers,
                         AVG(time_taken_seconds) as avg_time,
                         MIN(response_time) as start_time,
@@ -615,19 +625,21 @@ namespace IQA_SOURCE.Data
                     {
                         SessionId = row["session_id"]?.ToString() ?? "",
                         AssessmentType = row["assessment_type"]?.ToString() ?? "",
-                        TotalQuestionsAttempted = totalAttempted,
+                        TotalQuestions = totalAttempted,
                         CorrectAnswers = correctAnswers,
-                        IncorrectAnswers = Convert.ToInt32(row["incorrect_answers"] ?? 0),
+                        WrongAnswers = Convert.ToInt32(row["wrong_answers"] ?? 0),
+                        SkippedQuestions = Convert.ToInt32(row["skipped_answers"] ?? 0),
                         CantReadAnswers = Convert.ToInt32(row["cant_read_answers"] ?? 0),
                         AccuracyPercentage = accuracy,
                         AverageTimePerQuestion = row["avg_time"] != DBNull.Value ? Convert.ToDouble(row["avg_time"]) : 0,
-                        TestStartTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
+                        TestDateTime = row["start_time"] != DBNull.Value ? (DateTime)row["start_time"] : DateTime.UtcNow,
                         TestEndTime = row["end_time"] != DBNull.Value ? (DateTime?)row["end_time"] : null,
                         IpAddress = row["ip_address"]?.ToString() ?? "",
-                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress"
+                        TestStatus = totalAttempted == 12 ? "Completed" : "In Progress",
+                        IsPassed = accuracy >= 80
                     };
 
-                    // ✅ FIXED: JOIN with colorblindness_images to get imageUrl
+                    // ✅ Get image-wise results with imageUrl
                     var imageWiseQuery = @"
                         SELECT 
                             ucr.image_sequence, ucr.image_id, ucr.selected_answer,
@@ -645,7 +657,7 @@ namespace IQA_SOURCE.Data
                         var selectedAnswer = imgRow["selected_answer"]?.ToString() ?? "";
                         var correctAnswer = imgRow["correct_answer"]?.ToString() ?? "";
                         var isCorrect = Convert.ToInt32(imgRow["is_correct"] ?? 0) == 1;
-                        var imageUrl = imgRow["image_url"]?.ToString() ?? "";  // ✅ NEW: Get image URL
+                        var imageUrl = imgRow["image_url"]?.ToString() ?? "";
 
                         string resultStatus = "Incorrect";
                         if (string.IsNullOrEmpty(selectedAnswer) || selectedAnswer == "null")
@@ -661,7 +673,7 @@ namespace IQA_SOURCE.Data
                         {
                             ImageSequence = Convert.ToInt32(imgRow["image_sequence"] ?? 0),
                             ImageId = Convert.ToInt32(imgRow["image_id"] ?? 0),
-                            ImageUrl = imageUrl,  // ✅ NEW: Add imageUrl to result
+                            ImageUrl = imageUrl,
                             SelectedAnswer = selectedAnswer,
                             CorrectAnswer = correctAnswer,
                             IsCorrect = isCorrect,
@@ -712,4 +724,4 @@ namespace IQA_SOURCE.Data
             };
         }
     }
-}   
+}

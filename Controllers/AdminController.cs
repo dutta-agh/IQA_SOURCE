@@ -1843,7 +1843,188 @@ namespace IQA_SOURCE.Controllers
             return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
         }
 
-        // ── Admin Menu Management ────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> DownloadColorblindnessResultsExcel(string assessmentType, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(assessmentType))
+                {
+                    TempData["ErrorMessage"] = "Assessment type is required.";
+                    return RedirectToAction("ColorblindnessResults");
+                }
+
+                _logger.LogInformation($"DownloadColorblindnessResultsExcel: assessmentType={assessmentType}, startDate={startDate}, endDate={endDate}");
+
+                // ✅ Fetch results from repository
+                ColorblindnessTestResultResponse result;
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    result = await _colorblindnessRepository.GetColorblindnessResultsByDateRange(
+                        assessmentType, startDate.Value, endDate.Value, userId);
+                }
+                else
+                {
+                    result = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentType, userId);
+                }
+
+                _logger.LogInformation($"Repository returned: Code={result.OutputCode}, Count={result.Data?.Count}, Msg={result.OutputMsg}");
+
+                if (result.OutputCode != 1 || result.Data == null || !result.Data.Any())
+                {
+                    TempData["ErrorMessage"] = "No data found for the selected assessment type and date range.";
+                    return RedirectToAction("ColorblindnessResults");
+                }
+
+                // ✅ Get system parameters for colorblindness max mistakes
+                var paramsResult = await _systemCheckParamRepository.GetAllParams(userId);
+                int maxMistakes = int.TryParse(
+                    paramsResult.Data?.FirstOrDefault(p => p.ScpParamCode == "COLORBLINDNESS_MAX_MISTAKES")?.ScpParamValue, 
+                    out var mm) ? mm : 2;
+
+                var workbook = new XSSFWorkbook();
+                CreateColorblindnessSummarySheet(workbook, result.Data, maxMistakes);
+                CreateColorblindnessImageWiseSheet(workbook, result.Data);
+
+                using var memoryStream = new MemoryStream();
+                workbook.Write(memoryStream);
+                
+                return File(memoryStream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"Colorblindness_{assessmentType}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating colorblindness Excel");
+                TempData["ErrorMessage"] = $"Error: {ex.Message}";
+                return RedirectToAction("ColorblindnessResults");
+            }
+        }
+
+        // ✅ NEW helper method for summary sheet
+        private void CreateColorblindnessSummarySheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results, int maxMistakes)
+        {
+            var sheet = workbook.CreateSheet("Summary");
+
+            var headerStyle = CreateHeaderStyle(workbook);
+            var dataStyle = CreateDataStyle(workbook);
+            var altStyle = CreateAltRowStyle(workbook);
+            var failStyle = workbook.CreateCellStyle();
+            failStyle.FillForegroundColor = IndexedColors.Red.Index;
+            failStyle.FillPattern = FillPattern.SolidForeground;
+            var failFont = workbook.CreateFont();
+            failFont.Color = IndexedColors.White.Index;
+            failFont.IsBold = true;
+            failStyle.SetFont(failFont);
+            failStyle.Alignment = HorizontalAlignment.Center;
+            failStyle.VerticalAlignment = VerticalAlignment.Center;
+
+            var headerRow = sheet.CreateRow(0);
+            string[] headers = {
+                "Session ID", "Assessment Type", "Total Questions",
+                "Correct Answers", "Wrong Answers", "Accuracy (%)",
+                "Avg Time/Question (sec)", "Test DateTime", "IP Address",
+                "Status", "Pass/Fail", "Max Mistakes"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = headerRow.CreateCell(i);
+                cell.SetCellValue(headers[i]);
+                cell.CellStyle = headerStyle;
+            }
+
+            int rowIndex = 1;
+            foreach (var testResult in results)
+            {
+                bool isPassed = testResult.WrongAnswers <= maxMistakes;
+                var row = sheet.CreateRow(rowIndex);
+                var style = isPassed ? (rowIndex % 2 == 0 ? altStyle : dataStyle) : failStyle;
+
+                row.CreateCell(0).SetCellValue(testResult.SessionId ?? ""); row.GetCell(0).CellStyle = style;
+                row.CreateCell(1).SetCellValue(testResult.AssessmentType ?? ""); row.GetCell(1).CellStyle = style;
+                row.CreateCell(2).SetCellValue(testResult.TotalQuestions); row.CreateCell(2).CellStyle = style;
+                row.CreateCell(3).SetCellValue(testResult.CorrectAnswers); row.CreateCell(3).CellStyle = style;
+                row.CreateCell(4).SetCellValue(testResult.WrongAnswers); row.CreateCell(4).CellStyle = style;
+                row.CreateCell(5).SetCellValue($"{testResult.AccuracyPercentage:F2}%"); row.GetCell(5).CellStyle = style;
+                row.CreateCell(6).SetCellValue($"{testResult.AverageTimePerQuestion:F2}"); row.GetCell(6).CellStyle = style;
+                row.CreateCell(7).SetCellValue(testResult.TestDateTime.ToString("yyyy-MM-dd HH:mm:ss")); row.GetCell(7).CellStyle = style;
+                row.CreateCell(8).SetCellValue(testResult.IpAddress ?? ""); row.GetCell(8).CellStyle = style;
+                row.CreateCell(9).SetCellValue(testResult.TestStatus ?? ""); row.GetCell(9).CellStyle = style;
+                row.CreateCell(10).SetCellValue(isPassed ? "PASSED" : "FAILED"); row.GetCell(10).CellStyle = style;
+                row.CreateCell(11).SetCellValue(maxMistakes); row.GetCell(11).CellStyle = style;
+
+                rowIndex++;
+            }
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                sheet.AutoSizeColumn(i);
+                if (sheet.GetColumnWidth(i) > 15000)
+                    sheet.SetColumnWidth(i, 15000);
+            }
+        }
+
+        // ✅ NEW helper method for image-wise sheet
+        private void CreateColorblindnessImageWiseSheet(XSSFWorkbook workbook, List<ColorblindnessTestResult> results)
+        {
+            var sheet = workbook.CreateSheet("Image-Wise Details");
+
+            var headerStyle = CreateHeaderStyle(workbook);
+            var dataStyle = CreateDataStyle(workbook);
+            var altStyle = CreateAltRowStyle(workbook);
+
+            var headerRow = sheet.CreateRow(0);
+            string[] headers = {
+                "Session ID", "Image Sequence", "Image ID", "Correct Answer",
+                "User Answer", "Result", "Time Taken (sec)"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = headerRow.CreateCell(i);
+                cell.SetCellValue(headers[i]);
+                cell.CellStyle = headerStyle;
+            }
+
+            int rowIndex = 1;
+            foreach (var testResult in results)
+            {
+                if (testResult.ImageWiseResults != null && testResult.ImageWiseResults.Any())
+                {
+                    foreach (var imageResult in testResult.ImageWiseResults)
+                    {
+                        var row = sheet.CreateRow(rowIndex);
+                        var style = rowIndex % 2 == 0 ? altStyle : dataStyle;
+
+                        row.CreateCell(0).SetCellValue(testResult.SessionId ?? ""); row.GetCell(0).CellStyle = style;
+                        row.CreateCell(1).SetCellValue(imageResult.ImageSequence); row.GetCell(1).CellStyle = style;
+                        row.CreateCell(2).SetCellValue(imageResult.ImageId); row.GetCell(2).CellStyle = style;
+                        row.CreateCell(3).SetCellValue(imageResult.CorrectAnswer ?? ""); row.GetCell(3).CellStyle = style;
+                        row.CreateCell(4).SetCellValue(imageResult.SelectedAnswer ?? "Skipped"); row.GetCell(4).CellStyle = style;
+                        row.CreateCell(5).SetCellValue(imageResult.ResultStatus ?? ""); row.GetCell(5).CellStyle = style;
+                        row.CreateCell(6).SetCellValue(imageResult.TimeTakenSeconds); row.GetCell(6).CellStyle = style;
+
+                        rowIndex++;
+                    }
+                }
+            }
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                sheet.AutoSizeColumn(i);
+                if (sheet.GetColumnWidth(i) > 15000)
+                    sheet.SetColumnWidth(i, 15000);
+            }
+        }
+
+
+        // ── Admin Menu Management ──────────────────────────────────────────────────
+
         [HttpGet]
         public IActionResult AdminMenus()
         {
@@ -1863,17 +2044,12 @@ namespace IQA_SOURCE.Controllers
             try
             {
                 var result = await _adminMenuRepository.GetAllAdminMenus(userId);
-                return Json(new
-                {
-                    success = result.OutputCode == 1,
-                    message = result.OutputMsg,
-                    data = result.Data ?? new List<AdminMenu>()
-                });
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading admin menus");
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
@@ -1893,15 +2069,11 @@ namespace IQA_SOURCE.Controllers
                     ? await _adminMenuRepository.UpdateAdminMenu(model, userId)
                     : await _adminMenuRepository.InsertAdminMenu(model, userId);
 
-                return Json(new
-                {
-                    success = result.OutputCode == 1,
-                    message = result.OutputMsg
-                });
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
@@ -1912,20 +2084,161 @@ namespace IQA_SOURCE.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
+            if (menuId <= 0)
+                return Json(new { success = false, message = "Menu ID is required" });
+
             try
             {
                 var result = await _adminMenuRepository.DeleteAdminMenu(menuId, userId);
-                return Json(new
-                {
-                    success = result.OutputCode == 1,
-                    message = result.OutputMsg
-                });
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
+
+        // ── Admin Users Management ─────────────────────────────────────────────────
+
+        [HttpGet]
+        public IActionResult AdminUsers()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return RedirectToAction("Login");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllAdminUsers()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                var result = await _adminUserRepository.GetAllAdminUsers(userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading admin users");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAdminUserById(string auId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(auId))
+                return Json(new { success = false, message = "User ID is required" });
+
+            try
+            {
+                var result = await _adminUserRepository.GetAdminUserById(auId, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveAdminUser([FromBody] AdminUser model)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(model.AuUserName) )
+                return Json(new { success = false, message = "Username and full name are required" });
+
+            try
+            {
+                var result = string.IsNullOrEmpty(model.AuId)
+                    ? await _adminUserRepository.InsertAdminUser(model, userId)
+                    : await _adminUserRepository.UpdateAdminUser(model, userId);
+
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAdminUser([FromBody] string auId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(auId))
+                return Json(new { success = false, message = "User ID is required" });
+
+            try
+            {
+                var result = await _adminUserRepository.DeleteAdminUser(auId, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangeAdminUserPassword([FromBody] ChangePasswordModel model)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(model.UserId) || string.IsNullOrWhiteSpace(model.NewPassword))
+                return Json(new { success = false, message = "User ID and new password are required" });
+
+            try
+            {
+                var result = await _adminUserRepository.ChangePassword(model.UserId, model.NewPassword, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAdminMenuById(int menuId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (menuId <= 0)
+                return Json(new { success = false, message = "Menu ID is required" });
+
+            try
+            {
+                var result = await _adminMenuRepository.GetAdminMenuById(menuId, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
+    
 
         [HttpGet]
         public async Task<IActionResult> GetMenuRoleAccess(int menuId)
@@ -1934,41 +2247,81 @@ namespace IQA_SOURCE.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
+            if (menuId <= 0)
+                return Json(new { success = false, message = "Menu ID is required" });
+
             try
             {
                 var result = await _adminMenuRepository.GetMenuRoleAccess(menuId, userId);
-                return Json(new
-                {
-                    success = result.OutputCode == 1,
-                    message = result.OutputMsg,
-                    data = result.Data ?? new List<MenuRoleAccess>()
-                });
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg, data = result.Data });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading menu role access");
-                return Json(new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Error loading menu role access for menu {MenuId}", menuId);
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveMenuRoleAccess([FromBody] List<MenuRoleAccess> roleAccess)
+        public async Task<IActionResult> SaveMenuRoleAccess([FromBody] List<MenuRoleAccess> roleAccessList)
         {
             var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty( userId))
+            if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            if (roleAccess == null || roleAccess.Count == 0)
-                return Json(new { success = false, message = "No role access data provided" });
+            if (roleAccessList == null || roleAccessList.Count == 0)
+                return Json(new { success = false, message = "Role access list is required" });
 
             try
             {
-                var result = await _adminMenuRepository.SaveMenuRoleAccess(roleAccess, userId);
-                return Json(new
-                {
-                    success = result.OutputCode == 1,
-                    message = result.OutputMsg
-                });
+                var result = await _adminMenuRepository.SaveMenuRoleAccess(roleAccessList, userId);
+                return Json(new { success = result.OutputCode == 1, message = result.OutputMsg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving menu role access");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMenusByUserRole(string userRole)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            if (string.IsNullOrWhiteSpace(userRole))
+                return Json(new { success = false, message = "User role is required" });
+
+            try
+            {
+                var menus = await _adminMenuRepository.GetMenusByUserRole(userRole);
+                return Json(new { success = menus != null && menus.Count > 0, message = "Menus retrieved", data = menus });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading menus for role {UserRole}", userRole);
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        // Add this method to AdminController
+
+        [HttpGet]
+        public IActionResult GetAllRoles()
+        {
+            try
+            {
+                // Return a list of available roles
+                // You can modify this to fetch from database if you have a roles table
+            var roles = new List<dynamic>
+            {
+            new { roleCode = "Admin", roleName = "Administrator" },
+            new { roleCode = "Operator", roleName = "Operator" },
+            new { roleCode = "Viewer", roleName = "Viewer" }
+            };
+
+                return Json(new { success = true, data = roles });
             }
             catch (Exception ex)
             {
@@ -1981,18 +2334,12 @@ namespace IQA_SOURCE.Controllers
             public string AssessmentType { get; set; }
         }
 
-        public class BulkDeleteByGroupRequest
-        {
-            public string ImageGroupCode { get; set; }
-            public string AssessmentType { get; set; }
-        }
-
         public class BulkDeleteSpeedTestLogsRequest
         {
             public string AssessmentCode { get; set; }
             public DateTime? StartDate { get; set; }
             public DateTime? EndDate { get; set; }
         }
-
     }
+
 }

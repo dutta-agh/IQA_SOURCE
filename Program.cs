@@ -117,10 +117,12 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = builder.Configuration.GetValue<string>("ImageStorage:WebBasePath")
 });
 
-app.UseRouting();
-
 // Add Session Middleware
 app.UseSession();
+
+app.UseRouting();
+
+
 
 app.UseMiddleware<ActionLoggingMiddleware>();
 

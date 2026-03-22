@@ -39,8 +39,103 @@
             font-size: 0.85rem;
         }
 
-        .status-active { background: #d4edda; color: #155724; }
-        .status-inactive { background: #f8d7da; color: #721c24; }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Role Assignment Styles */
+        .role-assignment-section {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+            .role-assignment-section h6 {
+                color: #667eea;
+                font-weight: 600;
+                margin-bottom: 15px;
+            }
+
+        .role-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .role-checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+            .role-checkbox-item input[type="checkbox"] {
+                cursor: pointer;
+                margin-right: 8px;
+                width: 18px;
+                height: 18px;
+            }
+
+            .role-checkbox-item label {
+                cursor: pointer;
+                margin: 0;
+                font-weight: 500;
+                color: #333;
+            }
+
+        .permission-grid {
+            background: white;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .permission-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 80px 80px 80px;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .permission-row:last-child {
+                border-bottom: none;
+            }
+
+            .permission-row label {
+                font-weight: 600;
+                color: #666;
+            }
+
+        .permission-check {
+            text-align: center;
+        }
+
+            .permission-check input[type="checkbox"] {
+                cursor: pointer;
+                width: 16px;
+                height: 16px;
+            }
+
+        .no-roles-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .menu-code-input {
+            font-family: monospace;
+            background: #f5f5f5;
+        }
     </style>
 }
 
@@ -83,7 +178,7 @@
             <div class="modal-body">
                 <form id="menuForm">
                     <input type="hidden" id="amId" value="0">
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Menu Name <span class="text-danger">*</span></label>
@@ -122,11 +217,6 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="amDescription" rows="2" placeholder="Optional description"></textarea>
-                    </div>
-
                     <div class="alert alert-danger d-none" id="formError" role="alert">
                         <i class="fas fa-exclamation-circle"></i>
                         <span id="errorMessage"></span>
@@ -145,30 +235,80 @@
     </div>
 </div>
 
+<!-- Role Assignment Modal -->
+<div class="modal fade" id="roleAssignmentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title" id="assignmentModalTitle">
+                    <i class="fas fa-lock"></i> Assign Menu to Roles
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="role-assignment-section">
+                    <h6><i class="fas fa-users"></i> Select Roles</h6>
+                    <div class="role-checkboxes" id="roleCheckboxesContainer">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading roles...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="permissionsContainer" style="display: none;">
+                    <h6 class="mb-3"><i class="fas fa-shield-alt"></i> Role Permissions</h6>
+                    <div class="permission-grid" id="permissionGrid">
+                        <div class="permission-row">
+                            <label>Permission</label>
+                            <div class="permission-check">Read</div>
+                            <div class="permission-check">Create</div>
+                            <div class="permission-check">Edit</div>
+                            <div class="permission-check">Delete</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="showAssignmentConfirmation()">
+                    <i class="fas fa-check"></i> Save Assignments
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         let menusTable;
         let isEditMode = false;
         let currentMenus = [];
+        let availableRoles = [];
+        let currentMenuIdForAssignment = 0;
+        let selectedRoles = new Set();
+        let rolePermissions = {};
 
         $(document).ready(function() {
             initializeTable();
             loadMenus();
+            loadRoles();
         });
 
         function initializeTable() {
             menusTable = $('#menusTable').DataTable({
                 data: [],
                 columns: [
-                    { 
-                        data: 'amId', 
+                    {
+                        data: 'amId',
                         defaultContent: '',
                         render: function(data) {
                             return `<span class="badge bg-secondary">#${data}</span>`;
                         }
                     },
-                    { 
-                        data: 'amMenuName',
+                    {
+                        data: 'amName',
                         defaultContent: '',
                         render: function(data, type, row) {
                             const icon = row.amIcon || 'fas fa-link';
@@ -188,7 +328,7 @@
                         data: 'amOrderNo',
                         defaultContent: '0',
                         render: function(data) {
-                            return `<span class="menu-order-badge">${data || '—'}</span>`;
+                            return `<span class="menu-order-badge">${data || '0'}</span>`;
                         }
                     },
                     {
@@ -209,6 +349,9 @@
                             if (!amId) return '';
                             return `
                                 <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="openRoleAssignmentModal(${amId})" title="Assign Roles">
+                                        <i class="fas fa-users"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-warning" onclick="editMenu(${amId})" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -258,6 +401,21 @@
             });
         }
 
+        function loadRoles() {
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllRoles'),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        availableRoles = response.data;
+                    }
+                },
+                error: function() {
+                    console.error('Error loading roles');
+                }
+            });
+        }
+
         function openAddMenuModal() {
             isEditMode = false;
             $('#modalTitle').html('<i class="fas fa-plus-circle"></i> Add Menu');
@@ -278,12 +436,11 @@
             isEditMode = true;
             $('#modalTitle').html('<i class="fas fa-edit"></i> Edit Menu');
             $('#amId').val(menu.amId);
-            $('#amMenuName').val(menu.amMenuName);
+            $('#amMenuName').val(menu.amName);
             $('#amIcon').val(menu.amIcon);
             $('#amController').val(menu.amController);
             $('#amAction').val(menu.amAction);
             $('#amOrderNo').val(menu.amOrderNo || '1');
-            $('#amDescription').val(menu.amDescription || '');
             $('#amActive').val(menu.amActive || 'Y');
             $('#formError').addClass('d-none');
 
@@ -291,27 +448,235 @@
             modal.show();
         }
 
+        function openRoleAssignmentModal(amId) {
+            currentMenuIdForAssignment = amId;
+            const menu = currentMenus.find(m => m.amId === amId);
+            if (!menu) return;
+
+            $('#assignmentModalTitle').html(`<i class="fas fa-lock"></i> Assign "${escapeHtml(menu.amName)}" to Roles`);
+            selectedRoles.clear();
+            rolePermissions = {};
+
+            loadMenuRoleAccess(amId);
+
+            var modal = new bootstrap.Modal(document.getElementById('roleAssignmentModal'));
+            modal.show();
+        }
+
+        function loadMenuRoleAccess(menuId) {
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetMenuRoleAccess?menuId=' + menuId),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        // Populate existing role access
+                        response.data.forEach(function(access) {
+                            selectedRoles.add(access.mraRole);
+                            rolePermissions[access.mraRole] = {
+                                canRead: access.mraCanRead === 'Y',
+                                canCreate: access.mraCanCreate === 'Y',
+                                canEdit: access.mraCanEdit === 'Y',
+                                canDelete: access.mraCanDelete === 'Y'
+                            };
+                        });
+                    }
+                    renderRoleCheckboxes();
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading role access', 'danger');
+                }
+            });
+        }
+
+        function renderRoleCheckboxes() {
+            const container = $('#roleCheckboxesContainer');
+            container.empty();
+
+            if (availableRoles.length === 0) {
+                container.html('<div class="no-roles-message">No roles available. Please create roles first.</div>');
+                return;
+            }
+
+            let html = '';
+            availableRoles.forEach(function(role) {
+                const isChecked = selectedRoles.has(role.roleCode) ? 'checked' : '';
+                html += `
+                    <div class="role-checkbox-item">
+                        <input type="checkbox" id="role_${escapeHtml(role.roleCode)}"
+                               value="${escapeHtml(role.roleCode)}" ${isChecked}
+                               onchange="toggleRole('${escapeHtml(role.roleCode)}')">
+                        <label for="role_${escapeHtml(role.roleCode)}">${escapeHtml(role.roleName || role.roleCode)}</label>
+                    </div>
+                `;
+            });
+
+            container.html(html);
+            updatePermissionsGrid();
+        }
+
+        function toggleRole(roleCode) {
+            if (selectedRoles.has(roleCode)) {
+                selectedRoles.delete(roleCode);
+                delete rolePermissions[roleCode];
+            } else {
+                selectedRoles.add(roleCode);
+                rolePermissions[roleCode] = {
+                    canRead: true,
+                    canCreate: false,
+                    canEdit: false,
+                    canDelete: false
+                };
+            }
+            updatePermissionsGrid();
+        }
+
+        function updatePermissionsGrid() {
+            const container = $('#permissionsContainer');
+            const grid = $('#permissionGrid');
+
+            if (selectedRoles.size === 0) {
+                container.hide();
+                return;
+            }
+
+            container.show();
+            let html = `
+                <div class="permission-row">
+                    <label>Role</label>
+                    <div class="permission-check">Read</div>
+                    <div class="permission-check">Create</div>
+                    <div class="permission-check">Edit</div>
+                    <div class="permission-check">Delete</div>
+                </div>
+            `;
+
+            selectedRoles.forEach(function(roleCode) {
+                const perms = rolePermissions[roleCode] || {
+                    canRead: true,
+                    canCreate: false,
+                    canEdit: false,
+                    canDelete: false
+                };
+
+                html += `
+                    <div class="permission-row">
+                        <label>${escapeHtml(roleCode)}</label>
+                        <div class="permission-check">
+                            <input type="checkbox" class="perm-read" ${perms.canRead ? 'checked' : ''}
+                                   onchange="updatePermission('${escapeHtml(roleCode)}', 'canRead', this.checked)">
+                        </div>
+                        <div class="permission-check">
+                            <input type="checkbox" class="perm-create" ${perms.canCreate ? 'checked' : ''}
+                                   onchange="updatePermission('${escapeHtml(roleCode)}', 'canCreate', this.checked)">
+                        </div>
+                        <div class="permission-check">
+                            <input type="checkbox" class="perm-edit" ${perms.canEdit ? 'checked' : ''}
+                                   onchange="updatePermission('${escapeHtml(roleCode)}', 'canEdit', this.checked)">
+                        </div>
+                        <div class="permission-check">
+                            <input type="checkbox" class="perm-delete" ${perms.canDelete ? 'checked' : ''}
+                                   onchange="updatePermission('${escapeHtml(roleCode)}', 'canDelete', this.checked)">
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.html(html);
+        }
+
+        function updatePermission(roleCode, permissionType, value) {
+            if (!rolePermissions[roleCode]) {
+                rolePermissions[roleCode] = {
+                    canRead: false,
+                    canCreate: false,
+                    canEdit: false,
+                    canDelete: false
+                };
+            }
+            rolePermissions[roleCode][permissionType] = value;
+        }
+
+        function showAssignmentConfirmation() {
+            const message = selectedRoles.size === 0
+                ? 'Are you sure you want to remove all role access to this menu?'
+                : `Are you sure you want to assign this menu to ${selectedRoles.size} role(s)?`;
+
+            showConfirmationModal(
+                'Confirm Assignment',
+                message,
+                () => saveMenuRoleAccess(),
+                'Save',
+                'btn-primary'
+            );
+        }
+
+        function saveMenuRoleAccess() {
+            const roleAccessList = [];
+
+            selectedRoles.forEach(function(roleCode) {
+                const perms = rolePermissions[roleCode] || {
+                    canRead: true,
+                    canCreate: false,
+                    canEdit: false,
+                    canDelete: false
+                };
+
+                roleAccessList.push({
+                    mraMenuId: currentMenuIdForAssignment,
+                    mraRole: roleCode,
+                    mraCanRead: perms.canRead ? 'Y' : 'N',
+                    mraCanCreate: perms.canCreate ? 'Y' : 'N',
+                    mraCanEdit: perms.canEdit ? 'Y' : 'N',
+                    mraCanDelete: perms.canDelete ? 'Y' : 'N'
+                });
+            });
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/SaveMenuRoleAccess'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(roleAccessList),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('roleAssignmentModal')).hide();
+                        loadMenus();
+                        showAlert(response.message || 'Role assignments saved successfully', 'success');
+                    } else {
+                        showAlert(response.message || 'Error saving assignments', 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error saving role assignments', 'danger');
+                }
+            });
+        }
+
         function showSaveConfirmation() {
             const data = {
                 amId: parseInt($('#amId').val()) || 0,
-                amMenuName: $('#amMenuName').val().trim(),
+                amName: $('#amMenuName').val().trim(),
                 amIcon: $('#amIcon').val().trim(),
                 amController: $('#amController').val().trim(),
                 amAction: $('#amAction').val().trim(),
                 amOrderNo: parseInt($('#amOrderNo').val()) || 1,
-                amDescription: $('#amDescription').val().trim(),
                 amActive: $('#amActive').val()
             };
 
             // Validation
-            if (!data.amMenuName || !data.amIcon || !data.amController || !data.amAction) {
+            if (!data.amName || !data.amIcon || !data.amController || !data.amAction) {
                 showFormError('Please fill all required fields');
                 return;
             }
 
             const message = isEditMode
-                ? `Are you sure you want to update menu "${data.amMenuName}"?`
-                : `Are you sure you want to create new menu "${data.amMenuName}"?`;
+                ? `Are you sure you want to update menu "${data.amName}"?`
+                : `Are you sure you want to create new menu "${data.amName}"?`;
 
             showConfirmationModal(
                 'Confirm Save',
@@ -325,12 +690,11 @@
         function saveMenu() {
             const data = {
                 amId: parseInt($('#amId').val()) || 0,
-                amMenuName: $('#amMenuName').val().trim(),
+                amName: $('#amMenuName').val().trim(),
                 amIcon: $('#amIcon').val().trim(),
                 amController: $('#amController').val().trim(),
                 amAction: $('#amAction').val().trim(),
                 amOrderNo: parseInt($('#amOrderNo').val()) || 1,
-                amDescription: $('#amDescription').val().trim(),
                 amActive: $('#amActive').val()
             };
 
@@ -364,7 +728,7 @@
 
         function showDeleteConfirmation(amId) {
             const menu = currentMenus.find(m => m.amId === amId);
-            const menuName = menu ? menu.amMenuName : 'Menu';
+            const menuName = menu ? menu.amName : 'Menu';
 
             showConfirmationModal(
                 'Confirm Delete',

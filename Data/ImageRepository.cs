@@ -271,60 +271,60 @@ namespace IQA_SOURCE.Data
                 foreach (var master in masterImages)
                 {
                     var insertMasterQuery = @"
-                        INSERT INTO image_master (
-                            im_assessment_type, im_group_code, im_file_name, im_file_path, 
-                            im_file_size, im_width, im_height, im_format,
-                            im_color_space, im_bit_depth, im_dpi_x, im_dpi_y,
-                            im_exif_data, im_camera_make, im_camera_model,
-                            im_lens_model, im_focal_length, im_aperture,
-                            im_shutter_speed, im_iso, im_flash,
-                            im_exposure_mode, im_white_balance, im_date_taken,
-                            im_orientation, im_compression_quality,
-                            im_upload_batch, im_created_user, im_created_date, im_active
-                        ) VALUES (
-                            @assessmentType, @groupCode, @fileName, @filePath, 
-                            @fileSize, @width, @height, @format,
-                            @colorSpace, @bitDepth, @dpiX, @dpiY,
-                            @exifData, @cameraMake, @cameraModel,
-                            @lensModel, @focalLength, @aperture,
-                            @shutterSpeed, @iso, @flash,
-                            @exposureMode, @whiteBalance, @dateTaken,
-                            @orientation, @compressionQuality,
-                            @uploadBatch, @userId, NOW(), 1
-                        );
-                        SELECT LAST_INSERT_ID();";
+                INSERT INTO image_master (
+                    im_assessment_type, im_group_code, im_file_name, im_file_path, 
+                    im_file_size, im_width, im_height, im_format,
+                    im_color_space, im_bit_depth, im_dpi_x, im_dpi_y,
+                    im_exif_data, im_camera_make, im_camera_model,
+                    im_lens_model, im_focal_length, im_aperture,
+                    im_shutter_speed, im_iso, im_flash,
+                    im_exposure_mode, im_white_balance, im_date_taken,
+                    im_orientation, im_compression_quality,
+                    im_upload_batch, im_created_user, im_created_date, im_active
+                ) VALUES (
+                    @assessmentType, @groupCode, @fileName, @filePath, 
+                    @fileSize, @width, @height, @format,
+                    @colorSpace, @bitDepth, @dpiX, @dpiY,
+                    @exifData, @cameraMake, @cameraModel,
+                    @lensModel, @focalLength, @aperture,
+                    @shutterSpeed, @iso, @flash,
+                    @exposureMode, @whiteBalance, @dateTaken,
+                    @orientation, @compressionQuality,
+                    @uploadBatch, @userId, NOW(), 1
+                );
+                SELECT LAST_INSERT_ID();";
 
                     var masterParams = new[]
                     {
-                        new MySqlParameter("@assessmentType", master.ImAssessmentType),
-                        new MySqlParameter("@groupCode", (object?)master.ImGroupCode ?? DBNull.Value),
-                        new MySqlParameter("@fileName", master.ImFileName),
-                        new MySqlParameter("@filePath", master.ImFilePath),
-                        new MySqlParameter("@fileSize", (object)master.ImFileSize ?? DBNull.Value),
-                        new MySqlParameter("@width", (object)master.ImWidth ?? DBNull.Value),
-                        new MySqlParameter("@height", (object)master.ImHeight ?? DBNull.Value),
-                        new MySqlParameter("@format", (object)master.ImFormat ?? DBNull.Value),
-                        new MySqlParameter("@colorSpace", (object)master.ImColorSpace ?? DBNull.Value),
-                        new MySqlParameter("@bitDepth", (object)master.ImBitDepth ?? DBNull.Value),
-                        new MySqlParameter("@dpiX", (object)master.ImDpiX ?? DBNull.Value),
-                        new MySqlParameter("@dpiY", (object)master.ImDpiY ?? DBNull.Value),
-                        new MySqlParameter("@exifData", (object)master.ImExifData ?? DBNull.Value),
-                        new MySqlParameter("@cameraMake", (object)master.ImCameraMake ?? DBNull.Value),
-                        new MySqlParameter("@cameraModel", (object)master.ImCameraModel ?? DBNull.Value),
-                        new MySqlParameter("@lensModel", (object)master.ImLensModel ?? DBNull.Value),
-                        new MySqlParameter("@focalLength", (object)master.ImFocalLength ?? DBNull.Value),
-                        new MySqlParameter("@aperture", (object)master.ImAperture ?? DBNull.Value),
-                        new MySqlParameter("@shutterSpeed", (object)master.ImShutterSpeed ?? DBNull.Value),
-                        new MySqlParameter("@iso", (object)master.ImIso ?? DBNull.Value),
-                        new MySqlParameter("@flash", (object)master.ImFlash ?? DBNull.Value),
-                        new MySqlParameter("@exposureMode", (object)master.ImExposureMode ?? DBNull.Value),
-                        new MySqlParameter("@whiteBalance", (object)master.ImWhiteBalance ?? DBNull.Value),
-                        new MySqlParameter("@dateTaken", (object)master.ImDateTaken ?? DBNull.Value),
-                        new MySqlParameter("@orientation", (object)master.ImOrientation ?? DBNull.Value),
-                        new MySqlParameter("@compressionQuality", (object)master.ImCompressionQuality ?? DBNull.Value),
-                        new MySqlParameter("@uploadBatch", master.ImUploadBatch),
-                        new MySqlParameter("@userId", userId)
-                    };
+                new MySqlParameter("@assessmentType", master.ImAssessmentType),
+                new MySqlParameter("@groupCode", (object?)master.ImGroupCode ?? DBNull.Value),
+                new MySqlParameter("@fileName", master.ImFileName),
+                new MySqlParameter("@filePath", master.ImFilePath),
+                new MySqlParameter("@fileSize", (object)master.ImFileSize ?? DBNull.Value),
+                new MySqlParameter("@width", (object)master.ImWidth ?? DBNull.Value),
+                new MySqlParameter("@height", (object)master.ImHeight ?? DBNull.Value),
+                new MySqlParameter("@format", (object)master.ImFormat ?? DBNull.Value),
+                new MySqlParameter("@colorSpace", (object)master.ImColorSpace ?? DBNull.Value),
+                new MySqlParameter("@bitDepth", (object)master.ImBitDepth ?? DBNull.Value),
+                new MySqlParameter("@dpiX", (object)master.ImDpiX ?? DBNull.Value),
+                new MySqlParameter("@dpiY", (object)master.ImDpiY ?? DBNull.Value),
+                new MySqlParameter("@exifData", (object)master.ImExifData ?? DBNull.Value),
+                new MySqlParameter("@cameraMake", (object)master.ImCameraMake ?? DBNull.Value),
+                new MySqlParameter("@cameraModel", (object)master.ImCameraModel ?? DBNull.Value),
+                new MySqlParameter("@lensModel", (object)master.ImLensModel ?? DBNull.Value),
+                new MySqlParameter("@focalLength", (object)master.ImFocalLength ?? DBNull.Value),
+                new MySqlParameter("@aperture", (object)master.ImAperture ?? DBNull.Value),
+                new MySqlParameter("@shutterSpeed", (object)master.ImShutterSpeed ?? DBNull.Value),
+                new MySqlParameter("@iso", (object)master.ImIso ?? DBNull.Value),
+                new MySqlParameter("@flash", (object)master.ImFlash ?? DBNull.Value),
+                new MySqlParameter("@exposureMode", (object)master.ImExposureMode ?? DBNull.Value),
+                new MySqlParameter("@whiteBalance", (object)master.ImWhiteBalance ?? DBNull.Value),
+                new MySqlParameter("@dateTaken", (object)master.ImDateTaken ?? DBNull.Value),
+                new MySqlParameter("@orientation", (object)master.ImOrientation ?? DBNull.Value),
+                new MySqlParameter("@compressionQuality", (object)master.ImCompressionQuality ?? DBNull.Value),
+                new MySqlParameter("@uploadBatch", master.ImUploadBatch),
+                new MySqlParameter("@userId", userId)
+            };
 
                     var masterIdResult = await Task.Run(() => _dbHelper.ExecuteQuery(insertMasterQuery, masterParams));
                     if (masterIdResult.Rows.Count > 0)
@@ -336,89 +336,12 @@ namespace IQA_SOURCE.Data
                             l.IlMasterId == 0 &&
                             l.IlFileName.StartsWith(master.ImFileName.Split('.')[0])
                         ).ToList();
-                        
+
                         foreach (var linked in relatedLinked)
                         {
                             linked.IlMasterId = masterId;
 
-                            // ✅ FIXED: Removed il_group_code from column list and VALUES
                             var insertLinkedQuery = @"
-                                INSERT INTO image_linked (
-                                    il_master_id, il_file_name, il_file_path, 
-                                    il_file_size, il_width, il_height, il_format,
-                                    il_color_space, il_bit_depth, il_dpi_x, il_dpi_y,
-                                    il_exif_data, il_camera_make, il_camera_model,
-                                    il_lens_model, il_focal_length, il_aperture,
-                                    il_shutter_speed, il_iso, il_flash,
-                                    il_exposure_mode, il_white_balance, il_date_taken,
-                                    il_orientation, il_compression_quality,
-                                    il_quality_level, il_quality_type, il_upload_batch,
-                                    il_created_user, il_created_date, im_active
-                                ) VALUES (
-                                    @masterId, @fileName, @filePath, 
-                                    @fileSize, @width, @height, @format,
-                                    @colorSpace, @bitDepth, @dpiX, @dpiY,
-                                    @exifData, @cameraMake, @cameraModel,
-                                    @lensModel, @focalLength, @aperture,
-                                    @shutterSpeed, @iso, @flash,
-                                    @exposureMode, @whiteBalance, @dateTaken,
-                                    @orientation, @compressionQuality,
-                                    @uploadBatch, @userId, NOW(), 1
-                                )";
-
-                            var linkedParams = new[]
-                            {
-                                new MySqlParameter("@masterId", linked.IlMasterId),
-                                new MySqlParameter("@fileName", linked.IlFileName),
-                                new MySqlParameter("@filePath", linked.IlFilePath),
-                                new MySqlParameter("@fileSize", (object)linked.IlFileSize ?? DBNull.Value),
-                                new MySqlParameter("@width", (object)linked.IlWidth ?? DBNull.Value),
-                                new MySqlParameter("@height", (object)linked.IlHeight ?? DBNull.Value),
-                                new MySqlParameter("@format", (object)linked.IlFormat ?? DBNull.Value),
-                                new MySqlParameter("@colorSpace", (object)linked.IlColorSpace ?? DBNull.Value),
-                                new MySqlParameter("@bitDepth", (object)linked.IlBitDepth ?? DBNull.Value),
-                                new MySqlParameter("@dpiX", (object)linked.IlDpiX ?? DBNull.Value),
-                                new MySqlParameter("@dpiY", (object)linked.IlDpiY ?? DBNull.Value),
-                                new MySqlParameter("@exifData", (object)linked.IlExifData ?? DBNull.Value),
-                                new MySqlParameter("@cameraMake", (object)linked.IlCameraMake ?? DBNull.Value),
-                                new MySqlParameter("@cameraModel", (object)linked.IlCameraModel ?? DBNull.Value),
-                                new MySqlParameter("@lensModel", (object)linked.IlLensModel ?? DBNull.Value),
-                                new MySqlParameter("@focalLength", (object)linked.IlFocalLength ?? DBNull.Value),
-                                new MySqlParameter("@aperture", (object)linked.IlAperture ?? DBNull.Value),
-                                new MySqlParameter("@shutterSpeed", (object)linked.IlShutterSpeed ?? DBNull.Value),
-                                new MySqlParameter("@iso", (object)linked.IlIso ?? DBNull.Value),
-                                new MySqlParameter("@flash", (object)linked.IlFlash ?? DBNull.Value),
-                                new MySqlParameter("@exposureMode", (object)linked.IlExposureMode ?? DBNull.Value),
-                                new MySqlParameter("@whiteBalance", (object)linked.IlWhiteBalance ?? DBNull.Value),
-                                new MySqlParameter("@dateTaken", (object)linked.IlDateTaken ?? DBNull.Value),
-                                new MySqlParameter("@orientation", (object)linked.IlOrientation ?? DBNull.Value),
-                                new MySqlParameter("@compressionQuality", (object)linked.IlCompressionQuality ?? DBNull.Value),
-                                new MySqlParameter("@qualityLevel", linked.IlQualityLevel),
-                                new MySqlParameter("@qualityType", linked.IlQualityType),
-                                new MySqlParameter("@uploadBatch", linked.IlUploadBatch),
-                                new MySqlParameter("@userId", userId)
-                            };
-
-                            var linkedRows = await Task.Run(() => _dbHelper.ExecuteNonQuery(insertLinkedQuery, linkedParams));
-                            if (linkedRows > 0)
-                            {
-                                linkedCount++;
-                                processedLinkedImages.Add(linked.IlFileName);
-                            }
-                        }
-                    }
-                }
-
-                // Insert linked images for existing masters (IlMasterId > 0)
-                var linkedImagesForExistingMasters = linkedImages.Where(l =>
-                    l.IlMasterId > 0 &&
-                    !processedLinkedImages.Contains(l.IlFileName)
-                ).ToList();
-
-                foreach (var linked in linkedImagesForExistingMasters)
-                {
-                    // ✅ FIXED: Removed il_group_code from column list and VALUES
-                    var insertLinkedQuery = @"
                         INSERT INTO image_linked (
                             il_master_id, il_file_name, il_file_path, 
                             il_file_size, il_width, il_height, il_format,
@@ -439,11 +362,12 @@ namespace IQA_SOURCE.Data
                             @shutterSpeed, @iso, @flash,
                             @exposureMode, @whiteBalance, @dateTaken,
                             @orientation, @compressionQuality,
-                            @uploadBatch, @userId, NOW(), 1
+                            @qualityLevel, @qualityType, @uploadBatch,
+                            @userId, NOW(), 1
                         )";
 
-                    var linkedParams = new[]
-                    {
+                            var linkedParams = new[]
+                            {
                         new MySqlParameter("@masterId", linked.IlMasterId),
                         new MySqlParameter("@fileName", linked.IlFileName),
                         new MySqlParameter("@filePath", linked.IlFilePath),
@@ -475,6 +399,82 @@ namespace IQA_SOURCE.Data
                         new MySqlParameter("@userId", userId)
                     };
 
+                            var linkedRows = await Task.Run(() => _dbHelper.ExecuteNonQuery(insertLinkedQuery, linkedParams));
+                            if (linkedRows > 0)
+                            {
+                                linkedCount++;
+                                processedLinkedImages.Add(linked.IlFileName);
+                            }
+                        }
+                    }
+                }
+
+                // Insert linked images for existing masters (IlMasterId > 0)
+                var linkedImagesForExistingMasters = linkedImages.Where(l =>
+                    l.IlMasterId > 0 &&
+                    !processedLinkedImages.Contains(l.IlFileName)
+                ).ToList();
+
+                foreach (var linked in linkedImagesForExistingMasters)
+                {
+                    var insertLinkedQuery = @"
+                INSERT INTO image_linked (
+                    il_master_id, il_file_name, il_file_path, 
+                    il_file_size, il_width, il_height, il_format,
+                    il_color_space, il_bit_depth, il_dpi_x, il_dpi_y,
+                    il_exif_data, il_camera_make, il_camera_model,
+                    il_lens_model, il_focal_length, il_aperture,
+                    il_shutter_speed, il_iso, il_flash,
+                    il_exposure_mode, il_white_balance, il_date_taken,
+                    il_orientation, il_compression_quality,
+                    il_quality_level, il_quality_type, il_upload_batch,
+                    il_created_user, il_created_date, im_active
+                ) VALUES (
+                    @masterId, @fileName, @filePath, 
+                    @fileSize, @width, @height, @format,
+                    @colorSpace, @bitDepth, @dpiX, @dpiY,
+                    @exifData, @cameraMake, @cameraModel,
+                    @lensModel, @focalLength, @aperture,
+                    @shutterSpeed, @iso, @flash,
+                    @exposureMode, @whiteBalance, @dateTaken,
+                    @orientation, @compressionQuality,
+                    @qualityLevel, @qualityType, @uploadBatch,
+                    @userId, NOW(), 1
+                )";
+
+                    var linkedParams = new[]
+                    {
+                new MySqlParameter("@masterId", linked.IlMasterId),
+                new MySqlParameter("@fileName", linked.IlFileName),
+                new MySqlParameter("@filePath", linked.IlFilePath),
+                new MySqlParameter("@fileSize", (object)linked.IlFileSize ?? DBNull.Value),
+                new MySqlParameter("@width", (object)linked.IlWidth ?? DBNull.Value),
+                new MySqlParameter("@height", (object)linked.IlHeight ?? DBNull.Value),
+                new MySqlParameter("@format", (object)linked.IlFormat ?? DBNull.Value),
+                new MySqlParameter("@colorSpace", (object)linked.IlColorSpace ?? DBNull.Value),
+                new MySqlParameter("@bitDepth", (object)linked.IlBitDepth ?? DBNull.Value),
+                new MySqlParameter("@dpiX", (object)linked.IlDpiX ?? DBNull.Value),
+                new MySqlParameter("@dpiY", (object)linked.IlDpiY ?? DBNull.Value),
+                new MySqlParameter("@exifData", (object)linked.IlExifData ?? DBNull.Value),
+                new MySqlParameter("@cameraMake", (object)linked.IlCameraMake ?? DBNull.Value),
+                new MySqlParameter("@cameraModel", (object)linked.IlCameraModel ?? DBNull.Value),
+                new MySqlParameter("@lensModel", (object)linked.IlLensModel ?? DBNull.Value),
+                new MySqlParameter("@focalLength", (object)linked.IlFocalLength ?? DBNull.Value),
+                new MySqlParameter("@aperture", (object)linked.IlAperture ?? DBNull.Value),
+                new MySqlParameter("@shutterSpeed", (object)linked.IlShutterSpeed ?? DBNull.Value),
+                new MySqlParameter("@iso", (object)linked.IlIso ?? DBNull.Value),
+                new MySqlParameter("@flash", (object)linked.IlFlash ?? DBNull.Value),
+                new MySqlParameter("@exposureMode", (object)linked.IlExposureMode ?? DBNull.Value),
+                new MySqlParameter("@whiteBalance", (object)linked.IlWhiteBalance ?? DBNull.Value),
+                new MySqlParameter("@dateTaken", (object)linked.IlDateTaken ?? DBNull.Value),
+                new MySqlParameter("@orientation", (object)linked.IlOrientation ?? DBNull.Value),
+                new MySqlParameter("@compressionQuality", (object)linked.IlCompressionQuality ?? DBNull.Value),
+                new MySqlParameter("@qualityLevel", linked.IlQualityLevel),
+                new MySqlParameter("@qualityType", linked.IlQualityType),
+                new MySqlParameter("@uploadBatch", linked.IlUploadBatch),
+                new MySqlParameter("@userId", userId)
+            };
+
                     var linkedRows = await Task.Run(() => _dbHelper.ExecuteNonQuery(insertLinkedQuery, linkedParams));
                     if (linkedRows > 0) linkedCount++;
                 }
@@ -485,11 +485,11 @@ namespace IQA_SOURCE.Data
                     OutputMsg = "Images uploaded successfully",
                     Data = new ImageUploadResult
                     {
-                        TotalFiles           = masterImages.Count + linkedImages.Count,
+                        TotalFiles = masterImages.Count + linkedImages.Count,
                         MasterImagesUploaded = masterCount,
                         LinkedImagesUploaded = linkedCount,
-                        FailedUploads        = 0,
-                        ErrorMessages        = new List<string>()
+                        FailedUploads = 0,
+                        ErrorMessages = new List<string>()
                     }
                 };
             }
@@ -498,15 +498,14 @@ namespace IQA_SOURCE.Data
                 return new ImageUploadResponse
                 {
                     OutputCode = 0,
-                    OutputMsg  = $"Error: {ex.Message}",
-                    Data       = new ImageUploadResult
+                    OutputMsg = $"Error: {ex.Message}",
+                    Data = new ImageUploadResult
                     {
                         ErrorMessages = new List<string> { ex.Message }
                     }
                 };
             }
         }
-
         public async Task<ImageMasterResponse> GetImagesByAssessmentType(string assessmentType, string userId)
         {
             try
