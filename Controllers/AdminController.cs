@@ -105,8 +105,115 @@ namespace IQA_SOURCE.Controllers
         [HttpPost]
         public IActionResult Logout()
         {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+            try
+            {
+                // Log logout action
+                var userId = HttpContext.Session.GetString("UserId");
+                _logger.LogInformation($"User {userId} logging out");
+
+                // Clear all session data
+                HttpContext.Session.Clear();
+
+                // Return JSON response for AJAX
+                return Json(new
+                {
+                    success = true,
+                    message = "Logout successful",
+                    redirectUrl = "/Admin/Login"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error: {ex.Message}",
+                    redirectUrl = "/Admin/Login"
+                });
+            }
+        }
+        /// <summary>
+        /// Server-side pagination endpoint for Image Ratings with timing data
+        /// Supports DataTables AJAX server-side processing
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetImageRatingsServerSide(
+            string assessmentCode,
+            string? groupCode,
+            int draw,
+            int start,
+            int length,
+            string search = "")
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Unauthorized" });
+
+            try
+            {
+                // Fetch all filtered data from repository
+                var (outputCode, outputMsg, data) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
+
+                if (outputCode != 1 || data == null)
+                    return Json(new { draw, recordsTotal = 0, recordsFiltered = 0, data = new List<object>() });
+
+                // Enrich with group names if needed
+                var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
+                var groupsMap = groupsResult.Data?
+                    .ToDictionary(g => g.IgCode, g => g.IgName)
+                    ?? new Dictionary<string, string>();
+
+                foreach (var rating in data)
+                {
+                    if (string.IsNullOrEmpty(rating.GroupName) && !string.IsNullOrEmpty(rating.MasterGroupCode))
+                    {
+                        if (groupsMap.TryGetValue(rating.MasterGroupCode, out var groupName))
+                            rating.GroupName = groupName;
+                    }
+                }
+
+                // Filter by group if specified
+                if (!string.IsNullOrEmpty(groupCode))
+                    data = data.Where(r => r.GroupName == groupCode).ToList();
+
+                // Apply search filter across multiple columns
+                var recordsTotal = data.Count;
+                if (!string.IsNullOrEmpty(search))
+                {
+                    var searchLower = search.ToLower();
+                    data = data.Where(r =>
+                        (r.SessionId?.ToLower().Contains(searchLower) ?? false) ||
+                        (r.GroupName?.ToLower().Contains(searchLower) ?? false) ||
+                        (r.AssessmentCode?.ToLower().Contains(searchLower) ?? false) ||
+                        (r.IpAddress?.ToLower().Contains(searchLower) ?? false) ||
+                        (r.MasterImageName?.ToLower().Contains(searchLower) ?? false) ||
+                        (r.LinkedImageName?.ToLower().Contains(searchLower) ?? false)
+                    ).ToList();
+                }
+
+                var recordsFiltered = data.Count;
+
+                // Apply sorting and pagination
+                var paginatedData = data
+                    .OrderByDescending(r => r.RatedAt)
+                    .Skip(start)
+                    .Take(length)
+                    .ToList();
+
+                return Json(new
+                {
+                    draw,
+                    recordsTotal,
+                    recordsFiltered,
+                    data = paginatedData
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetImageRatingsServerSide");
+                return Json(new { draw, recordsTotal = 0, recordsFiltered = 0, data = new List<object>(), error = ex.Message });
+            }
         }
 
         // Dashboard
@@ -1094,9 +1201,9 @@ namespace IQA_SOURCE.Controllers
                 // ── Fetch global params for colorblindness thresholds ────────────────────
                 var paramsResult = await _systemCheckParamRepository.GetAllParams(userId);
                 var globalParams = paramsResult.Data ?? new List<SystemCheckParam>();
-                
+
                 int maxMistakes = int.TryParse(
-                    globalParams.FirstOrDefault(p => p.ScpParamCode == "COLORBLINDNESS_MAX_MISTAKES")?.ScpParamValue, 
+                    globalParams.FirstOrDefault(p => p.ScpParamCode == "COLORBLINDNESS_MAX_MISTAKES")?.ScpParamValue,
                     out var mm) ? mm : 2;
 
                 var responseData = await _questionAnswerRepository.GetQuestionAnswersForExcel(assessmentCode, userId);
@@ -1123,7 +1230,7 @@ namespace IQA_SOURCE.Controllers
                     }).ToList();
 
                 var workbook = new XSSFWorkbook();
-                
+
                 // ── Sheet 1: Question Answers ────────────────────────────────────────────
                 var sheet = workbook.CreateSheet($"QuestionAnswers_{assessmentCode}");
                 var headerStyle = CreateHeaderStyle(workbook);
@@ -1173,7 +1280,7 @@ namespace IQA_SOURCE.Controllers
                     if (sheet.GetColumnWidth(i) > 15000) sheet.SetColumnWidth(i, 15000);
                 }
 
-                // ── Sheet 2: Image Ratings ────────────────────────────────────────────────
+                // ── Sheet 2: Image Ratings WITH TIMING COLUMNS ───────────────────────────
                 var (irCode, irMsg, irData) = await _imageQualityRepository.GetImageRatingsForAdmin(assessmentCode, userId);
 
                 var groupsResult = await _imageGroupRepository.GetAllImageGroups(userId);
@@ -1200,13 +1307,18 @@ namespace IQA_SOURCE.Controllers
                 var irDataStyle = CreateDataStyle(workbook);
                 var irAltStyle = CreateAltRowStyle(workbook);
 
+                // ✅ UPDATED: Include timing columns in headers
                 string[] irHeaders = {
                     "Session ID", "Image Group", "Assessment", "IP Address", "Rated At",
                     "Ref Image", "Ref Resolution", "Ref DPI", "Ref Format",
                     "Main Image Rating", "Main Image Rating Label",
                     "Rated Image", "Rated Resolution", "Rated DPI", "Rated Format",
-                    "Quality Level", "Quality Type", "Rating (-3 to +3)", "Rating Label"
+                    "Quality Level", "Quality Type", "Rating (-3 to +3)", "Rating Label",
+                    // ✅ NEW: Timing Columns
+                    "Time Taken (ms)", "Time Taken (seconds)", "Display Duration (ms)",
+                    "Rating Timestamp", "Session Total Time (ms)", "Session Total Time (MM:SS)"
                 };
+
                 var irHeaderRow = irSheet.CreateRow(0);
                 for (int i = 0; i < irHeaders.Length; i++)
                 {
@@ -1221,6 +1333,7 @@ namespace IQA_SOURCE.Controllers
                 {
                     var r = irSheet.CreateRow(irRowIdx);
                     var style = irRowIdx % 2 == 0 ? irAltStyle : irDataStyle;
+
                     r.CreateCell(0).SetCellValue(row.SessionId ?? ""); r.GetCell(0).CellStyle = style;
                     r.CreateCell(1).SetCellValue(row.GroupName ?? "N/A"); r.GetCell(1).CellStyle = style;
                     r.CreateCell(2).SetCellValue(row.AssessmentCode ?? ""); r.GetCell(2).CellStyle = style;
@@ -1242,6 +1355,17 @@ namespace IQA_SOURCE.Controllers
                     var ratingLabel = GetRatingLabel(row.QualityRating);
                     r.CreateCell(17).SetCellValue(ratingScale.ToString()); r.GetCell(17).CellStyle = style;
                     r.CreateCell(18).SetCellValue(ratingLabel); r.GetCell(18).CellStyle = style;
+
+                    // ✅ NEW: Add timing columns
+                    r.CreateCell(19).SetCellValue(row.TimeTakenMilliseconds); r.GetCell(19).CellStyle = style;
+                    r.CreateCell(20).SetCellValue($"{(row.TimeTakenMilliseconds / 1000.0):F2}"); r.GetCell(20).CellStyle = style;
+                    r.CreateCell(21).SetCellValue(row.DisplayDurationMilliseconds); r.GetCell(21).CellStyle = style;
+                    r.CreateCell(22).SetCellValue(row.RatingTimestamp?.ToString("yyyy-MM-dd HH:mm:ss.fff") ?? ""); r.GetCell(22).CellStyle = style;
+                    r.CreateCell(23).SetCellValue(row.SessionTotalTimeMs); r.GetCell(23).CellStyle = style;
+                    var minutes = row.SessionTotalTimeMs / 60000;
+                    var seconds = (row.SessionTotalTimeMs % 60000) / 1000;
+                    r.CreateCell(24).SetCellValue($"{minutes}:{seconds:D2}"); r.GetCell(24).CellStyle = style;
+
                     irRowIdx++;
                 }
 
@@ -1253,7 +1377,7 @@ namespace IQA_SOURCE.Controllers
 
                 // ── Sheet 3: Colorblindness Test Results (with param filtering) ──────────
                 var cbResult = await _colorblindnessRepository.GetAllColorblindnessResults(assessmentCode, userId);
-                
+
                 if (cbResult.OutputCode == 1 && cbResult.Data != null && cbResult.Data.Count > 0)
                 {
                     var cbSheet = workbook.CreateSheet("Colorblindness Results");
@@ -1275,7 +1399,7 @@ namespace IQA_SOURCE.Controllers
                         "Total Questions", "Correct Answers", "Wrong Answers", "Score (%)",
                         "Colorblind Type", "Status", "Max Mistakes Allowed", "Notes"
                     };
-                    
+
                     var cbHeaderRow = cbSheet.CreateRow(0);
                     for (int i = 0; i < cbHeaders.Length; i++)
                     {
@@ -1294,7 +1418,7 @@ namespace IQA_SOURCE.Controllers
 
                         var cbRow = cbSheet.CreateRow(cbRowIdx);
                         var cbStyle = !isPassed ? cbFailStyle : (cbRowIdx % 2 == 0 ? cbAltStyle : cbDataStyle);
-                                    
+
                         cbRow.CreateCell(0).SetCellValue(cbData.SessionId ?? ""); cbRow.GetCell(0).CellStyle = cbStyle;
                         cbRow.CreateCell(1).SetCellValue(cbData.AssessmentType ?? ""); cbRow.GetCell(1).CellStyle = cbStyle;
                         cbRow.CreateCell(2).SetCellValue(cbData.IpAddress ?? ""); cbRow.GetCell(2).CellStyle = cbStyle;
@@ -1307,7 +1431,7 @@ namespace IQA_SOURCE.Controllers
                         cbRow.CreateCell(9).SetCellValue(isPassed ? "PASSED" : "FAILED"); cbRow.GetCell(9).CellStyle = cbStyle;
                         cbRow.CreateCell(10).SetCellValue(maxMistakes); cbRow.GetCell(10).CellStyle = cbStyle;
                         cbRow.CreateCell(11).SetCellValue(cbData.Notes ?? ""); cbRow.GetCell(11).CellStyle = cbStyle;
-                        
+
                         cbRowIdx++;
                     }
 
@@ -1331,7 +1455,6 @@ namespace IQA_SOURCE.Controllers
                 return RedirectToAction("QuestionAnswers");
             }
         }
-
         // ── Helper methods ──────────────────────────────────────────────────────
 
         private ImageMaster BuildMasterImage(string assessmentType, string fileName, string webPath, long fileSize, dynamic meta, string uploadBatch, string groupCode) =>

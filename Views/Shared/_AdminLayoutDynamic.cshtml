@@ -1,4 +1,4 @@
-@* Updated Admin Layout with Dynamic Menu Loading *@
+﻿@* Updated Admin Layout with Dynamic Menu Loading *@
 @{
     var currentPage = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
 }
@@ -187,7 +187,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
-        // ?? Global Select2 initialiser � runs after page scripts so dynamic selects are caught ??
+        // ?? Global Select2 initialiser — runs after page scripts so dynamic selects are caught ??
         function initSelect2(context) {
             var scope = context || document;
             $(scope).find('select').not('.no-select2').not('.select2-hidden-accessible').each(function () {
@@ -258,12 +258,32 @@
             showConfirmationModal('Confirm Logout', 'Are you sure you want to logout?', logout, 'Logout', 'btn-danger');
         }
 
-        function logout() {
+                function logout() {
             showLoader();
             $.ajax({
-                url: buildApiUrl('/Admin/Logout'), type: 'POST',
-                success: function () { window.location.href = buildApiUrl('/Admin/Login'); },
-                error:   function () { hideLoader(); showAlert('Error during logout', 'danger'); }
+                url: buildApiUrl('/Admin/Logout'),
+                type: 'POST',
+                contentType: 'application/json',  // ✅ ADD THIS
+                data: JSON.stringify({}),         // ✅ ADD THIS (empty object)
+                dataType: 'json',                 // ✅ ADD THIS
+                success: function (response) {
+                    hideLoader();
+                    console.log('Logout successful:', response);
+                    // Clear any cached data
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    // Redirect to login with timestamp to prevent caching
+                    window.location.href = buildApiUrl('/Admin/Login?t=' + Date.now());
+                },
+                error:   function (xhr, status, error) {
+                    hideLoader();
+                    console.error('Logout error:', status, error, xhr.responseText);
+                    showAlert('Error during logout: ' + (xhr.responseText || error), 'danger');
+                    // Force redirect anyway after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = buildApiUrl('/Admin/Login');
+                    }, 2000);
+                }
             });
         }
 

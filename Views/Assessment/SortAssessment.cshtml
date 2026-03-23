@@ -447,7 +447,7 @@
         }
 
         .rating-label {
-            font-size: 0.56rem;
+            font-size: 0.54rem;
             color: #292929;
             font-weight: 700;
             text-align: center;
@@ -811,7 +811,7 @@
     </div>
 </div>
 
-<div class="fs-toast" id="fsToast" onclick="re EnterFullscreen()" title="Click to re-enter full screen">
+<div class="fs-toast" id="fsToast" onclick="reEnterFullscreen()" title="Click to re-enter full screen">
     <i class="fas fa-expand-arrows-alt"></i> Click to re-enter full screen
 </div>
 
@@ -963,8 +963,8 @@
 
 @section Scripts {
     <script>
-        // ✅ FIX #1: Use sessionId and assessmentCode in API call
-        // ✅ FIX #2: Only show thank you modal when ALL sets are completed, not after each set
+        // ✅ MILLISECOND-PRECISION TIME TRACKING
+        // All timestamps and durations are in milliseconds for precision analytics
 
         const sessionId = '@Model.SessionId';
         const assessmentCode = '@Model.AssessmentCode';
@@ -972,24 +972,35 @@
         const totalImages = @ratableImages.Count;
         const FS_KEY = 'iqa_fs_granted';
 
-        const ratings = new Map();
-        let clientIpAddress = '';
+        // Data structures for tracking ratings and timing
+        const ratings = new Map(); // Rating score (-3 to +3)
+        const imageTimes = new Map(); // Per-image time in milliseconds
+        const imageDisplayTimes = new Map(); // When each image was displayed
 
-        // ✅ Track session-wide completion state
+        let clientIpAddress = '';
+        let sessionStartTime = 0; // In milliseconds
+
+        // Progress tracking
         let totalAssessmentSets = 0;
         let completedAssessmentSets = 0;
         let currentSetNumber = 1;
 
         document.addEventListener('DOMContentLoaded', function () {
+            // Record session start time in milliseconds
+            sessionStartTime = Date.now();
+
+            // Get client IP
             fetch('https://api.ipify.org?format=json')
                 .then(r => r.json())
                 .then(d => { clientIpAddress = d.ip || ''; })
                 .catch(() => {});
 
-            // ✅ Initialize ratings for ratable images (not the reference image)
+            // Initialize rating and time tracking maps
             document.querySelectorAll('[data-image-id][data-is-raw]').forEach(card => {
                 const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
                 ratings.set(key, null);
+                imageTimes.set(key, 0);
+                imageDisplayTimes.set(key, Date.now()); // Record when image becomes visible
             });
 
             initFullscreen();
@@ -1005,15 +1016,27 @@
             const key = makeKey(imageId, isRaw);
             const prev = ratings.get(key);
 
+            // ✅ Calculate time taken in milliseconds
+            const displayStartTime = imageDisplayTimes.get(key) || Date.now();
+            const timeTakenMilliseconds = Date.now() - displayStartTime;
+
             if (prev === score) {
+                // Unrating - clear the rating
                 ratings.set(key, null);
+                imageTimes.delete(key);
+                imageDisplayTimes.set(key, Date.now()); // Reset for potential re-rating
                 clearCardButtons(imageId, isRaw);
                 updateCardState(imageId, isRaw);
                 updateSubmitInfo();
                 return;
             }
 
+            // Setting a new rating
             ratings.set(key, score);
+            imageTimes.set(key, timeTakenMilliseconds); // Store time in milliseconds
+
+            console.log(`Image ${imageId} rated with score ${score} in ${timeTakenMilliseconds}ms`);
+
             clearCardButtons(imageId, isRaw);
             const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
             if (btn) btn.classList.add('active');
@@ -1034,13 +1057,10 @@
             if (card) card.classList.toggle('rated', ratings.get(makeKey(imageId, isRaw)) !== null);
         }
 
-        // ✅ UPDATED: Show only progress (completed of total sets)
         function updateSubmitInfo() {
             const ratedCount = [...ratings.values()].filter(v => v !== null).length;
             const remaining = totalImages - ratedCount;
 
-            // ✅ Only update the individual image rating count internally
-            // But don't display it in footer
             const footerStatus = document.getElementById('footerStatus');
             const submitButton = document.getElementById('submitButton');
 
@@ -1062,78 +1082,85 @@
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
+            // ✅ MILLISECOND-PRECISION TIMING
+            const totalSessionTimeMilliseconds = Math.round(Date.now() - sessionStartTime);
+
             const ratingList = [];
 
-            // ✅ FIXED: Correct conversion from -3 to +3 scale to 1-5 scale
-        ratings.forEach((score, key) => {
-            const [imageId, isRawStr] = key.split('|');
-            // Linear mapping: -3 to +3 → 1 to 5
-            // Simply add 4: -3+4=1, -2+4=2, -1+4=3, 0+4=4, 1+4=5, 2+4=6, 3+4=7
-            // Wait, that goes to 7. Let me recalculate:
-            // Better formula: ((score + 3) * 2 / 3) + 1
-            // -3: ((−3+3)*2/3)+1 = 0+1 = 1 ✓
-            // 0: ((0+3)*2/3)+1 = 2+1 = 3 ✓
-            // 3: ((3+3)*2/3)+1 = 4+1 = 5 ✓
-            // OR even simpler: Math.round((score + 3) * (5 - 1) / 6 + 1)
+            // Build rating list WITH millisecond-precision time tracking
+            ratings.forEach((score, key) => {
+                const [imageId, isRawStr] = key.split('|');
+                const timeTakenMs = imageTimes.get(key) || 0;
 
-            const convertedRating =score;
-
-            ratingList.push({
-                imageId: parseInt(imageId),
-                isRawImage: isRawStr === 'true',
-                rating: convertedRating
+                ratingList.push({
+                    imageId: parseInt(imageId),
+                    isRawImage: isRawStr === 'true',
+                    rating: score,
+                    timeTakenMilliseconds: Math.round(timeTakenMs), // Milliseconds
+                    displayDurationMilliseconds: Math.round(timeTakenMs), // Same as time taken
+                    ratingTimestamp: new Date().toISOString()
+                });
             });
-        });
 
-        // ✅ Add reference image with rating 3 (middle value)
-        ratingList.push({
-            imageId: @Model.RawImage.RisId,
-            isRawImage: true,
-            rating: 0  // Changed from 0 to 3 (middle of 1-5)
-        });
+            // Add reference image
+            ratingList.push({
+                imageId: @Model.RawImage.RisId,
+                isRawImage: true,
+                rating: 0,
+                timeTakenMilliseconds: 0,
+                displayDurationMilliseconds: 0,
+                ratingTimestamp: new Date().toISOString()
+            });
+
+            console.log('Submitting ratings with timing:', {
+                totalSessionTimeMilliseconds,
+                ratingCount: ratingList.length,
+                ratings: ratingList
+            });
 
             try {
                 const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        sessionId, assessmentCode, rawImageSetId,
+                        sessionId,
+                        assessmentCode,
+                        rawImageSetId,
                         ratings: ratingList,
-                        ipAddress: clientIpAddress
+                        ipAddress: clientIpAddress,
+                        totalSessionTimeMilliseconds: Math.round(totalSessionTimeMilliseconds),
+                        setCompletionTime: new Date().toISOString()
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    console.log('Submission successful. Response data:', data);
-                    console.log('Has more images:', data.data?.hasMoreImages);
+                    console.log('Submission successful with millisecond timing:', data);
 
-                    // ✅ FIX: Disable leave site prompt BEFORE redirecting
                     window.disableLeavePrompt?.();
 
-                    // ✅ FIX: Check if there are MORE images to rate
-                    // Only show thank you modal if NO more images exist (ALL sets completed)
                     if (data.data && data.data.hasMoreImages === false) {
-                        // ✅ ALL sets completed - show thank you modal
                         console.log('All sets completed. Showing thank you modal.');
                         showThankYouModal();
                     } else if (data.data && data.data.hasMoreImages === true) {
-                        // ✅ More images exist - load next set with session preservation
                         console.log('More images available. Loading next set...');
                         await new Promise(resolve => setTimeout(resolve, 500));
-                        // ✅ FIX: Use direct assignment instead of location.href to avoid prompt
+                        if (sessionStorage.getItem(FS_KEY) === '1') {
+                            sessionStorage.setItem(FS_KEY, '1');
+                        }
                         window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
                     } else {
-                        // ✅ Fallback: If hasMoreImages is undefined, check completedSets vs totalSets
-                        console.log('hasMoreImages not provided. Checking progress...');
+                        console.log('Checking progress...');
                         if (data.data?.completedSets >= data.data?.totalSets) {
-                            console.log('All sets completed (from progress check). Showing thank you modal.');
+                            console.log('All sets completed. Showing thank you modal.');
                             showThankYouModal();
                         } else {
-                            console.log('More sets available (from progress check). Loading next set...');
+                            console.log('More sets available. Loading next set...');
                             await new Promise(resolve => setTimeout(resolve, 500));
-                            // ✅ FIX: Use direct assignment instead of location.href to avoid prompt
+                            if (sessionStorage.getItem(FS_KEY) === '1') {
+                                sessionStorage.setItem(FS_KEY, '1');
+                            }
                             window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
                         }
                     }
@@ -1181,7 +1208,10 @@
 
         function initFullscreen() {
             const alreadyGranted = sessionStorage.getItem(FS_KEY) === '1';
-            if (isInFullscreen()) { sessionStorage.setItem(FS_KEY, '1'); return; }
+            if (isInFullscreen()) {
+                sessionStorage.setItem(FS_KEY, '1');
+                return;
+            }
             if (alreadyGranted) requestFullscreenSilently();
             else document.getElementById('fullscreenPrompt').classList.add('show');
 
@@ -1211,7 +1241,6 @@
             document.getElementById('fsToast').classList.remove('show');
         }
 
-        // ✅ FIX: Pass sessionId and assessmentCode to GetImageAssessmentProgress
         async function loadAssessmentProgress() {
             try {
                 const response = await fetch(buildApiUrl(`/Assessment/GetImageAssessmentProgress?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`), {
@@ -1226,22 +1255,16 @@
                     completedAssessmentSets = data.data.completedSets;
                     currentSetNumber = completedAssessmentSets + 1;
 
-                    // ✅ Update footer display with current progress
                     document.getElementById('footerSubtext').textContent = `${completedAssessmentSets} of ${totalAssessmentSets} sets completed`;
-                    // document.getElementById('totalSets').textContent = totalAssessmentSets;
 
                     console.log(`Progress: ${completedAssessmentSets}/${totalAssessmentSets} raw image sets completed`);
                     console.log(`Currently on set: ${currentSetNumber}`);
                 } else {
-                    // ✅ Fallback if API fails - show 0 of total
                     document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
-                    // document.getElementById('totalSets').textContent = '0';
                 }
             } catch (error) {
                 console.error('Error loading progress:', error);
-                // ✅ Show default on error
                 document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
-                // document.getElementById('totalSets').textContent = '0';
             }
         }
     </script>

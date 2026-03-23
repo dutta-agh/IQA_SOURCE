@@ -240,6 +240,149 @@
             margin-bottom: 5px;
         }
 
+        /* ── Color Vision Test Modal ──────────────────────────────────────────── */
+        .color-vision-modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            backdrop-filter: blur(2px);
+        }
+
+        .color-vision-modal.show { display: flex; }
+
+        .color-vision-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            border-radius: 24px;
+            padding: clamp(40px, 8vw, 60px);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideInDown 0.4s ease-out forwards;
+            border: 3px solid #667eea;
+            transform: scale(0.85) !important;
+            transform-origin: center;
+            transition: transform 0.3s ease-out;
+        }
+
+        @@keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .color-vision-icon {
+            font-size: clamp(3rem, 8vw, 4.5rem);
+            color: #667eea;
+            margin-bottom: clamp(16px, 4vw, 24px);
+            display: block;
+        }
+
+        .color-vision-title {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: clamp(12px, 3vw, 16px);
+        }
+
+        .color-vision-description {
+            font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+            color: #4a5568;
+            line-height: 1.8;
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .color-vision-info-box {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e6f0ff 100%);
+            border-left: 5px solid #667eea;
+            border-radius: 8px;
+            padding: clamp(16px, 4vw, 20px);
+            margin-bottom: clamp(20px, 5vw, 30px);
+            text-align: left;
+        }
+
+        .color-vision-info-box strong {
+            color: #667eea;
+            display: block;
+            font-size: clamp(0.9rem, 2.3vw, 1.05rem);
+            margin-bottom: 8px;
+        }
+
+        .color-vision-info-box p {
+            color: #4a5568;
+            margin: 0;
+            font-size: clamp(0.85rem, 2.2vw, 1rem);
+            line-height: 1.6;
+        }
+
+        .color-vision-list {
+            text-align: left;
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .color-vision-list li {
+            color: #4a5568;
+            margin-bottom: clamp(10px, 2vw, 14px);
+            font-size: clamp(0.85rem, 2.2vw, 1rem);
+            line-height: 1.6;
+        }
+
+        .color-vision-list li strong {
+            color: #2d3748;
+        }
+
+        .color-vision-buttons {
+            display: flex;
+            gap: clamp(12px, 3vw, 16px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-start-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: clamp(12px, 2.5vw, 16px) clamp(28px, 5vw, 40px);
+            font-size: clamp(0.95rem, 2.3vw, 1.1rem);
+            border-radius: 50px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-start-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-cancel-test {
+            background: white;
+            border: 2px solid #cbd5e0;
+            color: #667eea;
+            padding: clamp(12px, 2.5vw, 16px) clamp(28px, 5vw, 40px);
+            font-size: clamp(0.95rem, 2.3vw, 1.1rem);
+            border-radius: 50px;
+            transition: all 0.3s;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancel-test:hover {
+            border-color: #667eea;
+            background: #f0f4f8;
+        }
+
         /* ── Failure overlay ─────────────────────────────────────────────── */
         .failure-overlay {
             display: none; position: fixed; inset: 0;
@@ -261,6 +404,14 @@
         @@media (max-width: 768px) {
             .content-card {
                 padding: clamp(20px, 5vw, 30px);
+            }
+
+            .color-vision-buttons {
+                flex-direction: column;
+            }
+
+            .btn-start-test, .btn-cancel-test {
+                width: 100%;
             }
         }
     </style>
@@ -302,6 +453,39 @@
                 <li>Navigate back to this URL</li>
                 <li>The assessment will load automatically</li>
             </ol>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Color Vision Test Modal — shown before redirecting to ColorblindnessTest -->
+<div class="color-vision-modal" id="colorVisionModal">
+    <div class="color-vision-content">
+        <i class="fas fa-eye color-vision-icon"></i>
+        <h2 class="color-vision-title">Color Vision Test</h2>
+        
+        <p class="color-vision-description">
+            You are about to begin the <strong>Color Vision Test</strong>. This test helps us understand your color perception abilities.
+        </p>
+
+        <div class="color-vision-info-box">
+            <strong><i class="fas fa-info-circle"></i> Test Overview</strong>
+            <p>Now 12 Ishihara Color Plates. From there you to choose the correct number displayed in the image. You'll have 5 seconds per image to choose.</p>
+        </div>
+
+        <ul class="color-vision-list">
+            <li><strong>12 Color Plates:</strong> You will be shown 12 different Ishihara color plates</li>
+            <li><strong>Read the Number:</strong> Identify the correct number displayed in each plate</li>
+            <li><strong>5 Seconds Per Image:</strong> You have a limited time to make your selection</li>
+            <li><strong>Quick Responses:</strong> Try to respond as quickly and accurately as possible</li>
+        </ul>
+
+        <div class="color-vision-buttons">
+            <button class="btn-start-test" onclick="proceedToColorVisionTest()">
+                <i class="fas fa-play-circle"></i> Start Test
+            </button>
+            <button class="btn-cancel-test" onclick="cancelColorVisionTest()">
+                <i class="fas fa-times-circle"></i> Cancel
+            </button>
         </div>
     </div>
 </div>
@@ -471,6 +655,37 @@
             });
         }
 
+        /**
+         * ✅ NEW: Show color vision test modal before redirecting
+         */
+        function showColorVisionModal() {
+            document.getElementById('colorVisionModal').classList.add('show');
+        }
+
+        /**
+         * ✅ NEW: Hide color vision test modal
+         */
+        function hideColorVisionModal() {
+            document.getElementById('colorVisionModal').classList.remove('show');
+        }
+
+        /**
+         * ✅ NEW: Proceed to colorblindness test after acknowledging
+         */
+        function proceedToColorVisionTest() {
+            hideColorVisionModal();
+            const url = buildApiUrl('/Assessment/' + encodeURIComponent(assessmentType) + '/ColorblindnessTest');
+            navigateTo(url);
+        }
+
+        /**
+         * ✅ NEW: Cancel and close modal
+         */
+        function cancelColorVisionTest() {
+            hideColorVisionModal();
+            showAlert('Color vision test cancelled. You can start again whenever you are ready.', 'info');
+        }
+
         function startAssessment() {
             const checkbox = document.getElementById('consentCheckbox');
             if (!checkbox.checked) {
@@ -490,17 +705,16 @@
                         const isColorblindnessEnabled = response.data.isColorblindnessEnabled;
                         
                         if (isColorblindnessEnabled) {
-                            // Route to Colorblindness Test using the same pattern as SpeedTest: /{assessmentType}/ColorblindnessTest
-                            const url = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/ColorblindnessTest');
-                            navigateTo(url);
+                            // ✅ UPDATED: Show color vision modal instead of direct redirect
+                            showColorVisionModal();
                         } else {
                             // Route directly to SpeedTest: /{assessmentType}/SpeedTest
-                            const url = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                            const url = buildApiUrl('/Assessment/' + encodeURIComponent(assessmentType) + '/SpeedTest');
                             navigateTo(url);
                         }
                     } else {
                         // Default to SpeedTest if unable to fetch settings
-                        const url = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                        const url = buildApiUrl('/Assessment/' + encodeURIComponent(assessmentType) + '/SpeedTest');
                         navigateTo(url);
                     }
                 },
@@ -508,7 +722,7 @@
                     hideLoader();
                     console.error('Error checking assessment settings:', error);
                     // Default to SpeedTest on error
-                    const url = buildApiUrl('/' + encodeURIComponent(assessmentType) + '/SpeedTest');
+                    const url = buildApiUrl('/Assessment/' + encodeURIComponent(assessmentType) + '/SpeedTest');
                     navigateTo(url);    
                 }
             });

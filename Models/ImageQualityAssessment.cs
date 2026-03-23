@@ -1,4 +1,4 @@
-namespace IQA_SOURCE.Models
+﻿namespace IQA_SOURCE.Models
 {
     // Raw image set (parent image) - linked to assessment
     public class RawImageSet
@@ -94,6 +94,11 @@ namespace IQA_SOURCE.Models
         public string? LinkedQualityLevel { get; set; }
         public string? LinkedQualityType { get; set; }
 
+        public int TimeTakenMilliseconds { get; set; }
+        public int DisplayDurationMilliseconds { get; set; }
+        public DateTime? RatingTimestamp { get; set; }
+        public int SessionTotalTimeMs { get; set; }
+
         // Rating
         public int QualityRating { get; set; }
         public string QualityRatingLabel => QualityRating switch
@@ -105,6 +110,8 @@ namespace IQA_SOURCE.Models
             5 => "Excellent",
             _ => "N/A"
         };
+
+        public int Id { get; internal set; }
     }
 
     // View models
@@ -146,23 +153,93 @@ namespace IQA_SOURCE.Models
         public string ImageLabel { get; set; } = string.Empty;
     }
 
-    /// <summary>Per-image rating sent from the Sort page.</summary>
+    /// <summary>Per-image rating sent from the Sort page with millisecond precision timing.</summary>
     public class SortImageRatingEntry
     {
         /// <summary>il_id for a linked image, 0 for the raw/reference image.</summary>
         public int ImageId { get; set; }
+        
         public bool IsRawImage { get; set; }
+        
+        /// <summary>Quality rating on -3 to +3 scale where -3=Much Worse, 0=Same, +3=Much Better</summary>
         public int Rating { get; set; }
+
+        // ✅ TIME TRACKING IN MILLISECONDS FOR PRECISION
+
+        /// <summary>Time taken to rate this specific image in milliseconds (from display to rating submission).</summary>
+        public long TimeTakenMilliseconds { get; set; } = 0;
+
+        /// <summary>Duration the image was displayed before being rated (in milliseconds).</summary>
+        public long DisplayDurationMilliseconds { get; set; } = 0;
+
+        /// <summary>Exact timestamp when this image was rated.</summary>
+        public DateTime RatingTimestamp { get; set; } = DateTime.UtcNow;
+
+        // ✅ CONVENIENCE PROPERTIES FOR SECONDS (READ-ONLY)
+
+        /// <summary>Time taken to rate this image in seconds (derived from milliseconds).</summary>
+        public decimal TimeTakenSeconds => TimeTakenMilliseconds / 1000m;
+
+        /// <summary>Display duration in seconds (derived from milliseconds).</summary>
+        public decimal DisplayDurationSeconds => DisplayDurationMilliseconds / 1000m;
     }
 
-    /// <summary>Full Sort assessment submission payload.</summary>
+    /// <summary>Full Sort assessment submission payload with millisecond-precision time tracking.</summary>
     public class SortRatingSubmission
     {
+        /// <summary>Unique session identifier for this assessment session.</summary>
         public string SessionId { get; set; } = string.Empty;
+
+        /// <summary>Assessment code/type identifier (e.g., "SORT", "IQA").</summary>
         public string AssessmentCode { get; set; } = string.Empty;
+
+        /// <summary>Raw image set ID being rated in this submission.</summary>
         public int RawImageSetId { get; set; }
+
+        /// <summary>List of individual image ratings with per-image time tracking in milliseconds.</summary>
         public List<SortImageRatingEntry> Ratings { get; set; } = new();
+
+        /// <summary>Client's IP address from ipify or fallback to connection IP.</summary>
         public string? IpAddress { get; set; }
+
+        // ✅ SESSION-LEVEL TIME TRACKING IN MILLISECONDS
+
+        /// <summary>Total time spent rating this entire image set in milliseconds.</summary>
+        public long TotalSessionTimeMilliseconds { get; set; } = 0;
+
+        /// <summary>Timestamp when the entire set submission was completed.</summary>
+        public DateTime SetCompletionTime { get; set; } = DateTime.UtcNow;
+
+        // ✅ CONVENIENCE PROPERTIES FOR SECONDS (READ-ONLY)
+
+        /// <summary>Total session time in seconds (derived from milliseconds).</summary>
+        public decimal TotalSessionTimeSeconds => TotalSessionTimeMilliseconds / 1000m;
+
+        /// <summary>Average time per image rating in milliseconds.</summary>
+        public long AverageTimePerImageMilliseconds => Ratings.Count > 0
+            ? TotalSessionTimeMilliseconds / Ratings.Count
+            : 0;
+
+        /// <summary>Average time per image rating in seconds (derived from milliseconds).</summary>
+        public decimal AverageTimePerImageSeconds => Ratings.Count > 0
+            ? AverageTimePerImageMilliseconds / 1000m
+            : 0;
+
+        /// <summary>Fastest rating time among all images in this set (in milliseconds).</summary>
+        public long FastestRatingMilliseconds => Ratings.Count > 0
+            ? Ratings.Min(r => r.TimeTakenMilliseconds)
+            : 0;
+
+        /// <summary>Fastest rating time in seconds (derived from milliseconds).</summary>
+        public decimal FastestRatingSeconds => FastestRatingMilliseconds / 1000m;
+
+        /// <summary>Slowest rating time among all images in this set (in milliseconds).</summary>
+        public long SlowestRatingMilliseconds => Ratings.Count > 0
+            ? Ratings.Max(r => r.TimeTakenMilliseconds)
+            : 0;
+
+        /// <summary>Slowest rating time in seconds (derived from milliseconds).</summary>
+        public decimal SlowestRatingSeconds => SlowestRatingMilliseconds / 1000m;
     }
 
     public class ImageQualitySubmission

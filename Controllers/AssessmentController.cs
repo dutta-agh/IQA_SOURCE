@@ -885,17 +885,26 @@ namespace IQA_SOURCE.Controllers
         {
             try
             {
+                // ✅ MILLISECOND-PRECISION TIMING SUPPORT
                 var sessionId = _sessionService.GetOrCreateSessionId();
                 submission.SessionId = sessionId;
 
+                // Validate submission
                 if (submission.RawImageSetId <= 0)
                     return Json(new { success = false, message = "Invalid image set" });
 
                 if (submission.Ratings == null || submission.Ratings.Count == 0)
                     return Json(new { success = false, message = "No ratings provided" });
 
+                // ✅ Validate millisecond timing data
+                if (submission.TotalSessionTimeMilliseconds < 0)
+                    return Json(new { success = false, message = "Invalid session time" });
+
                 if (submission.Ratings.Any(r => r.Rating < -3 || r.Rating > 3))
                     return Json(new { success = false, message = "All ratings must be between -3 and +3" });
+
+                if (submission.Ratings.Any(r => r.TimeTakenMilliseconds < 0))
+                    return Json(new { success = false, message = "Invalid timing data" });
 
                 var ipAddress = !string.IsNullOrWhiteSpace(submission.IpAddress)
                     ? submission.IpAddress
@@ -904,23 +913,29 @@ namespace IQA_SOURCE.Controllers
                 var userAgent = Request.Headers["User-Agent"].ToString();
 
                 _logger.LogInformation(
-                    "Submitting {Count} sort ratings - SessionId: {SessionId}, RawImageSetId: {RisId}",
-                    submission.Ratings.Count, sessionId, submission.RawImageSetId);
+                    "Submitting {Count} sort ratings - SessionId: {SessionId}, RawImageSetId: {RisId}, TotalTime: {Time}ms",
+                    submission.Ratings.Count, sessionId, submission.RawImageSetId, submission.TotalSessionTimeMilliseconds);
 
+                // ✅ Log timing details for analytics
+                foreach (var rating in submission.Ratings)
+                {
+                    _logger.LogInformation(
+                        "Image {ImageId} rated {Rating} in {TimeTaken}ms (display: {DisplayDuration}ms)",
+                        rating.ImageId, rating.Rating, rating.TimeTakenMilliseconds, rating.DisplayDurationMilliseconds);
+                }
+
+                // Pass full submission with millisecond timing to repository
                 var result = await _imageQualityRepository.SaveSortRatings(submission, ipAddress, userAgent, "Anonymous");
 
                 if (result.OutputCode == 1)
                 {
-                    // ✅ FIXED: Get progress to check for MORE images
                     var progressResult = await _imageQualityRepository.GetAssessmentProgress(sessionId, submission.AssessmentCode, "Anonymous");
 
-                    // ✅ CRITICAL FIX: Check if there are MORE unrated images available
-                    // CompletedSets < TotalSets means there are still images to rate
                     var hasMoreImages = progressResult.Data.CompletedSets < progressResult.Data.TotalSets;
 
                     _logger.LogInformation(
-                        "Sort ratings submitted - SessionId: {SessionId}, RawImageSetId: {RisId}, CompletedSets: {Completed}, TotalSets: {Total}, HasMoreImages: {HasMore}",
-                        sessionId, submission.RawImageSetId, progressResult.Data.CompletedSets, progressResult.Data.TotalSets, hasMoreImages);
+                        "Sort ratings submitted successfully - SessionId: {SessionId}, RawImageSetId: {RisId}, CompletedSets: {Completed}/{Total}, HasMoreImages: {HasMore}, TotalTime: {Time}ms",
+                        sessionId, submission.RawImageSetId, progressResult.Data.CompletedSets, progressResult.Data.TotalSets, hasMoreImages, submission.TotalSessionTimeMilliseconds);
 
                     return Json(new
                     {
@@ -930,10 +945,23 @@ namespace IQA_SOURCE.Controllers
                         {
                             completedSets = progressResult.Data.CompletedSets,
                             totalSets = progressResult.Data.TotalSets,
-                            hasMoreImages = hasMoreImages  // ✅ Return TRUE if more images exist
+                            hasMoreImages = hasMoreImages,
+                            isCompleted = hasMoreImages == false,
+                            percentComplete = 0,
+                            timingMetrics = new
+                            {
+                                totalSessionTimeMilliseconds = submission.TotalSessionTimeMilliseconds,
+                                averageTimePerImageMs = submission.AverageTimePerImageMilliseconds,
+                                fastestRatingMs = submission.FastestRatingMilliseconds,
+                                slowestRatingMs = submission.SlowestRatingMilliseconds
+                            }
                         }
                     });
                 }
+
+                _logger.LogWarning(
+                    "Sort ratings submission failed - SessionId: {SessionId}, OutputCode: {Code}, Message: {Message}",
+                    sessionId, result.OutputCode, result.OutputMsg);
 
                 return Json(new { success = false, message = result.OutputMsg });
             }

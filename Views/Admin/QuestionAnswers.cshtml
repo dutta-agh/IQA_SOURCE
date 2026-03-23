@@ -61,6 +61,31 @@
             min-width: 120px;
             word-break: break-word;
         }
+
+        /* ✅ NEW: Timing Badge Styles */
+        .timing-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .timing-fast {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .timing-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .timing-slow {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 }
 
@@ -169,7 +194,7 @@
         <thead>
             <tr>
                 <th>Session ID</th>
-                <th>Group Name</th>
+                <th>Image Group</th>
                 <th>Assessment</th>
                 <th>IP Address</th>
                 <th>Rated At</th>
@@ -181,6 +206,13 @@
                 <th>Rated DPI</th>
                 <th>Quality Level</th>
                 <th>Rating</th>
+                <!-- ✅ NEW TIMING COLUMNS -->
+                <th>Time Taken (ms)</th>
+@*                 <th>Time Taken (sec)</th>
+                <th>Display Duration (ms)</th>
+                <th>Rating Timestamp</th> *@
+                <th>Session Total Time (ms)</th>
+                <!-- END NEW TIMING COLUMNS -->
                 <th>Actions</th>
             </tr>
         </thead>
@@ -274,12 +306,12 @@
 @section Scripts {
     <script>
         let qaTable, irTable;
-        let allQA = [], allIR = [];
+        let allQA = [];
         let currentTab = 'qa';
-        let assessmentGroups = {}; // Map of assessment code to groups array
+        let assessmentGroups = {};
+        let currentAssessmentCode = '';
+        let currentGroupCode = '';
 
-        // ✅ FIX #1: Updated rating labels to match SortAssessment 7-point scale (-3 to +3)
-        // Use STRING keys for object indexing
         const ratingLabels = {
             '-3': '-3:Much Worse',
             '-2': '-2:Worse',
@@ -290,7 +322,6 @@
             '3': '+3:Much Better'
         };
 
-        // Helper function to convert DB value (1-7) to scale (-3 to +3)
         function convertDbRatingToScale(dbValue) {
             const mapping = { '-3': -3, '-2': -2, '-1': -1, '0': 0, '1': 1, '2': 2, '3': 3 };
             return mapping[dbValue] ?? dbValue;
@@ -298,35 +329,37 @@
 
         function getRatingLabel(dbValue) {
             const scaleValue = convertDbRatingToScale(dbValue);
-            // ✅ Convert to string for object key lookup
             return ratingLabels[String(scaleValue)] ?? 'N/A';
         }
 
         function getRatingBadgeClass(dbValue) {
-            debugger
             const scaleValue = convertDbRatingToScale(dbValue);
             const classMap = {
                 '-3': 'minus3', '-2': 'minus2', '-1': 'minus1',
                 '0': '0', '1': 'plus1', '2': 'plus2', '3': 'plus3'
             };
-            // ✅ Convert to string for object key lookup
             return 'rating-badge-' + (classMap[String(scaleValue)] ?? '0');
         }
 
-        // ✅ MOVED OUTSIDE $(document).ready): Make switchTab globally accessible
         function switchTab(tab) {
             currentTab = tab;
             document.getElementById('panel-qa').classList.toggle('d-none', tab !== 'qa');
             document.getElementById('panel-ir').classList.toggle('d-none', tab !== 'ir');
             document.getElementById('tab-qa').classList.toggle('active', tab === 'qa');
             document.getElementById('tab-ir').classList.toggle('active', tab === 'ir');
-            if (tab === 'qa') qaTable.columns.adjust().draw(false);
-            else              irTable.columns.adjust().draw(false);
+
+            if (tab === 'qa') {
+                qaTable.columns.adjust().draw(false);
+            } else {
+                if (currentAssessmentCode) {
+                    irTable.draw();
+                }
+            }
         }
 
         function getBootstrapModal(elementId) {
             if (typeof bootstrap === 'undefined') {
-                console.error('Bootstrap JS is not loaded. Check CDN connectivity.');
+                console.error('Bootstrap JS is not loaded.');
                 showAlert('UI library failed to load. Please refresh the page.', 'danger');
                 return null;
             }
@@ -334,30 +367,48 @@
         }
 
         $(document).ready(function () {
+            // ✅ Q&A TABLE - Client-Side (Smaller Dataset)
             qaTable = $('#qaTable').DataTable({
                 columns: [
-                    { data: 'sessionId',        render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                    { data: 'sessionId', render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
                     { data: 'assessmentName' },
                     { data: 'ipAddress' },
-                    { data: 'startTime',         render: d => d ? new Date(d).toLocaleString() : 'N/A' },
-                    { data: 'submitTime',        render: d => d ? new Date(d).toLocaleString() : 'N/A' },
-                    { data: 'status',            render: d => d === 'COMPLETED'
+                    { data: 'startTime', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: 'submitTime', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: 'status', render: d => d === 'COMPLETED'
                         ? '<span class="badge bg-success">Completed</span>'
                         : '<span class="badge bg-warning text-dark">In Progress</span>' },
                     { data: 'answeredQuestions' },
                     { data: null, orderable: false, render: (d, type, row, meta) =>
                         `<button class="btn btn-sm btn-info" onclick="viewQADetails(${meta.row})" title="View"><i class="fas fa-eye"></i></button>` }
                 ],
-                order: [[4, 'desc']]
+                order: [[4, 'desc']],
+                processing: false
             });
 
+            // ✅ IMAGE RATINGS TABLE - SERVER-SIDE PAGINATION
             irTable = $('#irTable').DataTable({
+                serverSide: true,
+                processing: true,
+                pageLength: 25,
+                ajax: {
+                    url: buildApiUrl('/Admin/GetImageRatingsServerSide'),
+                    type: 'GET',
+                    data: function (d) {
+                        d.assessmentCode = currentAssessmentCode;
+                        d.groupCode = currentGroupCode;
+                    },
+                    error: function (xhr, error, thrown) {
+                        console.error('Server-side error:', error);
+                        showAlert('Error loading image ratings: ' + (xhr.responseJSON?.error || error), 'danger');
+                    }
+                },
                 columns: [
-                    { data: 'sessionId',          render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
-                    { data: 'groupName',          render: d => d ? `<span class="group-badge">${escapeHtml(d)}</span>` : '<span class="text-muted">N/A</span>' },
+                    { data: 'sessionId', render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                    { data: 'groupName', render: d => d ? `<span class="group-badge">${escapeHtml(d)}</span>` : '<span class="text-muted">N/A</span>' },
                     { data: 'assessmentCode' },
                     { data: 'ipAddress' },
-                    { data: 'ratedAt',            render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: 'ratedAt', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
                     { data: null, render: d => d.masterImageUrl
                         ? `<a href="${escapeHtml(d.masterImageUrl)}" target="_blank"><img src="${escapeHtml(d.masterImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.masterImageName ?? '')}"></a>`
                         : escapeHtml(d.masterImageName ?? '') },
@@ -370,7 +421,7 @@
                     { data: null, render: d => (d.linkedDpiX && d.linkedDpiY) ? `${Math.round(d.linkedDpiX)} × ${Math.round(d.linkedDpiY)}` : 'N/A' },
                     { data: null, render: d => {
                         const lvl = escapeHtml(d.linkedQualityLevel ?? '');
-                        const typ = escapeHtml(d.linkedQualityType  ?? '');
+                        const typ = escapeHtml(d.linkedQualityType ?? '');
                         return lvl ? `${lvl} <small class="text-muted">(${typ})</small>` : 'N/A';
                     }},
                     { data: 'qualityRating', render: d => {
@@ -378,82 +429,90 @@
                         const badgeClass = getRatingBadgeClass(d);
                         return `<span class="badge ${badgeClass}">${label}</span>`;
                     }},
+                    // ✅ TIMING COLUMNS - Now from server
+                    { data: 'timeTakenMilliseconds', render: d => {
+                        const ms = d || 0;
+                        const badge = ms < 2000 ? 'timing-fast' : ms < 5000 ? 'timing-medium' : 'timing-slow';
+                        return `<span class="timing-badge ${badge}">${ms}ms</span>`;
+                    }},
+                    // { data: 'timeTakenMilliseconds', render: d => {
+                    //     const ms = d || 0;
+                    //     return `<strong>${(ms / 1000).toFixed(2)}</strong>s`;
+                    // }},
+                    // { data: 'displayDurationMilliseconds', render: d => d ? `${d}ms` : 'N/A' },
+                    // { data: 'ratingTimestamp', render: d => d ? new Date(d).toLocaleTimeString() : 'N/A' },
+                    { data: 'sessionTotalTimeMs', render: d => {
+                        const ms = d || 0;
+                        const minutes = Math.floor(ms / 60000);
+                        const seconds = ((ms % 60000) / 1000).toFixed(0);
+                        return `<small>${minutes}m ${seconds}s</small>`;
+                    }},
                     { data: null, orderable: false, render: (d, type, row, meta) =>
-                        `<button class="btn btn-sm btn-info" onclick="viewIRDetails(${meta.row})" title="Details"><i class="fas fa-eye"></i></button>` }
+                        `<button class="btn btn-sm btn-info" onclick="viewIRDetails('${escapeHtml(d.sessionId)}')" title="Details"><i class="fas fa-eye"></i></button>` }
                 ],
-                order: [[4, 'desc']]
+                order: [[4, 'desc']],
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>'
             });
 
             loadAssessmentList();
         });
 
-        // ✅ All remaining functions defined globally (outside document.ready)
         async function loadAll() {
             const ac = $('#assessmentFilter').val();
             if (!ac) return;
 
-            showLoader();
-            const qaUrl = buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`);
-            const irUrl = buildApiUrl(`/Admin/GetAllImageRatings?assessmentCode=${encodeURIComponent(ac)}`);
+            currentAssessmentCode = ac;
+            currentGroupCode = $('#groupFilter').val() || '';
 
-            const [qaRes, irRes] = await Promise.all([fetch(qaUrl), fetch(irUrl)]);
+            showLoader();
+
+            // Load Q&A data
+            const qaUrl = buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`);
+            const qaRes = await fetch(qaUrl);
             const qaJson = await qaRes.json();
-            const irJson = await irRes.json();
-            hideLoader();
 
             allQA = qaJson.success ? (qaJson.data || []) : [];
-            allIR = irJson.success ? (irJson.data || []) : [];
-
-            // ✅ FIX #2: Debug - log the IR data to verify groupName is present
-            console.log('Image Ratings Data:', allIR);
-
-            // Filter by selected group if one is selected
-            const selectedGroup = $('#groupFilter').val();
-            let filteredIR = allIR;
-            if (selectedGroup) {
-                filteredIR = allIR.filter(r => r.groupName === selectedGroup);
-            }
-
             qaTable.clear().rows.add(allQA).draw();
-            irTable.clear().rows.add(filteredIR).draw();
+
+            // Reload server-side IR table with new filters
+            irTable.draw();
+
+            hideLoader();
             updateStats();
         }
 
         function applyAssessmentFilter() {
-            const ac   = $('#assessmentFilter').val();
-            const btn  = document.getElementById('btnDownloadExcel');
+            const ac = $('#assessmentFilter').val();
+            const btn = document.getElementById('btnDownloadExcel');
             const hint = document.getElementById('downloadHint');
             const delBtn = document.getElementById('btnDeleteQA');
             const delHint = document.getElementById('deleteHint');
             const $groupFilter = $('#groupFilter');
 
             if (ac) {
-                btn.disabled     = false;
-                btn.title        = 'Download consolidated Excel for selected assessment';
+                btn.disabled = false;
+                btn.title = 'Download consolidated Excel for selected assessment';
                 hint.textContent = '';
-                
-                delBtn.disabled  = false;
-                delBtn.title     = 'Delete question answers for selected assessment';
+                delBtn.disabled = false;
+                delBtn.title = 'Delete question answers for selected assessment';
                 delHint.textContent = '';
 
-                // Load groups for this assessment
                 loadGroupsForAssessment(ac);
                 loadDeleteQAAssessmentAndGroups();
             } else {
-                btn.disabled     = true;
-                btn.title        = 'Select an assessment to enable download';
+                btn.disabled = true;
+                btn.title = 'Select an assessment to enable download';
                 hint.textContent = 'Select assessment';
-                
-                delBtn.disabled  = true;
-                delBtn.title     = 'Select an assessment to enable deletion';
+                delBtn.disabled = true;
+                delBtn.title = 'Select an assessment to enable deletion';
                 delHint.textContent = 'Select assessment';
-                
+
                 qaTable.clear().draw();
-                irTable.clear().draw();
-                allQA = []; allIR = [];
+                irTable.draw();
+                allQA = [];
                 updateStats();
 
-                // Reset group filter
                 $groupFilter.empty().append(new Option('Select Group…', '')).prop('disabled', true);
                 $groupFilter.closest('.col-md-2').find('small').text('Select assessment first');
             }
@@ -461,19 +520,16 @@
 
         async function loadGroupsForAssessment(assessmentCode) {
             try {
-                // Fetch all image groups (including inactive)
                 const res = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
                 const json = await res.json();
 
                 if (json.success && json.data) {
                     assessmentGroups[assessmentCode] = json.data;
 
-                    // Populate group dropdown
                     const $groupFilter = $('#groupFilter');
                     $groupFilter.empty().append(new Option('Select Group…', ''));
 
                     json.data.forEach(g => {
-                        // ✅ Add status indicator for inactive groups
                         const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
                         $groupFilter.append(new Option(g.igName + status, g.igName));
                     });
@@ -481,7 +537,6 @@
                     $groupFilter.prop('disabled', false);
                     $groupFilter.closest('.col-md-2').find('small').text('');
 
-                    // Wire change event
                     $groupFilter.off('change').on('change', function () {
                         loadAll();
                     });
@@ -492,44 +547,37 @@
         }
 
         function applyQAStatusFilter() {
-            const status   = document.getElementById('statusFilter').value;
+            const status = document.getElementById('statusFilter').value;
             const filtered = status ? allQA.filter(r => r.status === status) : allQA;
             qaTable.clear().rows.add(filtered).draw();
         }
 
         function updateStats() {
-            const sessions = new Set([
-                ...allQA.map(r => r.sessionId),
-                ...allIR.map(r => r.sessionId)
-            ]);
-            document.getElementById('totalQA').textContent        = allQA.length;
-            document.getElementById('completedQA').textContent    = allQA.filter(r => r.status === 'COMPLETED').length;
-            document.getElementById('totalIR').textContent        = allIR.length;
-            document.getElementById('uniqueSessions').textContent = sessions.size;
+            document.getElementById('totalQA').textContent = allQA.length;
+            document.getElementById('completedQA').textContent = allQA.filter(r => r.status === 'COMPLETED').length;
+            // For IR stats, we'll update after server-side data loads
+            document.getElementById('totalIR').textContent = 'Loading...';
+            document.getElementById('uniqueSessions').textContent = 'Loading...';
         }
 
         async function loadAssessmentList() {
-            const res  = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+            const res = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
             const json = await res.json();
             if (!json.success) return;
 
             const $sel = $('#assessmentFilter');
-
-            // Populate options (placeholder already in HTML)
             json.data.forEach(a => {
                 $sel.append(new Option(a.atmName, a.atmCode));
             });
 
-            // Init Select2 now that options are ready
             $sel.select2({
-                theme:          'material',
-                width:          '100%',
-                allowClear:     true,
-                placeholder:    'Select Assessment…',
+                theme: 'material',
+                width: '100%',
+                allowClear: true,
+                placeholder: 'Select Assessment…',
                 dropdownParent: $(document.body)
             });
 
-            // Wire change event via Select2 API
             $sel.on('select2:select select2:clear', function () {
                 applyAssessmentFilter();
             });
@@ -539,18 +587,16 @@
             const code = $('#assessmentFilter').val();
             if (!code) { showAlert('Please select an assessment first.', 'warning'); return; }
             const btn = document.getElementById('btnDownloadExcel');
-            btn.disabled  = true;
+            btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
             window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(code)}`);
             setTimeout(() => {
-                btn.disabled  = false;
+                btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel';
             }, 3000);
         }
 
-        /* ════════════════════════════════════════
-           DELETE Q&A FUNCTIONS
-        ════════════════════════════════════════ */
+        // ... (Keep existing delete, view details functions)
         function openDeleteQAModal() {
             const modal = new bootstrap.Modal(document.getElementById('deleteQAModal'));
             modal.show();
@@ -558,68 +604,42 @@
 
         async function loadDeleteQAAssessmentAndGroups() {
             try {
-                // Load assessment types
                 const aRes = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
                 const aJson = await aRes.json();
-                
+
                 if (aJson.success && aJson.data) {
                     const sel = $('#deleteQAAssessment');
                     sel.find('option').not(':first').remove();
                     aJson.data.forEach(a => {
-                        const $option = $('<option></option>')
-                            .attr('value', a.atmCode)
-                            .text(a.atmName);
-                        sel.append($option);
+                        sel.append($('<option></option>').attr('value', a.atmCode).text(a.atmName));
                     });
                 }
 
-                // Load groups
                 const gRes = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
                 const gJson = await gRes.json();
-                
+
                 if (gJson.success && gJson.data) {
                     const sel = $('#deleteQAGroup');
                     sel.find('option').not(':first').remove();
                     gJson.data.forEach(g => {
                         const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
-                        const $option = $('<option></option>')
-                            .attr('value', g.igCode)
-                            .text(g.igName + status);
-                        sel.append($option);
+                        sel.append($('<option></option>').attr('value', g.igCode).text(g.igName + status));
                     });
                 }
             } catch (error) {
-                console.error('Error loading delete Q&A options:', error);
+                console.error('Error loading delete options:', error);
             }
         }
 
         function getDeleteQAPreview() {
             const assessmentCode = $('#deleteQAAssessment').val();
-            const groupCode = $('#deleteQAGroup').val();
+            if (!assessmentCode) { $('#deleteQAPreview').hide(); return; }
 
-            if (!assessmentCode) {
-                $('#deleteQAPreview').hide();
-                return;
-            }
-
-            console.log('Getting delete preview for:', { assessmentCode, groupCode });
-            
-            // Calculate from current data
-            let qaToDelete = allQA;
-            let irToDelete = allIR;
-
-            if (groupCode) {
-                qaToDelete = allQA.filter(qa => qa.groupName === $('#deleteQAGroup').find('option:selected').text().split(' [')[0]);
-                irToDelete = allIR.filter(ir => ir.groupName === $('#deleteQAGroup').find('option:selected').text().split(' [')[0]);
-            }
-
-            const statsHtml = `
-                <div><strong>Question Answer Records:</strong> ${qaToDelete.length}</div>
-                <div><strong>Image Rating Records:</strong> ${irToDelete.length}</div>
-                <div><strong>Total Records to Delete:</strong> ${qaToDelete.length + irToDelete.length}</div>
-            `;
-
-            $('#deletePreviewStats').html(statsHtml);
+            let qaCount = allQA.length;
+            $('#deletePreviewStats').html(`
+                <div><strong>Question Answer Records:</strong> ${qaCount}</div>
+                <div><strong>Note:</strong> Image ratings will be loaded from server</div>
+            `);
             $('#deleteQAPreview').show();
         }
 
@@ -628,52 +648,34 @@
 
         function confirmDeleteQA() {
             const assessmentCode = $('#deleteQAAssessment').val();
-            const groupCode = $('#deleteQAGroup').val();
+            if (!assessmentCode) { showAlert('Please select an assessment type', 'warning'); return; }
 
-            if (!assessmentCode) {
-                showAlert('Please select an assessment type', 'warning');
-                return;
-            }
+            const message = `Are you sure you want to delete all question answers for assessment "${assessmentCode}"? This action cannot be undone.`;
 
-            const message = groupCode 
-                ? `Are you sure you want to delete all question answers for assessment "${assessmentCode}" and set level "${$('#deleteQAGroup').find('option:selected').text()}"? This action cannot be undone.`
-                : `Are you sure you want to delete all question answers for assessment "${assessmentCode}"? This action cannot be undone.`;
-
-            if (!confirm(message)) {
-                return;
-            }
+            if (!confirm(message)) return;
 
             showLoader();
-            const request = {
-                assessmentCode: assessmentCode,
-                setLevel: groupCode || null
-            };
-
             $.ajax({
                 url: buildApiUrl('/Admin/BulkDeleteQuestionAnswers'),
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(request),
+                data: JSON.stringify({ assessmentCode, setLevel: null }),
                 dataType: 'json',
                 success: function (res) {
                     hideLoader();
                     if (res && res.success) {
                         showAlert(`Successfully deleted question answers: ${res.message}`, 'success');
                         bootstrap.Modal.getInstance(document.getElementById('deleteQAModal')).hide();
-                        
-                        // Refresh if we have assessment loaded
-                        const currentAssessment = $('#assessmentFilter').val();
-                        if (currentAssessment === assessmentCode) {
+                        if ($('#assessmentFilter').val() === assessmentCode) {
                             loadAll();
                         }
                     } else {
                         showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
                     }
                 },
-                error: function (xhr, status, error) {
+                error: function () {
                     hideLoader();
-                    console.error('Error deleting question answers:', error);
-                    showAlert('Error deleting question answers. Please try again.', 'danger');
+                    showAlert('Error deleting question answers', 'danger');
                 }
             });
         }
@@ -683,7 +685,7 @@
             if (!data) { showAlert('Could not find record', 'danger'); return; }
 
             showLoader();
-            const res  = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(data.assessmentCode)}`));
+            const res = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(data.assessmentCode)}`));
             const json = await res.json();
             hideLoader();
 
@@ -691,8 +693,8 @@
 
             const detail = json.data.find(r => r.sessionId === data.sessionId) || json.data[0];
 
-            document.getElementById('detailSessionId').textContent  = detail.sessionId  ?? 'N/A';
-            document.getElementById('detailIpAddress').textContent  = detail.ipAddress  ?? 'N/A';
+            document.getElementById('detailSessionId').textContent = detail.sessionId ?? 'N/A';
+            document.getElementById('detailIpAddress').textContent = detail.ipAddress ?? 'N/A';
             document.getElementById('detailSubmitTime').textContent = detail.submitTime ? new Date(detail.submitTime).toLocaleString() : 'N/A';
             document.getElementById('detailStatus').innerHTML = detail.status === 'COMPLETED'
                 ? '<span class="badge bg-success">Completed</span>'
@@ -711,67 +713,77 @@
             if (modal) modal.show();
         }
 
-        function viewIRDetails(rowIdx) {
-            const r = irTable.row(rowIdx).data();
-            if (!r) return;
+        function viewIRDetails(sessionId) {
+            // This will be called with sessionId from server-side paginated data
+            const $table = $('#irTable');
+            const data = $table.DataTable().rows().data().toArray().find(r => r.sessionId === sessionId);
+
+            if (!data) { showAlert('Could not find record', 'danger'); return; }
 
             let exifHtml = '';
             try {
-                const ex = JSON.parse(r.linkedExifData || '{}');
+                const ex = JSON.parse(data.linkedExifData || '{}');
                 exifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
             } catch { exifHtml = ''; }
 
             let masterExifHtml = '';
             try {
-                const ex = JSON.parse(r.masterExifData || '{}');
+                const ex = JSON.parse(data.masterExifData || '{}');
                 masterExifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
             } catch { masterExifHtml = ''; }
 
-            const groupBadge = r.groupName ? `<span class="group-badge">${escapeHtml(r.groupName)}</span>` : '<span class="text-muted">N/A</span>';
+            const groupBadge = data.groupName ? `<span class="group-badge">${escapeHtml(data.groupName)}</span>` : '<span class="text-muted">N/A</span>';
+            const ratingLabel = getRatingLabel(data.qualityRating);
+            const badgeClass = getRatingBadgeClass(data.qualityRating);
 
-            // ✅ FIX #1: Updated rating label for -3 to +3 scale
-            const ratingLabel = getRatingLabel(r.qualityRating);
-            const badgeClass = getRatingBadgeClass(r.qualityRating);
+            // ✅ NEW: Timing info display
+            const timeTakenMs = data.timeTakenMilliseconds || 0;
+            const displayDurationMs = data.displayDurationMilliseconds || 0;
+            const sessionTotalMs = data.sessionTotalTimeMs || 0;
+            const sessionMinutes = Math.floor(sessionTotalMs / 60000);
+            const sessionSeconds = ((sessionTotalMs % 60000) / 1000).toFixed(0);
 
             document.getElementById('irDetailBody').innerHTML = `
                 <div class="row mb-3">
-                    <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(r.sessionId ?? '')}</div>
+                    <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(data.sessionId ?? '')}</div>
                     <div class="col-md-4"><strong>Image Group:</strong> ${groupBadge}</div>
-                    <div class="col-md-4"><strong>IP:</strong> ${escapeHtml(r.ipAddress ?? '')}</div>
+                    <div class="col-md-4"><strong>IP:</strong> ${escapeHtml(data.ipAddress ?? '')}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(r.assessmentCode ?? '')}</div>
-                    <div class="col-md-4"><strong>Rated At:</strong> ${r.ratedAt ? new Date(r.ratedAt).toLocaleString() : 'N/A'}</div>
-                    <div class="col-md-4"><strong>Quality Rating:</strong>
-                        <span class="badge ${badgeClass}">${ratingLabel}</span>
-                    </div>
+                    <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(data.assessmentCode ?? '')}</div>
+                    <div class="col-md-4"><strong>Rated At:</strong> ${data.ratedAt ? new Date(data.ratedAt).toLocaleString() : 'N/A'}</div>
+                    <div class="col-md-4"><strong>Quality Rating:</strong> <span class="badge ${badgeClass}">${ratingLabel}</span></div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-4"><strong>Quality Level:</strong> ${escapeHtml(r.linkedQualityLevel ?? 'N/A')} (${escapeHtml(r.linkedQualityType ?? '')})</div>
+                    <div class="col-md-12"><strong>Quality Level:</strong> ${escapeHtml(data.linkedQualityLevel ?? 'N/A')} (${escapeHtml(data.linkedQualityType ?? '')})</div>
+                </div>
+                <div class="row mb-3" style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div class="col-md-3"><strong>⏱️ Time Taken:</strong><div>${timeTakenMs}ms (${(timeTakenMs / 1000).toFixed(2)}s)</div></div>
+                    <div class="col-md-3"><strong>👁️ Display Duration:</strong><div>${displayDurationMs}ms</div></div>
+                    <div class="col-md-3"><strong>⏳ Session Total:</strong><div>${sessionMinutes}m ${sessionSeconds}s</div></div>
+                    <div class="col-md-3"><strong>🕐 Rating Time:</strong><div>${data.ratingTimestamp ? new Date(data.ratingTimestamp).toLocaleTimeString() : 'N/A'}</div></div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <h6><i class="fas fa-image"></i> Reference Image</h6>
-                        ${r.masterImageUrl ? `<a href="${escapeHtml(r.masterImageUrl)}" target="_blank">
-                            <img src="${escapeHtml(r.masterImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                        ${data.masterImageUrl ? `<a href="${escapeHtml(data.masterImageUrl)}" target="_blank">
+                            <img src="${escapeHtml(data.masterImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
                         </a>` : ''}
-                        <p class="mt-2 mb-1"><a href="${escapeHtml(r.masterImageUrl ?? '')}" target="_blank">${escapeHtml(r.masterImageName ?? '')}</a></p>
-                        <p class="mb-1"><strong>Resolution:</strong> ${r.masterWidth ?? '?'} × ${r.masterHeight ?? '?'} px</p>
-                        <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.masterFormat ?? 'N/A')}</p>
-                        <p class="mb-1"><strong>DPI:</strong> ${r.masterDpiX ? Math.round(r.masterDpiX) : '?'} × ${r.masterDpiY ? Math.round(r.masterDpiY) : '?'}</p>
-                        ${masterExifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
+                        <p class="mt-2 mb-1"><strong>Name:</strong> ${escapeHtml(data.masterImageName ?? 'N/A')}</p>
+                        <p class="mb-1"><strong>Resolution:</strong> ${data.masterWidth ?? '?'} × ${data.masterHeight ?? '?'} px</p>
+                        <p class="mb-1"><strong>DPI:</strong> ${data.masterDpiX ? Math.round(data.masterDpiX) : '?'} × ${data.masterDpiY ? Math.round(data.masterDpiY) : '?'}</p>
+                        ${masterExifHtml ? `<details><summary style="cursor:pointer; color: #0066cc;"><strong>EXIF Data</strong></summary>
                             <table class="table table-sm mt-2">${masterExifHtml}</table></details>` : ''}
                     </div>
                     <div class="col-md-6">
                         <h6><i class="fas fa-star"></i> Rated Image</h6>
-                        ${r.linkedImageUrl ? `<a href="${escapeHtml(r.linkedImageUrl)}" target="_blank">
-                            <img src="${escapeHtml(r.linkedImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                        ${data.linkedImageUrl ? `<a href="${escapeHtml(data.linkedImageUrl)}" target="_blank">
+                            <img src="${escapeHtml(data.linkedImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
                         </a>` : ''}
-                        <p class="mt-2 mb-1"><a href="${escapeHtml(r.linkedImageUrl ?? '')}" target="_blank">${escapeHtml(r.linkedImageName ?? '')}</a></p>
-                        <p class="mb-1"><strong>Resolution:</strong> ${r.linkedWidth ?? '?'} × ${r.linkedHeight ?? '?'} px</p>
-                        <p class="mb-1"><strong>Format:</strong> ${escapeHtml(r.linkedFormat ?? 'N/A')}</p>
-                        <p class="mb-1"><strong>DPI:</strong> ${r.linkedDpiX ? Math.round(r.linkedDpiX) : '?'} × ${r.linkedDpiY ? Math.round(r.linkedDpiY) : '?'}</p>
-                        ${exifHtml ? `<details><summary class="text-primary" style="cursor:pointer">EXIF Data</summary>
+                        <p class="mt-2 mb-1"><strong>Name:</strong> ${escapeHtml(data.linkedImageName ?? 'N/A')}</p>
+                        <p class="mb-1"><strong>Resolution:</strong> ${data.linkedWidth ?? '?'} × ${data.linkedHeight ?? '?'} px</p>
+                        <p class="mb-1"><strong>DPI:</strong> ${data.linkedDpiX ? Math.round(data.linkedDpiX) : '?'} × ${data.linkedDpiY ? Math.round(data.linkedDpiY) : '?'}</p>
+                        ${exifHtml ? `<details><summary style="cursor:pointer; color: #0066cc;"><strong>EXIF Data</strong></summary>
                             <table class="table table-sm mt-2">${exifHtml}</table></details>` : ''}
                     </div>
                 </div>`;
