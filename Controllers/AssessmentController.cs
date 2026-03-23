@@ -894,8 +894,8 @@ namespace IQA_SOURCE.Controllers
                 if (submission.Ratings == null || submission.Ratings.Count == 0)
                     return Json(new { success = false, message = "No ratings provided" });
 
-                if (submission.Ratings.Any(r => r.Rating < 1 || r.Rating > 5))
-                    return Json(new { success = false, message = "All ratings must be between 1 and 5" });
+                if (submission.Ratings.Any(r => r.Rating < -3 || r.Rating > 3))
+                    return Json(new { success = false, message = "All ratings must be between -3 and +3" });
 
                 var ipAddress = !string.IsNullOrWhiteSpace(submission.IpAddress)
                     ? submission.IpAddress

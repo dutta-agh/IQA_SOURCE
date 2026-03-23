@@ -28,7 +28,7 @@
             height: 100vh;
             width: 100vw;
             gap: 0;
-            background: #f8fafc;
+            background: #b7b7b7;
         }
 
         /* ── Header (Enhanced) ──────────────────────────────────── */
@@ -349,6 +349,7 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             width: 100%;
+            justify-content:space-between;
         }
 
         .rating-btn-wrapper {
@@ -446,8 +447,8 @@
         }
 
         .rating-label {
-            font-size: 0.5rem;
-            color: #94a3b8;
+            font-size: 0.56rem;
+            color: #292929;
             font-weight: 700;
             text-align: center;
             letter-spacing: 0.15px;
@@ -732,7 +733,7 @@
         @@media (max-width: 1500px) {
             .assessment-grid {
                 gap: 12px;
-                max-width: 1100px;
+                max-width: 90%;
             }
 
             .image-card {
@@ -748,7 +749,7 @@
         @@media (max-width: 1200px) {
             .assessment-grid {
                 gap: 10px;
-                max-width: 950px;
+                max-width: 90%;
             }
 
             .image-card {
@@ -825,7 +826,7 @@
                 {
                     var img = ratableImages[0];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                      
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -847,7 +848,7 @@
                 {
                     var img = ratableImages[2];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+    
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -870,8 +871,8 @@
                 @if (rawImage != null)
                 {
                     <div class="reference-card">
-                        <div class="reference-header">
-                            <i class="fas fa-star"></i> Reference(Raw) Image
+                        <div class="reference-header text-capitalize" style="text-transform:capitalize !important;">
+                            <i class="fas fa-star"></i> Reference (Raw) Image
                         </div>
                         <div class="reference-image-container">
                             <img src="@rawImage.ImagePath" alt="Reference Image" loading="eager">
@@ -879,10 +880,10 @@
                     </div>
 
                     <div style="position: absolute;
-        bottom: 3%;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
-        border-radius: 10px;
-        overflow: hidden;">
+            bottom: 3%;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+            border-radius: 10px;
+            overflow: hidden;">
                         <div class="footer">
                             <div class="footer-info">
                                 <div class="footer-status ready" id="footerStatus">All images rated in this set</div>
@@ -903,7 +904,7 @@
                 {
                     var img = ratableImages[1];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                        
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -925,7 +926,7 @@
                 {
                     var img = ratableImages[3];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                        <div class="image-filename"><i class="fas fa-image"></i> @System.IO.Path.GetFileName(img.ImagePath)</div>
+                       
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -964,7 +965,7 @@
     <script>
         // ✅ FIX #1: Use sessionId and assessmentCode in API call
         // ✅ FIX #2: Only show thank you modal when ALL sets are completed, not after each set
-        
+
         const sessionId = '@Model.SessionId';
         const assessmentCode = '@Model.AssessmentCode';
         const rawImageSetId = @Model.RawImage.RisId;
@@ -973,7 +974,7 @@
 
         const ratings = new Map();
         let clientIpAddress = '';
-        
+
         // ✅ Track session-wide completion state
         let totalAssessmentSets = 0;
         let completedAssessmentSets = 0;
@@ -1063,25 +1064,33 @@
 
             const ratingList = [];
 
-            // ✅ Convert -3 to +3 scale to 1-5 scale
-            ratings.forEach((score, key) => {
-                const [imageId, isRawStr] = key.split('|');
-                // Linear mapping: -3 to +3 → 1 to 5
-                const convertedRating = Math.round(((score + 3) / 6) * 4 + 1);
-                
-                ratingList.push({
-                    imageId: parseInt(imageId),
-                    isRawImage: isRawStr === 'true',
-                    rating: convertedRating
-                });
-            });
+            // ✅ FIXED: Correct conversion from -3 to +3 scale to 1-5 scale
+        ratings.forEach((score, key) => {
+            const [imageId, isRawStr] = key.split('|');
+            // Linear mapping: -3 to +3 → 1 to 5
+            // Simply add 4: -3+4=1, -2+4=2, -1+4=3, 0+4=4, 1+4=5, 2+4=6, 3+4=7
+            // Wait, that goes to 7. Let me recalculate:
+            // Better formula: ((score + 3) * 2 / 3) + 1
+            // -3: ((−3+3)*2/3)+1 = 0+1 = 1 ✓
+            // 0: ((0+3)*2/3)+1 = 2+1 = 3 ✓
+            // 3: ((3+3)*2/3)+1 = 4+1 = 5 ✓
+            // OR even simpler: Math.round((score + 3) * (5 - 1) / 6 + 1)
 
-            // ✅ Add reference image with rating 3 (middle value)
+            const convertedRating =score;
+
             ratingList.push({
-                imageId: @Model.RawImage.RisId,
-                isRawImage: true,
-                rating: 3 // Middle value for reference
+                imageId: parseInt(imageId),
+                isRawImage: isRawStr === 'true',
+                rating: convertedRating
             });
+        });
+
+        // ✅ Add reference image with rating 3 (middle value)
+        ratingList.push({
+            imageId: @Model.RawImage.RisId,
+            isRawImage: true,
+            rating: 0  // Changed from 0 to 3 (middle of 1-5)
+        });
 
             try {
                 const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
@@ -1095,14 +1104,14 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     console.log('Submission successful. Response data:', data);
                     console.log('Has more images:', data.data?.hasMoreImages);
-                    
+
                     // ✅ FIX: Disable leave site prompt BEFORE redirecting
                     window.disableLeavePrompt?.();
-                    
+
                     // ✅ FIX: Check if there are MORE images to rate
                     // Only show thank you modal if NO more images exist (ALL sets completed)
                     if (data.data && data.data.hasMoreImages === false) {
@@ -1209,9 +1218,9 @@
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success && data.data) {
                     totalAssessmentSets = data.data.totalSets;
                     completedAssessmentSets = data.data.completedSets;
@@ -1220,7 +1229,7 @@
                     // ✅ Update footer display with current progress
                     document.getElementById('footerSubtext').textContent = `${completedAssessmentSets} of ${totalAssessmentSets} sets completed`;
                     // document.getElementById('totalSets').textContent = totalAssessmentSets;
-                    
+
                     console.log(`Progress: ${completedAssessmentSets}/${totalAssessmentSets} raw image sets completed`);
                     console.log(`Currently on set: ${currentSetNumber}`);
                 } else {

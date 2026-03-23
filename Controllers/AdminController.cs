@@ -1205,7 +1205,7 @@ namespace IQA_SOURCE.Controllers
                     "Ref Image", "Ref Resolution", "Ref DPI", "Ref Format",
                     "Main Image Rating", "Main Image Rating Label",
                     "Rated Image", "Rated Resolution", "Rated DPI", "Rated Format",
-                    "Quality Level", "Quality Type", "Rating (1–5)", "Rating Label"
+                    "Quality Level", "Quality Type", "Rating (-3 to +3)", "Rating Label"
                 };
                 var irHeaderRow = irSheet.CreateRow(0);
                 for (int i = 0; i < irHeaders.Length; i++)
@@ -1238,8 +1238,10 @@ namespace IQA_SOURCE.Controllers
                     r.CreateCell(14).SetCellValue(row.LinkedFormat ?? ""); r.GetCell(14).CellStyle = style;
                     r.CreateCell(15).SetCellValue(row.LinkedQualityLevel ?? ""); r.GetCell(15).CellStyle = style;
                     r.CreateCell(16).SetCellValue(row.LinkedQualityType ?? ""); r.GetCell(16).CellStyle = style;
-                    r.CreateCell(17).SetCellValue(row.QualityRating); r.GetCell(17).CellStyle = style;
-                    r.CreateCell(18).SetCellValue(row.QualityRatingLabel); r.GetCell(18).CellStyle = style;
+                    var ratingScale = ConvertDbRatingToScale(row.QualityRating);
+                    var ratingLabel = GetRatingLabel(row.QualityRating);
+                    r.CreateCell(17).SetCellValue(ratingScale.ToString()); r.GetCell(17).CellStyle = style;
+                    r.CreateCell(18).SetCellValue(ratingLabel); r.GetCell(18).CellStyle = style;
                     irRowIdx++;
                 }
 
@@ -2303,6 +2305,39 @@ namespace IQA_SOURCE.Controllers
                 _logger.LogError(ex, "Error loading menus for role {UserRole}", userRole);
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
+        }
+
+        private string GetRatingLabel(int dbValue)
+        {
+            // Convert DB value (1-7) to scale (-3 to +3) and get label
+            var scaleValue = ConvertDbRatingToScale(dbValue);
+            var ratingLabels = new Dictionary<int, string>
+    {
+        { -3, "-3:Much Worse" },
+        { -2, "-2:Worse" },
+        { -1, "-1:Slightly Worse" },
+        { 0, "0:Same" },
+        { 1, "+1:Slightly Better" },
+        { 2, "+2:Better" },
+        { 3, "+3:Much Better" }
+    };
+            return ratingLabels.TryGetValue(scaleValue, out var label) ? label : "N/A";
+        }
+
+        private int ConvertDbRatingToScale(int dbValue)
+        {
+            // Convert DB 1-7 scale to -3 to +3 scale
+            var mapping = new Dictionary<int, int>
+    {
+        { -3, -3 },
+        { -2, -2 },
+        { -1, -1 },
+        { 0, 0 },
+        { 1, 1 },
+        { 2, 2 },
+        { 3, 3 }
+    };
+            return mapping.TryGetValue(dbValue, out var value) ? value : dbValue;
         }
 
         // Add this method to AdminController

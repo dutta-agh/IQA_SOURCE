@@ -1,6 +1,7 @@
-﻿using System.Data;
-using MySqlConnector;
+﻿using IQA_SOURCE.Helpers;
 using IQA_SOURCE.Models.Colorblindness;
+using MySqlConnector;
+using System.Data;
 using YourApp.Data;
 
 namespace IQA_SOURCE.Data
@@ -242,7 +243,7 @@ namespace IQA_SOURCE.Data
                     {
                         CbImageId = Convert.ToInt32(row["cb_image_id"]),
                         ImageSequence = Convert.ToInt32(row["image_sequence"]),
-                        ImageUrl = row["image_url"]?.ToString() ?? "",
+                        ImageUrl = ImageUrlHelper.BuildImageUrl(row["image_url"]?.ToString()) ?? "",
                         CorrectAnswer = correctAnswer,
                         Options = options
                     };
@@ -657,7 +658,7 @@ namespace IQA_SOURCE.Data
                         var selectedAnswer = imgRow["selected_answer"]?.ToString() ?? "";
                         var correctAnswer = imgRow["correct_answer"]?.ToString() ?? "";
                         var isCorrect = Convert.ToInt32(imgRow["is_correct"] ?? 0) == 1;
-                        var imageUrl = imgRow["image_url"]?.ToString() ?? "";
+                        var imageUrl = ImageUrlHelper.BuildImageUrl(imgRow["image_url"]?.ToString()) ?? "";
 
                         string resultStatus = "Incorrect";
                         if (string.IsNullOrEmpty(selectedAnswer) || selectedAnswer == "null")
@@ -710,7 +711,7 @@ namespace IQA_SOURCE.Data
                 CbImageId = Convert.ToInt32(row["cb_image_id"]),
                 AssessmentType = row["assessment_type"]?.ToString() ?? "",
                 ImageSequence = Convert.ToInt32(row["image_sequence"]),
-                ImageUrl = row["image_url"]?.ToString() ?? "",
+                ImageUrl = ImageUrlHelper.BuildImageUrl(row["image_url"]?.ToString()) ?? "",
                 CorrectAnswer = row["correct_answer"]?.ToString() ?? "",
                 IncorrectOptionOne = row["incorrect_option_1"]?.ToString() ?? "",
                 IncorrectOptionTwo = row["incorrect_option_2"]?.ToString() ?? "",

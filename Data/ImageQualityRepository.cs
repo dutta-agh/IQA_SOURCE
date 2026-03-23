@@ -491,11 +491,9 @@ namespace IQA_SOURCE.Data
 
                 var whereClause = $"WHERE {string.Join(" AND ", filters)}";
 
-                // Note: Admin views should see ALL ratings regardless of current active group
-                // This is historical data and should not be filtered by current group status
                 var query = $@"
                     SELECT
-                        iqr.iqr_id,
+                        iqr.iqr_id, 
                         iqr.iqr_session_id,
                         iqr.iqr_assessment_code,
                         iqr.iqr_ip_address,
@@ -523,7 +521,7 @@ namespace IQA_SOURCE.Data
                         il.il_exif_data        AS linked_exif_data,
                         il.il_quality_level    AS linked_quality_level,
                         il.il_quality_type     AS linked_quality_type,
-                        ig.ig_name             AS group_name,
+                        COALESCE(ig.ig_name, 'Ungrouped') AS group_name,
                         (
                             SELECT iqr2.iqr_quality_rating
                             FROM   tbl_image_quality_ratings iqr2
@@ -566,6 +564,7 @@ namespace IQA_SOURCE.Data
                         MasterDpiX         = row["master_dpi_x"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_x"])  : null,
                         MasterDpiY         = row["master_dpi_y"]  != DBNull.Value ? Convert.ToDouble(row["master_dpi_y"])  : null,
                         MasterExifData     = row["master_exif_data"]?.ToString(),
+                        MasterGroupCode    = row["master_group_code"]?.ToString()   ?? string.Empty,
                         MasterImageRating  = row["master_image_rating"] != DBNull.Value ? Convert.ToInt32(row["master_image_rating"]) : null,
                         LinkedImageId      = row["il_id"]        != DBNull.Value ? Convert.ToInt32(row["il_id"])          : 0,
                         LinkedImageName    = row["linked_file_name"]?.ToString()    ?? string.Empty,
@@ -578,6 +577,8 @@ namespace IQA_SOURCE.Data
                         LinkedExifData     = row["linked_exif_data"]?.ToString(),
                         LinkedQualityLevel = row["linked_quality_level"]?.ToString(),
                         LinkedQualityType  = row["linked_quality_type"]?.ToString(),
+                        // ✅ FIX: Add GroupName mapping
+                        GroupName          = row["group_name"]?.ToString() ?? "Ungrouped"
                     });
                 }
 
