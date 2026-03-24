@@ -2,6 +2,7 @@
     ViewData["Title"] = "System Check - Speed Test";
     Layout = "_AssessmentLayout";
     var assessmentType = ViewBag.AssessmentType as string ?? "";
+    var sessionId = ViewBag.SessionId as string ?? "";
 }
 
 @section Styles {
@@ -115,7 +116,7 @@
             animation: fadeIn 0.5s forwards;
         }
 
-       @@keyframes fadeIn {
+        @@keyframes fadeIn {
             to {
                 opacity: 1;
             }
@@ -210,7 +211,7 @@
             font-size: 1.1rem;
         }
 
-       @@keyframes pulse {
+        @@keyframes pulse {
             0%, 100% {
                 opacity: 1;
             }
@@ -224,22 +225,50 @@
         }
 
         /* ── Failure overlay ─────────────────────────────────────────────── */
-.failure-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.88); z-index: 10000;
-    justify-content: center; align-items: center;
-}
-.failure-overlay.show { display: flex; }
-.failure-content {
-    background: white; border-radius: 20px;
-    padding: 50px 60px; text-align: center;
-    max-width: 560px; width: 90%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-    animation: popIn 0.3s ease-out forwards;
-}
-.failure-icon { font-size: 4rem; color: #dc3545; margin-bottom: 20px; }
-.failure-content h2 { color: #2d3748; font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
-.failure-content p  { color: #718096; font-size: 1rem; line-height: 1.7; margin-bottom: 0; }
+        .failure-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .failure-overlay.show {
+            display: flex;
+        }
+
+        .failure-content {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 60px;
+            text-align: center;
+            max-width: 560px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        .failure-icon {
+            font-size: 4rem;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .failure-content h2 {
+            color: #2d3748;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .failure-content p {
+            color: #718096;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 0;
+        }
     </style>
 }
 
@@ -320,7 +349,7 @@
 
         <div id="errorContainer"></div>
         <div id="redirectContainer"></div>
-    </div>
+    </div>          
 </div>
 
 <!-- Failure Overlay -->
@@ -334,8 +363,8 @@
 
 @section Scripts {
     <script>
-            const assessmentType = '@assessmentType';
-        const sessionId      = '@ViewBag.SessionId';
+        const assessmentType = '@assessmentType';
+        const sessionId      = '@sessionId';
 
         let currentCheck  = 0;
         let checksPassed  = 0;
@@ -433,8 +462,7 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        // Check 1: Private Mode
-        // FAIL-CLOSED
+        // Check 1: Private Mode - Using exact code from _AssessmentLayout.cshtml
         async function checkPrivateMode() {
             currentCheck = 1;
             updateProgress(10, 'Step 1/4: Checking private/incognito mode...');
@@ -444,8 +472,10 @@
             const iconI   = iconEl.querySelector('i');
             const textEl  = checkEl.querySelector('.text-muted');
 
-            checkEl.classList.remove('pending'); checkEl.classList.add('checking');
-            iconEl.classList.remove('pending');  iconEl.classList.add('checking');
+            checkEl.classList.remove('pending'); 
+            checkEl.classList.add('checking');
+            iconEl.classList.remove('pending');  
+            iconEl.classList.add('checking');
             iconI.className    = 'fas fa-spinner fa-spin';
             textEl.textContent = 'Checking...';
 
@@ -458,41 +488,42 @@
                 updateProgress(25, 'Private mode check skipped (not required)');
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, true,
                     '✓ Incognito mode not required for this assessment');
-                checksPassed++;
+                checksPassed++; 
                 return;
             }
 
-            // Re-use the shared promise from _AssessmentLayout — no duplicate detection work
-            // FAIL-CLOSED: any error or non-private result blocks progression
-            let isPrivate   = false;
-            let browserName = 'Unknown';
+            // ── EXACT CODE FROM _AssessmentLayout.cshtml ────────────────────────
+            detectIncognito().then(
+                function (result) {
+                    console.log("Browser:", result.browserName);
+                    console.log("Is Private:", result.isPrivate);
 
-            try {
-                const result = await window.checkIncognito();
-                isPrivate   = result.isPrivate   === true;
-                browserName = result.browserName ?? 'Unknown';
-            } catch (err) {
-                // Detection threw — treat as NOT incognito (fail-closed)
-                console.error('Incognito detection error on SpeedTest — failing closed:', err);
-                isPrivate   = false;
-                browserName = 'Detection error';
-            }
+                    testResults.privateModeDetected = result.isPrivate;
+                    testResults.privateModeBrowser  = result.browserName;
+                    updateProgress(25, 'Private mode check completed');
 
-            testResults.privateModeDetected = isPrivate;
-            testResults.privateModeBrowser  = browserName;
-            updateProgress(25, 'Private mode check completed');
-
-            if (isPrivate) {
-                updateCheckStatus(checkEl, iconEl, iconI, textEl, true,
-                    `✓ Private mode confirmed (${browserName})`);
-                checksPassed++;
-            } else {
+                    if (result.isPrivate) {
+                        updateCheckStatus(checkEl, iconEl, iconI, textEl, true,
+                            `✓ Private mode confirmed (${result.browserName})`);
+                        checksPassed++;
+                    } else {
+                        updateCheckStatus(checkEl, iconEl, iconI, textEl, false,
+                            '✗ You must use private/incognito mode');
+                        showError('Private Mode Required',
+                            'Please open this assessment in a private/incognito browser window. ' +
+                            'Close this window, open a new private/incognito window, and navigate back to the URL.');
+                    }
+                }
+            ).catch(function (error) {
+                console.error("Error detecting mode:", error);
+                // On error, assume normal mode and fail the check
+                testResults.privateModeDetected = false;
+                testResults.privateModeBrowser  = 'Detection error';
                 updateCheckStatus(checkEl, iconEl, iconI, textEl, false,
-                    '✗ You must use private/incognito mode');
-                showError('Private Mode Required',
-                    'Please open this assessment in a private/incognito browser window. ' +
-                    'Close this window, open a new private/incognito window, and navigate back to the URL.');
-            }
+                    '✗ Could not verify private mode');
+                showError('Detection Error',
+                    'Unable to verify browser mode. Please ensure you are using a private/incognito window and try again.');
+            });
         }
 
         // Check 2: Screen Resolution
@@ -506,7 +537,6 @@
             const textEl = checkEl.querySelector('.text-muted');
             const infoEl = document.getElementById('resolutionInfo');
             
-            // Update to checking state
             checkEl.classList.remove('pending');
             checkEl.classList.add('checking');
             iconEl.classList.remove('pending');
@@ -516,7 +546,6 @@
             
             await delay(800);
             
-            // CAPTURE SCREEN DIMENSIONS
             testResults.screenWidth = window.screen.width;
             testResults.screenHeight = window.screen.height;
             testResults.resolutionPassed = (testResults.screenWidth >= minWidth && testResults.screenHeight >= minHeight);
@@ -547,7 +576,6 @@
             const iconI = iconEl.querySelector('i');
             const textEl = checkEl.querySelector('.text-muted');
             
-            // Update to checking state
             checkEl.classList.remove('pending');
             checkEl.classList.add('checking');
             iconEl.classList.remove('pending');
@@ -557,7 +585,6 @@
             
             await delay(500);
             
-            // CAPTURE DEVICE TYPE
             const userAgent = navigator.userAgent.toLowerCase();
             const isMobile = /mobile|android|iphone|ipad|tablet/.test(userAgent);
             const isTablet = /tablet|ipad/.test(userAgent);
@@ -587,7 +614,7 @@
             }
         }
 
-        // Perform Speed Test (Download, Upload, Latency)
+        // Perform Speed Test
         async function performSpeedTest() {
             currentCheck = 4;
             updateProgress(70, 'Step 4/4: Testing internet speed...');
@@ -598,7 +625,6 @@
             const textEl  = checkEl.querySelector('.text-muted');
             const infoEl  = document.getElementById('speedInfo');
             
-            // Update to checking state
             checkEl.classList.remove('pending');
             checkEl.classList.add('checking');
             iconEl.classList.remove('pending');
@@ -652,7 +678,6 @@
                     ? parseFloat((testResults.downloadSpeedMbps * 0.25).toFixed(2))
                     : null;
 
-                // Use the DB-driven threshold (minSpeedMbps loaded from API)
                 testResults.speedPassed = testResults.downloadSpeedMbps !== null
                     ? testResults.downloadSpeedMbps >= minSpeedMbps
                     : true;
@@ -704,8 +729,8 @@
         async function saveSpeedTestLog() {
             try {
                 console.log('=== saveSpeedTestLog Started ===');
-                console.log('Assessment Type (from variable):', assessmentType);
-                console.log('Session ID (from variable):', sessionId);
+                console.log('Assessment Type:', assessmentType);
+                console.log('Session ID:', sessionId);
                 
                 const requestData = {
                     sessionId: sessionId,
@@ -724,10 +749,7 @@
                     ipAddress: window.clientIpAddress || ''
                 };
                 
-                console.log('Request Data:', JSON.stringify(requestData, null, 2));
-                
                 const apiUrl = buildApiUrl('/Assessment/SaveSpeedTestLog');
-                console.log('API URL:', apiUrl);
                 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -738,46 +760,29 @@
                     body: JSON.stringify(requestData)
                 });
                 
-                console.log('Response Status:', response.status);
-                console.log('Response Headers:', [...response.headers.entries()]);
-                
-                // Get response text first to see what we received
                 const responseText = await response.text();
-                console.log('Response Text:', responseText);
                 
                 if (!response.ok) {
                     console.error('Response Error:', responseText);
                     throw new Error(`HTTP ${response.status}: ${responseText}`);
                 }
                 
-                // Try to parse as JSON
                 let result;
                 try {
                     result = JSON.parse(responseText);
-                    console.log('Parsed Response Result:', JSON.stringify(result, null, 2));
                 } catch (parseError) {
                     console.error('JSON Parse Error:', parseError);
-                    console.error('Response was not valid JSON:', responseText);
                     throw new Error('Invalid JSON response from server');
                 }
                 
                 if (result.success) {
                     console.log('✓ Speed test log saved successfully');
-                } else {
-                    console.warn('⚠ Speed test log save returned unsuccessful:', result.message);
                 }
                 
                 return result;
                 
             } catch (error) {
                 console.error('Error saving speed test log:', error);
-                console.error('Error details:', {
-                    name: error.name,
-                    message: error.message,
-                    stack: error.stack
-                });
-                
-                // Don't fail the whole process, just log the error
                 return { success: false, message: error.message };
             }
         }
@@ -787,7 +792,6 @@
             const redirectContainer = document.getElementById('redirectContainer');
             
             if (testResults.overallPassed) {
-                // Show success message in the container first
                 redirectContainer.innerHTML = `
                     <div class="redirect-notice">
                         <h5><i class="fas fa-check-circle"></i> All Checks Passed!</h5>
@@ -795,10 +799,8 @@
                     </div>
                 `;
                 
-                // Wait a moment, then show countdown popup
                 await delay(800);
                 
-                // Create countdown overlay popup
                 const overlay = document.createElement('div');
                 overlay.className = 'countdown-overlay';
                 overlay.innerHTML = `
@@ -815,7 +817,6 @@
                 
                 document.body.appendChild(overlay);
                 
-                // Countdown timer with animation
                 let countdown = 3;
                 const countdownDisplay = document.getElementById('countdownDisplay');
                 
@@ -825,14 +826,11 @@
                     if (countdownDisplay) {
                         if (countdown > 0) {
                             countdownDisplay.textContent = countdown;
-                            
-                            // Add scale animation on each count
                             countdownDisplay.style.transform = 'scale(1.3)';
                             setTimeout(() => {
                                 countdownDisplay.style.transform = 'scale(1)';
                             }, 200);
                         } else {
-                            // Show spinner when countdown reaches 0
                             countdownDisplay.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                             countdownDisplay.style.fontSize = '4rem';
                         }
@@ -840,8 +838,6 @@
                     
                     if (countdown < 0) {
                         clearInterval(countdownInterval);
-                        
-                        // Fade out and redirect
                         overlay.style.opacity = '0';
                         overlay.style.transition = 'opacity 0.3s ease';
                         
@@ -850,19 +846,14 @@
                         }, 300);
                     }
                 }, 1000);
-                
-            } else {
-                // Checks failed — overlay already shown by showError(); nothing extra needed
             }
         }
 
         // Redirect to questions page
         function redirectToQuestions() {
-            console.log('Redirecting to questions page...');
             const url = assessmentType
                 ? buildApiUrl(`/Assessment/${assessmentType}/Questions`)
                 : buildApiUrl('/Assessment/Questions');
-            console.log('Redirect URL:', url);
             navigateTo(url);
         }
     </script>

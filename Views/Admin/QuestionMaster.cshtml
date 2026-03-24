@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = "_AdminLayoutDynamic";
     ViewData["Title"] = "Question Master";
 }
@@ -50,6 +50,11 @@
         .type-multiple {
             background: #6f42c1;
             color: white;
+        }
+
+        #viewOptionsList{
+            max-height: 50vh;
+            overflow-y: auto;
         }
     </style>
 }
@@ -400,45 +405,88 @@
                 data: { qId: qId },
                 success: function(response) {
                     hideLoader();
+                    console.log('EditQuestion Response:', response);
+                    
                     if (response.success && response.data) {
+                        // ✅ FIXED: Handle both camelCase and PascalCase properties
                         const q = response.data.question;
+                        
+                        // ✅ Get QId (try both camelCase and PascalCase)
+                        const questionId = q.qId || q.QId || 0;
+                        
+                        console.log('Question ID being set:', questionId);
+                        
                         $('#modalTitle').text('Edit Question');
-                        $('#qId').val(q.qId);
-                        $('#qsCode').val(q.qsCode).prop('readonly', true);
-                        $('#qsText').val(q.qsText);
-                        $('#qsType').val(q.qsType);
-                        $('#qsCategory').val(q.qsCategory);
-                        $('#qsMaxSelections').val(q.qsMaxSelections);
-                        $('#qsOrderNo').val(q.qsOrderNo);
-                        $('#qsActive').val(q.qsActive);
+                        $('#qId').val(questionId);  // ✅ Set the ID for UPDATE detection
+                        $('#qsCode').val(q.qsCode || q.QsCode || '').prop('readonly', true);
+                        $('#qsText').val(q.qsText || q.QsText || '');
+                        $('#qsType').val(q.qsType || q.QsType || 'SINGLE');
+                        $('#qsCategory').val(q.qsCategory || q.QsCategory || '');
+                        $('#qsMaxSelections').val(q.qsMaxSelections || q.QsMaxSelections || '');
+                        $('#qsOrderNo').val(q.qsOrderNo || q.QsOrderNo || '');
+                        
+                        // ✅ Handle qsActive (could be '1'/'0' or 'Y'/'N' or 1/0)
+                        const activeValue = q.qsActive || q.QsActive || 1;
+                        $('#qsActive').val(activeValue === 1 || activeValue === '1' || activeValue === 'Y' ? 'Y' : 'N');
+                        
                         handleTypeChange();
                         $('#formError').addClass('d-none');
+                        
                         new bootstrap.Modal(document.getElementById('questionModal')).show();
+                    } else {
+                        showAlert('Error loading question', 'danger');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     hideLoader();
+                    console.error('Error loading question:', error);
+                    console.error('Response:', xhr.responseText);
                     showAlert('Error loading question', 'danger');
                 }
             });
         }
 
+        // ✅ REWRITTEN: Improved saveQuestion method
         function saveQuestion() {
-            const data = {
-                qId: parseInt($('#qId').val()),
-                qsCode: $('#qsCode').val().trim(),
-                qsText: $('#qsText').val().trim(),
-                qsType: $('#qsType').val(),
-                qsCategory: $('#qsCategory').val(),
-                qsMaxSelections: $('#qsMaxSelections').val() ? parseInt($('#qsMaxSelections').val()) : null,
-                qsOrderNo: $('#qsOrderNo').val() ? parseInt($('#qsOrderNo').val()) : null,
-                qsActive: $('#qsActive').val()
-            };
+            // ✅ Parse all values with proper type conversion
+            const qId = parseInt($('#qId').val()) || 0;
+            const qsCode = $('#qsCode').val().trim();
+            const qsText = $('#qsText').val().trim();
+            const qsType = $('#qsType').val();
+            const qsCategory = $('#qsCategory').val();
+            const qsMaxSelectionsVal = $('#qsMaxSelections').val();
+            const qsOrderNoVal = $('#qsOrderNo').val();
+            const qsActive = $('#qsActive').val() === 'Y' ? 1 : 0;
 
-            if (!data.qsCode || !data.qsText) {
-                $('#formError').removeClass('d-none').text('Please fill all required fields');
+            // ✅ Validate required fields
+            if (!qsCode) {
+                $('#formError').removeClass('d-none').text('Question Code is required');
                 return;
             }
+
+            if (!qsText) {
+                $('#formError').removeClass('d-none').text('Question Text is required');
+                return;
+            }
+
+            // ✅ Build data object with proper field names
+            const data = {
+                qsId: qId,                                          // ✅ Must be qsId for UPDATE detection
+                qsCode: qsCode,
+                qsText: qsText,
+                qsType: qsType,
+                qsCategory: qsCategory,
+                qsMaxSelections: qsMaxSelectionsVal ? parseInt(qsMaxSelectionsVal) : null,
+                qsOrderNo: qsOrderNoVal ? parseInt(qsOrderNoVal) : null,
+                qsActive: qsActive
+            };
+
+            console.log('SaveQuestion Data:', {
+                isUpdate: qId > 0,
+                qsId: qId,
+                qsCode: qsCode,
+                action: qId > 0 ? 'UPDATE' : 'INSERT'
+            });
 
             showLoader();
             $.ajax({
@@ -448,17 +496,21 @@
                 data: JSON.stringify(data),
                 success: function(response) {
                     hideLoader();
+                    console.log('SaveQuestion Response:', response);
+                    
                     if (response.success) {
                         bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
                         loadQuestions();
-                        showAlert(response.message, 'success');
+                        showAlert(response.message || 'Question saved successfully', 'success');
                     } else {
-                        $('#formError').removeClass('d-none').text(response.message);
+                        $('#formError').removeClass('d-none').text(response.message || 'Error saving question');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     hideLoader();
-                    $('#formError').removeClass('d-none').text('An error occurred while saving');
+                    console.error('AJAX Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    $('#formError').removeClass('d-none').text('An error occurred while saving the question');
                 }
             });
         }

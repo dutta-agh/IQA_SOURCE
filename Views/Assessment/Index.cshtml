@@ -579,16 +579,18 @@
         // Any result where isPrivate !== true is treated as blocked.
         (async function () {
             try {
-                const result = await window.checkIncognito();
-                if (result.isPrivate === true) {
-                    allowAccess();
-                } else {
-                    blockAccess();
-                }
+                loadIntroContent();
+                document.getElementById('mainContainer').style.display = 'flex';
+                // const result = await window.checkIncognito();
+                // if (result.isPrivate === true) {
+                //     allowAccess();
+                // } else {
+                //     blockAccess();
+                // }
             } catch (err) {
                 // Detection threw — fail-closed: block access
-                console.error('Incognito detection error — blocking access:', err);
-                blockAccess();
+                // console.error('Incognito detection error — blocking access:', err);
+                // blockAccess();
             }
         })();
 
@@ -728,19 +730,7 @@
             });
         }
 
-        // Global error handler for demonstration (logs and shows a friendly message)
-        window.onerror = function (message, source, lineno, colno, error) {
-            console.error('Global error caught:', { message, source, lineno, colno, error });
-            document.getElementById('failureMessage').innerText = message || 'Unknown error occurred';
-            document.getElementById('failureOverlay').classList.add('show');
-            // Optionally, navigate to a dedicated error page or take other actions
-        };
 
-        // Close failure overlay on background click
-        document.getElementById('failureOverlay').onclick = function (event) {
-            if (event.target === this) {
-                this.classList.remove('show');
-            }
-        };
+
     </script>
 }

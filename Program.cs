@@ -51,6 +51,7 @@ builder.Services.Configure<ImageStorageSettings>(
     builder.Configuration.GetSection("ImageStorage"));
 
 // Register repositories
+builder.Services.AddScoped<IAssessmentSequenceService, AssessmentSequenceService>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAdminUserRepository, AdminUserRepository>();
 builder.Services.AddScoped<IAdminMenuRepository, AdminMenuRepository>();
@@ -119,6 +120,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 // Add Session Middleware
 app.UseSession();
+//app.UseAssessmentSequence();
 
 app.UseRouting();
 

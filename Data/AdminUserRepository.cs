@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using MySqlConnector;
 using IQA_SOURCE.Models.Admin;
 using YourApp.Data;
@@ -153,14 +153,14 @@ namespace IQA_SOURCE.Data
                 }
 
                 var query = @"
-                    INSERT INTO admin_users (username, password_hash, user_name, email, user_role, is_active)
-                    VALUES (@username, @passwordHash, @userName, @email, @role, @active)";
+                    INSERT INTO admin_users (user_id, username, password_hash, user_name, email, user_role, is_active)
+                    VALUES (@userId,@username, @passwordHash, @userName, @email, @role, @active)";
 
                 var parameters = new[]
                 {
+                    new MySqlParameter("@userId", user.AuUsername),
                     new MySqlParameter("@username", user.AuUsername),
                     new MySqlParameter("@passwordHash", user.AuPasswordHash ?? ""),
-                    new MySqlParameter("@userName", user.AuUserName ?? ""),
                     new MySqlParameter("@email", user.AuEmail ?? ""),
                     new MySqlParameter("@role", user.AuRole ?? "Operator"),
                     new MySqlParameter("@active", user.AuActive ?? "Y")
@@ -295,11 +295,11 @@ namespace IQA_SOURCE.Data
             return new AdminUser
             {
                 AuId = row["user_id"]?.ToString() ?? "",
-                AuUsername = row["username"]?.ToString() ?? "",
-                AuUserName = row["user_name"]?.ToString() ?? "",
-                AuEmail = row["email"]?.ToString() ?? "",
-                AuRole = row["user_role"]?.ToString() ?? "Operator",
-                AuActive = row["is_active"]?.ToString() ?? "Y",
+                AuUsername = row["username"]?.ToString() ?? "",           // ✅ Maps to DB: username
+                AuUserName = row["user_name"]?.ToString() ?? "",          // ✅ Maps to DB: user_name (NOT used in display)
+                AuEmail = row["email"]?.ToString() ?? "",                 // ✅ Maps to DB: email
+                AuRole = row["user_role"]?.ToString() ?? "Operator",      // ✅ Maps to DB: user_role - MUST be User_role in DB
+                AuActive = row["is_active"]?.ToString() ?? "Y",           // ✅ Maps to DB: is_active
                 AuCreatedDate = null,
                 AuCreatedUser = "",
                 AuModifiedDate = null,

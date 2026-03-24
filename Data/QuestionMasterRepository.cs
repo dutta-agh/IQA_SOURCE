@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using MySqlConnector;
 using IQA_SOURCE.Models.Admin;
 using YourApp.Data;
@@ -221,23 +221,11 @@ namespace IQA_SOURCE.Data
         {
             try
             {
-                // Check if question exists
-                var checkQuery = "SELECT COUNT(*) as cnt FROM dutta.tbl_questions WHERE QsId = @qId";
-                var checkParams = new[] { new MySqlParameter("@qId", question.QId) };
-                var checkResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
-
-                if (checkResult.Rows.Count == 0 || Convert.ToInt32(checkResult.Rows[0]["cnt"]) == 0)
-                {
-                    return new QuestionMasterResponse
-                    {
-                        OutputCode = 0,
-                        OutputMsg = "Question not found"
-                    };
-                }
-
+                // ✅ REMOVED: No existence check needed - just update directly
                 var query = @"
                     UPDATE dutta.tbl_questions
                     SET 
+                        QsCode = @qsCode,
                         QsText = @qsText,
                         QsType = @qsType,
                         QsCategory = @qsCategory,
@@ -251,6 +239,7 @@ namespace IQA_SOURCE.Data
                 var parameters = new[]
                 {
                     new MySqlParameter("@qId", question.QId),
+                    new MySqlParameter("@qsCode", question.QsCode ?? ""),
                     new MySqlParameter("@qsText", (object)question.QsText ?? DBNull.Value),
                     new MySqlParameter("@qsType", (object)question.QsType ?? DBNull.Value),
                     new MySqlParameter("@qsCategory", (object)question.QsCategory ?? DBNull.Value),

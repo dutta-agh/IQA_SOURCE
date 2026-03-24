@@ -516,7 +516,7 @@ namespace IQA_SOURCE.Data
                         
                         -- Reference Image (Master)
                         im.im_file_name AS MasterImageName,
-                        im_file_path AS MasterImageUrl,
+                        im.im_file_path AS MasterImageUrl,
                         im.im_width AS MasterWidth,
                         im.im_height AS MasterHeight,
                         im.im_dpi_x AS MasterDpiX,
@@ -529,7 +529,7 @@ namespace IQA_SOURCE.Data
                         
                         -- Rated Image (Linked)
                         il.il_file_name AS LinkedImageName,
-                        il_file_path AS LinkedImageUrl,
+                        il.il_file_path AS LinkedImageUrl,
                         il.il_width AS LinkedWidth,
                         il.il_height AS LinkedHeight,
                         il.il_dpi_x AS LinkedDpiX,
@@ -550,7 +550,7 @@ namespace IQA_SOURCE.Data
                     LEFT JOIN image_master im ON iqr.iqr_im_id = im.im_id
                     LEFT JOIN image_linked il ON iqr.iqr_il_id = il.il_id
                     LEFT JOIN image_groups ig ON im.im_group_code = ig.ig_code
-                    WHERE 1=1";
+                    WHERE iqr.iqr_il_id <> 0";  // ✅ FIXED: Exclude raw/main image rows (where il_id = 0)
 
                 if (!string.IsNullOrEmpty(assessmentCode))
                     query += " AND iqr.iqr_assessment_code = @assessmentCode";
@@ -577,7 +577,7 @@ namespace IQA_SOURCE.Data
 
                         MasterImageName = row["MasterImageName"]?.ToString(),
                         MasterImageUrl = ImageUrlHelper.BuildImageUrl(row["MasterImageUrl"]?.ToString()),
-                        MasterWidth = row["MasterWidth"] != DBNull.Value ? Convert.ToInt32( row["MasterWidth"]) : null,
+                        MasterWidth = row["MasterWidth"] != DBNull.Value ? Convert.ToInt32(row["MasterWidth"]) : null,
                         MasterHeight = row["MasterHeight"] != DBNull.Value ? Convert.ToInt32(row["MasterHeight"]) : null,
                         MasterDpiX = row["MasterDpiX"] != DBNull.Value ? Convert.ToDouble(row["MasterDpiX"]) : null,
                         MasterDpiY = row["MasterDpiY"] != DBNull.Value ? Convert.ToDouble(row["MasterDpiY"]) : null,

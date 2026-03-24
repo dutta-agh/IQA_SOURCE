@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = "_AdminLayoutDynamic";
     ViewData["Title"] = "Admin Users";
 }
@@ -25,9 +25,20 @@
             font-weight: 600;
         }
 
-        .role-admin { background: #667eea; color: white; }
-        .role-editor { background: #20c997; color: white; }
-        .role-viewer { background: #6c757d; color: white; }
+        .role-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .role-editor {
+            background: #20c997;
+            color: white;
+        }
+
+        .role-viewer {
+            background: #6c757d;
+            color: white;
+        }
 
         .status-badge {
             padding: 5px 10px;
@@ -35,8 +46,15 @@
             font-size: 0.85rem;
         }
 
-        .status-active { background: #d4edda; color: #155724; }
-        .status-inactive { background: #f8d7da; color: #721c24; }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 }
 
@@ -53,8 +71,6 @@
             <tr>
                 <th>User ID</th>
                 <th>Username</th>
-                <th>Full Name</th>
-                <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
                 <th>Last Login</th>
@@ -67,7 +83,7 @@
 </div>
 
 <!-- Add/Edit User Modal -->
-<div class="modal fade" id="userModal" tabindex="-1">
+<div class="modal fade" id="userModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
@@ -79,7 +95,7 @@
             <div class="modal-body">
                 <form id="userForm">
                     <input type="hidden" id="auId" value="0">
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Username <span class="text-danger">*</span></label>
@@ -95,23 +111,12 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="auFullName" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="auEmail" required>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
                             <label class="form-label">Role <span class="text-danger">*</span></label>
                             <select class="form-select" id="auRole" required>
                                 <option value="">-- Select Role --</option>
-                                <option value="ADMIN">Administrator</option>
-                                <option value="EDITOR">Editor</option>
-                                <option value="VIEWER">Viewer</option>
+                                <option value="Admin">Administrator</option>
+                                <option value="Operator">Operator</option>
+                                <option value="Viewer">Viewer</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -146,57 +151,53 @@
         let usersTable;
         let isEditMode = false;
         let currentUsers = [];
+        let userModal; // ✅ Store modal instance globally
 
         $(document).ready(function() {
+            // ✅ Initialize modal instance once
+            userModal = new bootstrap.Modal(document.getElementById('userModal'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+
             initializeTable();
             loadUsers();
+
+            // ✅ Fix dropdown closing issue - allow clicks inside dropdown menu
+            $(document).on('click', '.modal', function(e) {
+                if ($(e.target).hasClass('dropdown-menu')) {
+                    e.stopPropagation();
+                }
+            });
         });
 
         function initializeTable() {
             usersTable = $('#usersTable').DataTable({
                 data: [],
                 columns: [
-                    { 
-                        data: function(row) {
-                            return row.auId || row.AuId || '';
-                        },
-                        defaultContent: '',
-                        render: function(data) {    
-                            return `<span class="badge bg-secondary">#${data}</span>`;
-                        }
-                    },
-                    { 
-                        data: function(row) {
-                            return row.auUsername || row.AuUsername || '';
-                        },
-                        defaultContent: '' 
-                    },
-                    { 
-                        data: function(row) {
-                            return row.auUserName || row.AuUserName || '';
-                        },
-                        defaultContent: '' 
-                    },
-                    { 
-                        data: function(row) {
-                            return row.auEmail || row.AuEmail || '';
-                        },
-                        defaultContent: '' 
-                    },
                     {
                         data: function(row) {
-                            return row.auRole || row.AuRole || '';
+                            return row.auId || '';
                         },
                         defaultContent: '',
                         render: function(data) {
-                            const roleClass = data === 'ADMIN' ? 'role-admin' : data === 'EDITOR' ? 'role-editor' : 'role-viewer';
+                            return `<span class="badge bg-secondary">#${escapeHtml(data)}</span>`;
+                        }
+                    },
+                    {
+                        data: 'username',
+                        defaultContent: ''
+                    },
+                    {
+                        data: 'user_role',
+                        defaultContent: '',
+                        render: function(data) {
+                            const roleClass = data === 'Admin' ? 'role-admin' : data === 'Operator' ? 'role-editor' : 'role-viewer';
                             return `<span class="role-badge ${roleClass}">${escapeHtml(data || 'N/A')}</span>`;
                         }
                     },
                     {
-                        data: function(row) {
-                            return row.auActive || row.AuActive || '';
-                        },
+                        data: 'is_active',
                         defaultContent: '',
                         render: function(data) {
                             const statusClass = data === 'Y' ? 'status-active' : 'status-inactive';
@@ -205,9 +206,7 @@
                         }
                     },
                     {
-                        data: function(row) {
-                            return row.auLastLogin || row.AuLastLogin || null;
-                        },
+                        data: 'last_login',
                         defaultContent: 'Never',
                         render: function(data) {
                             return data ? new Date(data).toLocaleString() : '<em class="text-muted">Never</em>';
@@ -218,7 +217,7 @@
                         orderable: false,
                         defaultContent: '',
                         render: function(data, type, row) {
-                            const auId = row.auId || row.AuId || '';
+                            const auId = row.auId || '';
                             if (!auId) return '';
                             const escapedId = escapeHtml(auId.toString());
                             return `
@@ -278,17 +277,23 @@
             $('#userForm')[0].reset();
             $('#auId').val('0');
             $('#auUsername').prop('readonly', false);
-            $('#auPassword').prop('required', true).show();
+            $('#auPassword').prop('required', true);
             $('#passwordHint').text('Minimum 8 characters');
+
+            // ✅ FIXED: Set default values for dropdowns
+            $('#auRole').val('');
             $('#auActive').val('Y');
+
             $('#formError').addClass('d-none');
 
-            var modal = new bootstrap.Modal(document.getElementById('userModal'));
-            modal.show();
+            // ✅ Use stored modal instance and add slight delay
+            setTimeout(function() {
+                userModal.show();
+            }, 100);
         }
 
         function editUser(auId) {
-            const user = currentUsers.find(u => (u.auId || u.AuId) === auId);
+            const user = currentUsers.find(u => u.auId === auId);
             if (!user) {
                 showAlert('User not found', 'danger');
                 return;
@@ -296,18 +301,24 @@
 
             isEditMode = true;
             $('#modalTitle').html('<i class="fas fa-user-edit"></i> Edit Admin User');
-            $('#auId').val(user.auId || user.AuId || '');
-            $('#auUsername').val(user.auUsername || user.AuUsername || '').prop('readonly', true);
+            $('#auId').val(user.auId || '');
+            $('#auUsername').val(user.username || '').prop('readonly', true);
             $('#auPassword').val('').prop('required', false);
             $('#passwordHint').text('Leave blank to keep existing password');
-            $('#auFullName').val(user.auUserName || user.AuUserName || '');
-            $('#auEmail').val(user.auEmail || user.AuEmail || '');
-            $('#auRole').val(user.auRole || user.AuRole || 'Operator');
-            $('#auActive').val(user.auActive || user.AuActive || 'Y');
+
+            // ✅ FIXED: Set dropdown values explicitly
+            console.log('Setting role to:', user.user_role);
+            $('#auRole').val(user.user_role || 'Operator').trigger('change');
+
+            console.log('Setting status to:', user.is_active);
+            $('#auActive').val(user.is_active || 'Y').trigger('change');
+
             $('#formError').addClass('d-none');
 
-            var modal = new bootstrap.Modal(document.getElementById('userModal'));
-            modal.show();
+            // ✅ Use stored modal instance and add slight delay
+            setTimeout(function() {
+                userModal.show();
+            }, 100);
         }
 
         function showSaveConfirmation() {
@@ -315,14 +326,12 @@
                 auId: parseInt($('#auId').val()) || 0,
                 auUsername: $('#auUsername').val().trim(),
                 auPassword: $('#auPassword').val().trim(),
-                auFullName: $('#auFullName').val().trim(),
-                auEmail: $('#auEmail').val().trim(),
                 auRole: $('#auRole').val(),
                 auActive: $('#auActive').val()
             };
 
             // Validation
-            if (!data.auUsername || !data.auFullName || !data.auEmail || !data.auRole) {
+            if (!data.auUsername || !data.auRole) {
                 showFormError('Please fill all required fields');
                 return;
             }
@@ -334,11 +343,6 @@
                 return;
             } else if (data.auPassword && data.auPassword.length < 8) {
                 showFormError('Password must be at least 8 characters');
-                return;
-            }
-
-            if (!isValidEmail(data.auEmail)) {
-                showFormError('Please enter a valid email address');
                 return;
             }
 
@@ -357,14 +361,15 @@
 
         function saveUser() {
             const data = {
+                // ✅ CRITICAL: Match the [JsonPropertyName] attributes in AdminUser model
                 auId: $('#auId').val().trim() || "",
-                auUsername: $('#auUsername').val().trim(),
-                auUserName: $('#auFullName').val().trim(),
-                auEmail: $('#auEmail').val().trim(),
-                auRole: $('#auRole').val(),
-                auActive: $('#auActive').val(),
-                auPasswordHash: $('#auPassword').val().trim()   
+                username: $('#auUsername').val().trim(),        // Maps to [JsonPropertyName("username")] -> AuUsername
+                user_role: $('#auRole').val(),                  // Maps to [JsonPropertyName("user_role")] -> AuRole
+                is_active: $('#auActive').val(),                // Maps to [JsonPropertyName("is_active")] -> AuActive
+                password_hash: $('#auPassword').val().trim()    // Maps to [JsonPropertyName("password_hash")] -> AuPasswordHash
             };
+
+            console.log('Sending data to server:', data); // ✅ Debug log
 
             showLoader();
             $.ajax({
@@ -374,17 +379,20 @@
                 data: JSON.stringify(data),
                 success: function(response) {
                     hideLoader();
+                    console.log('Save response:', response); // ✅ Debug log
                     if (response.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                        userModal.hide();
                         loadUsers();
                         showAlert(response.message || 'User saved successfully', 'success');
                     } else {
                         showFormError(response.message);
                     }
                 },
-                error: function() {
+                error: function(xhr) {
                     hideLoader();
-                    showFormError('An error occurred while saving');
+                    console.error('Save error:', xhr); // ✅ Debug log
+                    const errorMsg = xhr.responseJSON?.message || 'An error occurred while saving';
+                    showFormError(errorMsg);
                 }
             });
         }
@@ -395,8 +403,8 @@
         }
 
         function showDeleteConfirmation(auId) {
-            const user = currentUsers.find(u => u.auId === auId || u.AuId === auId);
-            const username = user ? (user.auUsername || user.AuUsername) : 'User';
+            const user = currentUsers.find(u => u.auId === auId);
+            const username = user ? user.username : 'User';
 
             showConfirmationModal(
                 'Confirm Delete',
@@ -428,11 +436,6 @@
                     showAlert('Error deleting admin user', 'danger');
                 }
             });
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
-            return emailRegex.test(email);
         }
     </script>
 }

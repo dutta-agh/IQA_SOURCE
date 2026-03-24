@@ -385,9 +385,12 @@ namespace IQA_SOURCE.Controllers
 
             try
             {
+                // ✅ FIXED: Better handling of QsId parsing
                 var question = new QuestionMaster
                 {
-                    QId = model.TryGetProperty("qsId", out var qId) ? qId.GetInt32() : 0,
+                    QId = model.TryGetProperty("qsId", out var qId) && qId.ValueKind != JsonValueKind.Null 
+                        ? qId.GetInt32() 
+                        : 0,
                     QsCode = model.TryGetProperty("qsCode", out var qsCode) ? qsCode.GetString() : null,
                     QsText = model.TryGetProperty("qsText", out var qsText) ? qsText.GetString() : null,
                     QsType = model.TryGetProperty("qsType", out var qsType) ? qsType.GetString() : null,
@@ -397,6 +400,9 @@ namespace IQA_SOURCE.Controllers
                     QsActive = model.TryGetProperty("qsActive", out var qsActive) ? ConvertToIntActive(qsActive) : 1
                 };
 
+                // ✅ Log for debugging
+                _logger.LogInformation($"SaveQuestion - QId: {question.QId}, QsCode: {question.QsCode}, Action: {(question.QId > 0 ? "UPDATE" : "INSERT")}");
+
                 QuestionMasterResponse result = question.QId > 0
                     ? await _questionMasterRepository.UpdateQuestion(question, userId)
                     : await _questionMasterRepository.InsertQuestion(question, userId);
@@ -405,6 +411,7 @@ namespace IQA_SOURCE.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in SaveQuestion");
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
@@ -2281,12 +2288,19 @@ namespace IQA_SOURCE.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Unauthorized" });
 
-            if (string.IsNullOrWhiteSpace(model.AuUserName) )
-                return Json(new { success = false, message = "Username and full name are required" });
+            // ✅ Log the incoming data for debugging
+            _logger.LogInformation($"SaveAdminUser - Received Model: AuId={model?.AuId}, AuUsername={model?.AuUsername}, AuRole={model?.AuRole}, AuActive={model?.AuActive}");
+
+            // ✅ Check after logging to see what's actually received
+            if (model == null || string.IsNullOrWhiteSpace(model.AuUsername) || string.IsNullOrWhiteSpace(model.AuRole))
+            {
+                _logger.LogWarning($"Validation failed - Model: {(model == null ? "null" : $"Username={model.AuUsername}, Role={model.AuRole}")}");
+                return Json(new { success = false, message = "Username and role are required" });
+            }
 
             try
             {
-                var result = string.IsNullOrEmpty(model.AuId)
+                var result = string.IsNullOrEmpty(model.AuId) || model.AuId == "0"
                     ? await _adminUserRepository.InsertAdminUser(model, userId)
                     : await _adminUserRepository.UpdateAdminUser(model, userId);
 
@@ -2294,6 +2308,7 @@ namespace IQA_SOURCE.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error saving admin user");
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
