@@ -349,7 +349,7 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             width: 100%;
-            justify-content:space-between;
+            justify-content: space-between;
         }
 
         .rating-btn-wrapper {
@@ -826,7 +826,7 @@
                 {
                     var img = ratableImages[0];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                      
+
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -848,7 +848,7 @@
                 {
                     var img = ratableImages[2];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-    
+
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -880,10 +880,10 @@
                     </div>
 
                     <div style="position: absolute;
-            bottom: 3%;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
-            border-radius: 10px;
-            overflow: hidden;">
+                bottom: 3%;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+                border-radius: 10px;
+                overflow: hidden;">
                         <div class="footer">
                             <div class="footer-info">
                                 <div class="footer-status ready" id="footerStatus">All images rated in this set</div>
@@ -904,7 +904,7 @@
                 {
                     var img = ratableImages[1];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                        
+
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -926,7 +926,7 @@
                 {
                     var img = ratableImages[3];
                     <div class="image-card" id="card-@img.ImageId-@img.IsRawImage.ToString().ToLower()" data-image-id="@img.ImageId" data-is-raw="@img.IsRawImage.ToString().ToLower()">
-                       
+
                         <div class="image-container"><img src="@img.ImagePath" alt="Image" loading="eager"></div>
                         <div class="rating-section">
                             <div class="rating-title">Quality Rating</div>
@@ -956,238 +956,256 @@
         <h2>Thank You!</h2>
         <p>Your ratings have been recorded successfully.</p>
         <div class="redirect-message">
-            Closing in <span class="redirect-timer" id="redirectTimer">5</span>s
+            Do not close this window. Please call & show this Browser window to your instructor for his confirmation.
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // ✅ MILLISECOND-PRECISION TIME TRACKING
-        // All timestamps and durations are in milliseconds for precision analytics
+                // ✅ MILLISECOND-PRECISION TIME TRACKING
+                // All timestamps and durations are in milliseconds for precision analytics
 
-        const sessionId = '@Model.SessionId';
-        const assessmentCode = '@Model.AssessmentCode';
-        const rawImageSetId = @Model.RawImage.RisId;
-        const totalImages = @ratableImages.Count;
-        const FS_KEY = 'iqa_fs_granted';
+                const sessionId = '@Model.SessionId';
+                const assessmentCode = '@Model.AssessmentCode';
+                const rawImageSetId = @Model.RawImage.RisId;
+                const totalImages = @ratableImages.Count;
+                const FS_KEY = 'iqa_fs_granted';
 
-        // Data structures for tracking ratings and timing
-        const ratings = new Map(); // Rating score (-3 to +3)
-        const imageTimes = new Map(); // Per-image time in milliseconds
-        const imageDisplayTimes = new Map(); // When each image was displayed
+                // Data structures for tracking ratings and timing
+                const ratings = new Map(); // Rating score (-3 to +3)
+                const imageTimes = new Map(); // Per-image time in milliseconds
+                const imageDisplayTimes = new Map(); // When each image was displayed
 
-        let clientIpAddress = '';
-        let sessionStartTime = 0; // In milliseconds
+                let clientIpAddress = '';
+                let sessionStartTime = 0; // In milliseconds
 
-        // Progress tracking
-        let totalAssessmentSets = 0;
-        let completedAssessmentSets = 0;
-        let currentSetNumber = 1;
+                // Progress tracking
+                let totalAssessmentSets = 0;
+                let completedAssessmentSets = 0;
+                let currentSetNumber = 1;
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // Record session start time in milliseconds
-            sessionStartTime = Date.now();
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Record session start time in milliseconds
+                    sessionStartTime = Date.now();
 
-            // Get client IP
-            fetch('https://api.ipify.org?format=json')
-                .then(r => r.json())
-                .then(d => { clientIpAddress = d.ip || ''; })
-                .catch(() => {});
+                    // Get client IP
+                    fetch('https://api.ipify.org?format=json')
+                        .then(r => r.json())
+                        .then(d => { clientIpAddress = d.ip || ''; })
+                        .catch(() => {});
 
-            // Initialize rating and time tracking maps
-            document.querySelectorAll('[data-image-id][data-is-raw]').forEach(card => {
-                const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
-                ratings.set(key, null);
-                imageTimes.set(key, 0);
-                imageDisplayTimes.set(key, Date.now()); // Record when image becomes visible
-            });
+                    // Initialize rating and time tracking maps
+                    document.querySelectorAll('[data-image-id][data-is-raw]').forEach(card => {
+                        const key = makeKey(card.dataset.imageId, card.dataset.isRaw);
+                        ratings.set(key, null);
+                        imageTimes.set(key, 0);
+                        imageDisplayTimes.set(key, Date.now()); // Record when image becomes visible
+                    });
 
-            initFullscreen();
-            updateSubmitInfo();
-            loadAssessmentProgress();
-        });
-
-        function makeKey(imageId, isRaw) {
-            return `${imageId}|${isRaw}`;
-        }
-
-        function setRating(imageId, isRaw, score) {
-            const key = makeKey(imageId, isRaw);
-            const prev = ratings.get(key);
-
-            // ✅ Calculate time taken in milliseconds
-            const displayStartTime = imageDisplayTimes.get(key) || Date.now();
-            const timeTakenMilliseconds = Date.now() - displayStartTime;
-
-            if (prev === score) {
-                // Unrating - clear the rating
-                ratings.set(key, null);
-                imageTimes.delete(key);
-                imageDisplayTimes.set(key, Date.now()); // Reset for potential re-rating
-                clearCardButtons(imageId, isRaw);
-                updateCardState(imageId, isRaw);
-                updateSubmitInfo();
-                return;
-            }
-
-            // Setting a new rating
-            ratings.set(key, score);
-            imageTimes.set(key, timeTakenMilliseconds); // Store time in milliseconds
-
-            console.log(`Image ${imageId} rated with score ${score} in ${timeTakenMilliseconds}ms`);
-
-            clearCardButtons(imageId, isRaw);
-            const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
-            if (btn) btn.classList.add('active');
-
-            updateCardState(imageId, isRaw);
-            updateSubmitInfo();
-        }
-
-        function clearCardButtons(imageId, isRaw) {
-            for (let s = -3; s <= 3; s++) {
-                const btn = document.getElementById(`btn-${imageId}-${isRaw}-${s}`);
-                if (btn) btn.classList.remove('active');
-            }
-        }
-
-        function updateCardState(imageId, isRaw) {
-            const card = document.getElementById(`card-${imageId}-${isRaw}`);
-            if (card) card.classList.toggle('rated', ratings.get(makeKey(imageId, isRaw)) !== null);
-        }
-
-        function updateSubmitInfo() {
-            const ratedCount = [...ratings.values()].filter(v => v !== null).length;
-            const remaining = totalImages - ratedCount;
-
-            const footerStatus = document.getElementById('footerStatus');
-            const submitButton = document.getElementById('submitButton');
-
-            if (remaining === 0) {
-                footerStatus.textContent = 'Ready to submit!';
-                footerStatus.className = 'footer-status ready';
-                submitButton.disabled = false;
-            } else {
-                footerStatus.textContent = `Rate all ${totalImages} images to submit`;
-                footerStatus.className = 'footer-status';
-                submitButton.disabled = true;
-            }
-        }
-
-        async function submitAll() {
-            if ([...ratings.values()].some(v => v === null)) return;
-
-            const submitButton = document.getElementById('submitButton');
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-            // ✅ MILLISECOND-PRECISION TIMING
-            const totalSessionTimeMilliseconds = Math.round(Date.now() - sessionStartTime);
-
-            const ratingList = [];
-
-            // Build rating list WITH millisecond-precision time tracking
-            ratings.forEach((score, key) => {
-                const [imageId, isRawStr] = key.split('|');
-                const timeTakenMs = imageTimes.get(key) || 0;
-
-                ratingList.push({
-                    imageId: parseInt(imageId),
-                    isRawImage: isRawStr === 'true',
-                    rating: score,
-                    timeTakenMilliseconds: Math.round(timeTakenMs), // Milliseconds
-                    displayDurationMilliseconds: Math.round(timeTakenMs), // Same as time taken
-                    ratingTimestamp: new Date().toISOString()
-                });
-            });
-
-            // Add reference image
-            ratingList.push({
-                imageId: @Model.RawImage.RisId,
-                isRawImage: true,
-                rating: 0,
-                timeTakenMilliseconds: 0,
-                displayDurationMilliseconds: 0,
-                ratingTimestamp: new Date().toISOString()
-            });
-
-            console.log('Submitting ratings with timing:', {
-                totalSessionTimeMilliseconds,
-                ratingCount: ratingList.length,
-                ratings: ratingList
-            });
-
-            try {
-                const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId,
-                        assessmentCode,
-                        rawImageSetId,
-                        ratings: ratingList,
-                        ipAddress: clientIpAddress,
-                        totalSessionTimeMilliseconds: Math.round(totalSessionTimeMilliseconds),
-                        setCompletionTime: new Date().toISOString()
-                    })
+                    initFullscreen();
+                    updateSubmitInfo();
+                    loadAssessmentProgress();
                 });
 
-                const data = await response.json();
-
-                if (data.success) {
-                    console.log('Submission successful with millisecond timing:', data);
-
-                    window.disableLeavePrompt?.();
-
-                    if (data.data && data.data.hasMoreImages === false) {
-                        console.log('All sets completed. Showing thank you modal.');
-                        showThankYouModal();
-                    } else if (data.data && data.data.hasMoreImages === true) {
-                        console.log('More images available. Loading next set...');
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        if (sessionStorage.getItem(FS_KEY) === '1') {
-                            sessionStorage.setItem(FS_KEY, '1');
-                        }
-                        window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
-                    } else {
-                        console.log('Checking progress...');
-                        if (data.data?.completedSets >= data.data?.totalSets) {
-                            console.log('All sets completed. Showing thank you modal.');
-                            showThankYouModal();
-                        } else {
-                            console.log('More sets available. Loading next set...');
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                            if (sessionStorage.getItem(FS_KEY) === '1') {
-                                sessionStorage.setItem(FS_KEY, '1');
-                            }
-                            window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
-                        }
-                    }
-                } else {
-                    alert('Error: ' + data.message);
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
+                function makeKey(imageId, isRaw) {
+                    return `${imageId}|${isRaw}`;
                 }
-            } catch (error) {
-                console.error('Network error:', error);
-                alert('Network error. Please try again.');
-                submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
-            }
-        }
 
-        function showThankYouModal() {
-            window.disableLeavePrompt?.();
-            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-            sessionStorage.removeItem(FS_KEY);
+                function setRating(imageId, isRaw, score) {
+                    const key = makeKey(imageId, isRaw);
+                    const prev = ratings.get(key);
 
-            const modal = document.getElementById('thankyouModal');
-            const timerEl = document.getElementById('redirectTimer');
-            modal.classList.add('show');
+                    // ✅ Calculate time taken in milliseconds
+                    const displayStartTime = imageDisplayTimes.get(key) || Date.now();
+                    const timeTakenMilliseconds = Date.now() - displayStartTime;
 
-            let countdown = 5;
-            const interval = setInterval(() => {
+                    if (prev === score) {
+                        // Unrating - clear the rating
+                        ratings.set(key, null);
+                        imageTimes.delete(key);
+                        imageDisplayTimes.set(key, Date.now()); // Reset for potential re-rating
+                        clearCardButtons(imageId, isRaw);
+                        updateCardState(imageId, isRaw);
+                        updateSubmitInfo();
+                        return;
+                    }
+
+                    // Setting a new rating
+                    ratings.set(key, score);
+                    imageTimes.set(key, timeTakenMilliseconds); // Store time in milliseconds
+
+                    console.log(`Image ${imageId} rated with score ${score} in ${timeTakenMilliseconds}ms`);
+
+                    clearCardButtons(imageId, isRaw);
+                    const btn = document.getElementById(`btn-${imageId}-${isRaw}-${score}`);
+                    if (btn) btn.classList.add('active');
+
+                    updateCardState(imageId, isRaw);
+                    updateSubmitInfo();
+                }
+
+                function clearCardButtons(imageId, isRaw) {
+                    for (let s = -3; s <= 3; s++) {
+                        const btn = document.getElementById(`btn-${imageId}-${isRaw}-${s}`);
+                        if (btn) btn.classList.remove('active');
+                    }
+                }
+
+                function updateCardState(imageId, isRaw) {
+                    const card = document.getElementById(`card-${imageId}-${isRaw}`);
+                    if (card) card.classList.toggle('rated', ratings.get(makeKey(imageId, isRaw)) !== null);
+                }
+
+                function updateSubmitInfo() {
+                    const ratedCount = [...ratings.values()].filter(v => v !== null).length;
+                    const remaining = totalImages - ratedCount;
+
+                    const footerStatus = document.getElementById('footerStatus');
+                    const submitButton = document.getElementById('submitButton');
+
+                    if (remaining === 0) {
+                        footerStatus.textContent = 'Ready to submit!';
+                        footerStatus.className = 'footer-status ready';
+                        submitButton.disabled = false;
+                    } else {
+                        footerStatus.textContent = `Rate all ${totalImages} images to submit`;
+                        footerStatus.className = 'footer-status';
+                        submitButton.disabled = true;
+                    }
+                }
+
+                async function submitAll() {
+                    if ([...ratings.values()].some(v => v === null)) return;
+
+                    const submitButton = document.getElementById('submitButton');
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+                    // ✅ MILLISECOND-PRECISION TIMING
+                    const totalSessionTimeMilliseconds = Math.round(Date.now() - sessionStartTime);
+
+                    const ratingList = [];
+
+                    // Build rating list WITH millisecond-precision time tracking
+                    ratings.forEach((score, key) => {
+                        const [imageId, isRawStr] = key.split('|');
+                        const timeTakenMs = imageTimes.get(key) || 0;
+
+                        ratingList.push({
+                            imageId: parseInt(imageId),
+                            isRawImage: isRawStr === 'true',
+                            rating: score,
+                            timeTakenMilliseconds: Math.round(timeTakenMs), // Milliseconds
+                            displayDurationMilliseconds: Math.round(timeTakenMs), // Same as time taken
+                            ratingTimestamp: new Date().toISOString()
+                        });
+                    });
+
+                    // Add reference image
+                    ratingList.push({
+                        imageId: @Model.RawImage.RisId,
+                        isRawImage: true,
+                        rating: 0,
+                        timeTakenMilliseconds: 0,
+                        displayDurationMilliseconds: 0,
+                        ratingTimestamp: new Date().toISOString()
+                    });
+
+                    console.log('Submitting ratings with timing:', {
+                        totalSessionTimeMilliseconds,
+                        ratingCount: ratingList.length,
+                        ratings: ratingList
+                    });
+
+                    try {
+                        const response = await fetch(buildApiUrl('/Assessment/SubmitSortRatings'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sessionId,
+                                assessmentCode,
+                                rawImageSetId,
+                                ratings: ratingList,
+                                ipAddress: clientIpAddress,
+                                totalSessionTimeMilliseconds: Math.round(totalSessionTimeMilliseconds),
+                                setCompletionTime: new Date().toISOString()
+                            })
+                        });
+
+                        const data = await response.json();
+
+                                 if (data.success) {
+                                        console.log('Submission successful with millisecond timing:', data);
+
+                                        window.disableLeavePrompt?.();
+
+                                        if (data.data && data.data.hasMoreImages === false) {
+                                            console.log('All sets completed. Showing thank you modal.');
+                                            showThankYouModal();
+                                        } else if (data.data && data.data.hasMoreImages === true) {
+                                            console.log('More images available. Loading next set...');
+                                            // Prevent fullscreen prompt on next page by setting flag BEFORE navigation
+                                            sessionStorage.setItem(FS_KEY, '1');
+                                            // Exit fullscreen gracefully before navigation
+                                            if (document.fullscreenElement) {
+                                                document.exitFullscreen().then(() => {
+                                                    // Navigate after exiting fullscreen
+                                                    window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                                }).catch(() => {
+                                                    // If exit fails, navigate anyway
+                                                    window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                                });
+                                            } else {
+                                                window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                            }
+                                        } else {
+                                            console.log('Checking progress...');
+                                            if (data.data?.completedSets >= data.data?.totalSets) {
+                                                console.log('All sets completed. Showing thank you modal.');
+                                                showThankYouModal();
+                                            } else {
+                                                console.log('More sets available. Loading next set...');
+                                                // Prevent fullscreen prompt on next page by setting flag BEFORE navigation
+                                                sessionStorage.setItem(FS_KEY, '1');
+                                                // Exit fullscreen gracefully before navigation
+                                                if (document.fullscreenElement) {
+                                                    document.exitFullscreen().then(() => {
+                                                        // Navigate after exiting fullscreen
+                                                        window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                                    }).catch(() => {
+                                                        // If exit fails, navigate anyway
+                                                        window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                                    });
+                                                } else {
+                                                    window.location.replace(buildApiUrl(`/Assessment/SortAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                                                }
+                                            }
+                                        }
+                                    } else {
+                            alert('Error: ' + data.message);
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
+                        }
+                    } catch (error) {
+                        console.error('Network error:', error);
+                        alert('Network error. Please try again.');
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-check"></i> Submit Ratings';
+                    }
+                }
+
+                function showThankYouModal() {
+                    window.disableLeavePrompt?.();
+                    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+                    sessionStorage.removeItem(FS_KEY);
+
+                    const modal = document.getElementById('thankyouModal');
+                    const timerEl = document.getElementById('redirectTimer');
+                    modal.classList.add('show');
+
+                    let countdown = 5;
+        @*             const interval = setInterval(() => {
                 countdown--;
                 timerEl.textContent = countdown;
                 if (countdown <= 0) {
@@ -1199,74 +1217,74 @@
                         window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
                     }
                 }
-            }, 1000);
-        }
-
-        function isInFullscreen() {
-            return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
-        }
-
-        function initFullscreen() {
-            const alreadyGranted = sessionStorage.getItem(FS_KEY) === '1';
-            if (isInFullscreen()) {
-                sessionStorage.setItem(FS_KEY, '1');
-                return;
-            }
-            if (alreadyGranted) requestFullscreenSilently();
-            else document.getElementById('fullscreenPrompt').classList.add('show');
-
-            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(evt =>
-                document.addEventListener(evt, () => {
-                    const toast = document.getElementById('fsToast');
-                    if (isInFullscreen()) toast.classList.remove('show');
-                    else if (sessionStorage.getItem(FS_KEY) === '1') toast.classList.add('show');
-                })
-            );
-        }
-
-        function requestFullscreenSilently() {
-            const el = document.documentElement;
-            const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-            if (req) req.call(el).catch(() => {});
-        }
-
-        function enterFullscreenAndStart() {
-            requestFullscreenSilently();
-            sessionStorage.setItem(FS_KEY, '1');
-            document.getElementById('fullscreenPrompt').classList.remove('show');
-        }
-
-        function reEnterFullscreen() {
-            requestFullscreenSilently();
-            document.getElementById('fsToast').classList.remove('show');
-        }
-
-        async function loadAssessmentProgress() {
-            try {
-                const response = await fetch(buildApiUrl(`/Assessment/GetImageAssessmentProgress?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`), {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (data.success && data.data) {
-                    totalAssessmentSets = data.data.totalSets;
-                    completedAssessmentSets = data.data.completedSets;
-                    currentSetNumber = completedAssessmentSets + 1;
-
-                    document.getElementById('footerSubtext').textContent = `${completedAssessmentSets} of ${totalAssessmentSets} sets completed`;
-
-                    console.log(`Progress: ${completedAssessmentSets}/${totalAssessmentSets} raw image sets completed`);
-                    console.log(`Currently on set: ${currentSetNumber}`);
-                } else {
-                    document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
+            }, 1000); *@
                 }
-            } catch (error) {
-                console.error('Error loading progress:', error);
-                document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
-            }
-        }
+
+                function isInFullscreen() {
+                    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+                }
+
+                function initFullscreen() {
+                    const alreadyGranted = sessionStorage.getItem(FS_KEY) === '1';
+                    if (isInFullscreen()) {
+                        sessionStorage.setItem(FS_KEY, '1');
+                        return;
+                    }
+                    if (alreadyGranted) requestFullscreenSilently();
+                    else document.getElementById('fullscreenPrompt').classList.add('show');
+
+                    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(evt =>
+                        document.addEventListener(evt, () => {
+                            const toast = document.getElementById('fsToast');
+                            if (isInFullscreen()) toast.classList.remove('show');
+                            else if (sessionStorage.getItem(FS_KEY) === '1') toast.classList.add('show');
+                        })
+                    );
+                }
+
+                function requestFullscreenSilently() {
+                    const el = document.documentElement;
+                    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+                    if (req) req.call(el).catch(() => {});
+                }
+
+                function enterFullscreenAndStart() {
+                    requestFullscreenSilently();
+                    sessionStorage.setItem(FS_KEY, '1');
+                    document.getElementById('fullscreenPrompt').classList.remove('show');
+                }
+
+                function reEnterFullscreen() {
+                    requestFullscreenSilently();
+                    document.getElementById('fsToast').classList.remove('show');
+                }
+
+                async function loadAssessmentProgress() {
+                    try {
+                        const response = await fetch(buildApiUrl(`/Assessment/GetImageAssessmentProgress?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`), {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success && data.data) {
+                            totalAssessmentSets = data.data.totalSets;
+                            completedAssessmentSets = data.data.completedSets;
+                            currentSetNumber = completedAssessmentSets + 1;
+
+                            document.getElementById('footerSubtext').textContent = `${completedAssessmentSets} of ${totalAssessmentSets} sets completed`;
+
+                            console.log(`Progress: ${completedAssessmentSets}/${totalAssessmentSets} raw image sets completed`);
+                            console.log(`Currently on set: ${currentSetNumber}`);
+                        } else {
+                            document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
+                        }
+                    } catch (error) {
+                        console.error('Error loading progress:', error);
+                        document.getElementById('footerSubtext').textContent = `0 of 0 sets completed`;
+                    }
+                }
     </script>
 }
 

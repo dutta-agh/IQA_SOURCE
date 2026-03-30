@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IQA")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d1bca3d759bc167de65b72e2125b60308396da72")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f9599b5cd62f56bc4916fd1d79eb518aea414052")]
 [assembly: System.Reflection.AssemblyProductAttribute("IQA")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IQA")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
