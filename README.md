@@ -1,4 +1,4 @@
-Here's the improved `README.md` file, incorporating the new content while maintaining the existing structure and information:
+﻿Here's the improved `README.md` file, incorporating the new content while maintaining the existing structure and information:
 
 # IQA SOURCE - Image Quality Assessment Platform
 
@@ -6,7 +6,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## ?? Table of Contents
+## 📋 Table of Contents
 
 - [Project Overview](#project-overview)
 - [Technology Stack](#technology-stack)
@@ -26,7 +26,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## ?? Project Overview
+## 🎯 Project Overview
 
 **IQA SOURCE** is an enterprise-grade assessment platform that enables:
 
@@ -44,7 +44,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## ??? Technology Stack
+## 🛠️ Technology Stack
 
 ### Backend
 - **Framework**: ASP.NET Core 8.0
@@ -66,82 +66,82 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## ??? System Architecture
+## 🏗️ System Architecture
 
-???????????????????????????????????????????????????????????
-?                    CLIENT BROWSER                        ?
-?              (Razor Pages + JavaScript)                  ?
-???????????????????????????????????????????????????????????
-                       ? HTTP/HTTPS
-???????????????????????????????????????????????????????????
-?              ASP.NET CORE 8 APPLICATION                 ?
-?  ????????????????????????????????????????????????????  ?
-?  ?         Middleware Pipeline                      ?  ?
-?  ?  - Exception Handling                            ?  ?
-?  ?  - Action Logging                                ?  ?
-?  ?  - Session Management                            ?  ?
-?  ?  - CORS & Security Headers                       ?  ?
-?  ????????????????????????????????????????????????????  ?
-?                                                          ?
-?  ????????????????????????????????????????????????????  ?
-?  ?         Controllers (API & Pages)                ?  ?
-?  ?  - Assessment Controller                         ?  ?
-?  ?  - Admin Controller                              ?  ?
-?  ?  - Home Controller                               ?  ?
-?  ????????????????????????????????????????????????????  ?
-?                                                          ?
-?  ????????????????????????????????????????????????????  ?
-?  ?  Services & Business Logic                       ?  ?
-?  ?  - AssessmentSequenceService                     ?  ?
-?  ?  - ImageMetadataService                          ?  ?
-?  ?  - SessionService                                ?  ?
-?  ????????????????????????????????????????????????????  ?
-?                                                          ?
-?  ????????????????????????????????????????????????????  ?
-?  ?  Repositories & Data Access                      ?  ?
-?  ?  - Assessment Repositories                       ?  ?
-?  ?  - Image Repositories                            ?  ?
-?  ?  - User Response Repositories                    ?  ?
-?  ????????????????????????????????????????????????????  ?
-???????????????????????????????????????????????????????????
-                       ?
-        ???????????????????????????????
-        ?                             ?
-   ????????????            ?????????????????
-   ? SQL SERVER?            ? FILE STORAGE  ?
-   ? DATABASE  ?            ? (Linux Path)  ?
-   ????????????            ?????????????????
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT BROWSER                        │
+│              (Razor Pages + JavaScript)                  │
+└──────────────────────┬──────────────────────────────────┘
+                       │ HTTP/HTTPS
+┌──────────────────────▼──────────────────────────────────┐
+│              ASP.NET CORE 8 APPLICATION                 │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │         Middleware Pipeline                      │  │
+│  │  - Exception Handling                            │  │
+│  │  - Action Logging                                │  │
+│  │  - Session Management                            │  │
+│  │  - CORS & Security Headers                       │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │         Controllers (API & Pages)                │  │
+│  │  - Assessment Controller                         │  │
+│  │  - Admin Controller                              │  │
+│  │  - Home Controller                               │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Services & Business Logic                       │  │
+│  │  - AssessmentSequenceService                     │  │
+│  │  - ImageMetadataService                          │  │
+│  │  - SessionService                                │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Repositories & Data Access                      │  │
+│  │  - Assessment Repositories                       │  │
+│  │  - Image Repositories                            │  │
+│  │  - User Response Repositories                    │  │
+│  └──────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+   ┌────▼─────┐            ┌────────▼──────┐
+   │ SQL SERVER│            │ FILE STORAGE  │
+   │ DATABASE  │            │ (Linux Path)  │
+   └──────────┘            └───────────────┘
 
 ---
 
-## ?? Project Structure
+## 📁 Project Structure
 
 ### Root Directory
 IQA_SOURCE/
-??? Controllers/              # ASP.NET Core Controllers
-??? Models/                   # Data Models & ViewModels
-??? Services/                 # Business Logic Layer
-??? Data/                     # Database Access Layer (Repositories)
-??? Middleware/               # Custom HTTP Middleware
-??? Views/                    # Razor Pages & Layouts
-?   ??? Assessment/          # Assessment-specific views
-?   ??? Admin/               # Admin dashboard views
-?   ??? Shared/              # Shared layouts
-??? wwwroot/                 # Static files (CSS, JS, fonts)
-??? appsettings.json         # Application configuration
-??? Program.cs               # Application startup
-??? README.md                # This file
+├── Controllers/              # ASP.NET Core Controllers
+├── Models/                   # Data Models & ViewModels
+├── Services/                 # Business Logic Layer
+├── Data/                     # Database Access Layer (Repositories)
+├── Middleware/               # Custom HTTP Middleware
+├── Views/                    # Razor Pages & Layouts
+│   ├── Assessment/          # Assessment-specific views
+│   ├── Admin/               # Admin dashboard views
+│   └── Shared/              # Shared layouts
+├── wwwroot/                 # Static files (CSS, JS, fonts)
+├── appsettings.json         # Application configuration
+├── Program.cs               # Application startup
+└── README.md                # This file
 
 ---
 
-## ?? File Directory Guide
+## 📂 File Directory Guide
 
 ### **Controllers/** - Request Handling
 Controllers/
-??? AssessmentController.cs      # Assessment endpoints (Image/Sort/Speed/Colorblindness)
-??? AdminController.cs           # Admin dashboard & management
-??? HomeController.cs            # Application home page
-??? [Other]Controller.cs
+├── AssessmentController.cs      # Assessment endpoints (Image/Sort/Speed/Colorblindness)
+├── AdminController.cs           # Admin dashboard & management
+├── HomeController.cs            # Application home page
+└── [Other]Controller.cs
 
 | File | Purpose |
 |------|---------|
@@ -151,33 +151,33 @@ Controllers/
 
 ### **Models/** - Data & View Models
 Models/
-??? Admin/
-?   ??? AssessmentSequence.cs    # Assessment progression state machine
-?   ??? AssessmentType.cs        # Assessment type definitions
-?   ??? ImageQuality.cs          # Image quality rating data
-?   ??? [Others]
-??? Assessment/
-?   ??? SortAssessmentViewModel.cs
-?   ??? ImageAssessmentViewModel.cs
-?   ??? [Others]
-??? [Domain Models]
+├── Admin/
+│   ├── AssessmentSequence.cs    # Assessment progression state machine
+│   ├── AssessmentType.cs        # Assessment type definitions
+│   ├── ImageQuality.cs          # Image quality rating data
+│   └── [Others]
+├── Assessment/
+│   ├── SortAssessmentViewModel.cs
+│   ├── ImageAssessmentViewModel.cs
+│   └── [Others]
+└── [Domain Models]
 
 | File | Purpose |
 |------|---------|
-| `AssessmentSequence.cs` | Enum & model for assessment step progression (Index ? ColorblindnessTest ? SpeedTest ? Questions ? ImageAssessment) |
+| `AssessmentSequence.cs` | Enum & model for assessment step progression (Index → ColorblindnessTest → SpeedTest → Questions → ImageAssessment) |
 | `ImageQuality.cs` | Image quality rating records (-3 to +3 scale) |
 | `SortAssessmentViewModel.cs` | ViewModel for sort assessment page with image lists |
 | `ImageAssessmentViewModel.cs` | ViewModel for image rating assessment |
 
 ### **Services/** - Business Logic
 Services/
-??? IAssessmentSequenceService.cs    # Interface for sequence management
-??? AssessmentSequenceService.cs     # Sequence state management & validation
-??? IImageMetadataService.cs         # Image metadata handling interface
-??? ImageMetadataService.cs          # Image format/size/EXIF extraction
-??? ISessionService.cs               # Session management interface
-??? SessionService.cs                # User session handling
-??? [Other Services]
+├── IAssessmentSequenceService.cs    # Interface for sequence management
+├── AssessmentSequenceService.cs     # Sequence state management & validation
+├── IImageMetadataService.cs         # Image metadata handling interface
+├── ImageMetadataService.cs          # Image format/size/EXIF extraction
+├── ISessionService.cs               # Session management interface
+├── SessionService.cs                # User session handling
+└── [Other Services]
 
 | File | Purpose |
 |------|---------|
@@ -187,21 +187,21 @@ Services/
 
 ### **Data/** - Database Access Layer (Repositories)
 Data/
-??? DbHelper.cs                      # Database connection management
-??? IDbHelper.cs                     # DbHelper interface
-??? DbOptions.cs                     # Database configuration
-??? Repositories/
-?   ??? IImageQualityRepository.cs   # Image quality data interface
-?   ??? ImageQualityRepository.cs    # Image quality CRUD operations
-?   ??? IUserResponseRepository.cs   # User response interface
-?   ??? UserResponseRepository.cs    # User response data access
-?   ??? IImageRepository.cs          # Image management interface
-?   ??? ImageRepository.cs           # Image CRUD operations
-?   ??? IAssessmentTypeRepository.cs # Assessment type interface
-?   ??? AssessmentTypeRepository.cs  # Assessment type data access
-?   ??? IAdminRepository.cs          # Admin interface
-?   ??? AdminRepository.cs           # Admin functions
-?   ??? [Other Repositories]
+├── DbHelper.cs                      # Database connection management
+├── IDbHelper.cs                     # DbHelper interface
+├── DbOptions.cs                     # Database configuration
+├── Repositories/
+│   ├── IImageQualityRepository.cs   # Image quality data interface
+│   ├── ImageQualityRepository.cs    # Image quality CRUD operations
+│   ├── IUserResponseRepository.cs   # User response interface
+│   ├── UserResponseRepository.cs    # User response data access
+│   ├── IImageRepository.cs          # Image management interface
+│   ├── ImageRepository.cs           # Image CRUD operations
+│   ├── IAssessmentTypeRepository.cs # Assessment type interface
+│   ├── AssessmentTypeRepository.cs  # Assessment type data access
+│   ├── IAdminRepository.cs          # Admin interface
+│   ├── AdminRepository.cs           # Admin functions
+│   └── [Other Repositories]
 
 | File | Purpose |
 |------|---------|
@@ -213,10 +213,10 @@ Data/
 
 ### **Middleware/** - HTTP Pipeline
 Middleware/
-??? GlobalExceptionHandlingMiddleware.cs   # Global error handling
-??? ActionLoggingMiddleware.cs             # Request/response logging
-??? AssessmentSequenceMiddleware.cs        # Assessment state validation
-??? [Other Middleware]
+├── GlobalExceptionHandlingMiddleware.cs   # Global error handling
+├── ActionLoggingMiddleware.cs             # Request/response logging
+├── AssessmentSequenceMiddleware.cs        # Assessment state validation
+└── [Other Middleware]
 
 | File | Purpose |
 |------|---------|
@@ -226,30 +226,30 @@ Middleware/
 
 ### **Views/** - Razor Pages & Layouts
 Views/
-??? Shared/
-?   ??? _Layout.cshtml               # Main application layout
-?   ??? _AssessmentLayout.cshtml     # Assessment-specific layout (fullscreen)
-?   ??? _AdminLayout.cshtml          # Admin dashboard layout
-?   ??? [Other shared views]
-??? Assessment/
-?   ??? Index.cshtml                 # Assessment introduction/consent
-?   ??? Questions.cshtml             # Survey questions page
-?   ??? SpeedTest.cshtml             # Speed test page
-?   ??? ColorblindnessTest.cshtml    # Vision test page
-?   ??? ImageAssessment.cshtml       # Image rating page
-?   ??? SortAssessment.cshtml        # Image sorting page (most complex)
-?   ??? [Other assessment views]
-??? Admin/
-?   ??? Login.cshtml                 # Admin login
-?   ??? Dashboard.cshtml             # Admin dashboard
-?   ??? ContentMaster.cshtml         # Content management
-?   ??? ImagesMaster.cshtml          # Image upload
-?   ??? AssessmentImages.cshtml      # Assessment image assignment
-?   ??? QuestionMaster.cshtml        # Question management
-?   ??? [Other admin views]
-??? Home/
-    ??? Index.cshtml                 # Application home
-    ??? Error.cshtml                 # Error page
+├── Shared/
+│   ├── _Layout.cshtml               # Main application layout
+│   ├── _AssessmentLayout.cshtml     # Assessment-specific layout (fullscreen)
+│   ├── _AdminLayout.cshtml          # Admin dashboard layout
+│   └── [Other shared views]
+├── Assessment/
+│   ├── Index.cshtml                 # Assessment introduction/consent
+│   ├── Questions.cshtml             # Survey questions page
+│   ├── SpeedTest.cshtml             # Speed test page
+│   ├── ColorblindnessTest.cshtml    # Vision test page
+│   ├── ImageAssessment.cshtml       # Image rating page
+│   ├── SortAssessment.cshtml        # Image sorting page (most complex)
+│   └── [Other assessment views]
+├── Admin/
+│   ├── Login.cshtml                 # Admin login
+│   ├── Dashboard.cshtml             # Admin dashboard
+│   ├── ContentMaster.cshtml         # Content management
+│   ├── ImagesMaster.cshtml          # Image upload
+│   ├── AssessmentImages.cshtml      # Assessment image assignment
+│   ├── QuestionMaster.cshtml        # Question management
+│   └── [Other admin views]
+└── Home/
+    ├── Index.cshtml                 # Application home
+    └── Error.cshtml                 # Error page
 
 | File | Purpose |
 |------|---------|
@@ -261,19 +261,19 @@ Views/
 
 ### **wwwroot/** - Static Assets
 wwwroot/
-??? css/
-?   ??? site.css                     # Global styles (admin + assessment)
-?   ??? [Additional stylesheets]
-??? js/
-?   ??? site.js                      # Global JavaScript utilities
-?   ??? [Assessment scripts]         # Embedded in Razor pages
-?   ??? [Admin scripts]
-??? images/                          # Logo, icons
-??? lib/                             # Third-party libraries
-?   ??? bootstrap/                   # Bootstrap 5.3
-?   ??? font-awesome/                # Font Awesome 6.4
-?   ??? select2/                     # Select2 dropdown
-??? fonts/                           # Custom fonts
+├── css/
+│   ├── site.css                     # Global styles (admin + assessment)
+│   └── [Additional stylesheets]
+├── js/
+│   ├── site.js                      # Global JavaScript utilities
+│   ├── [Assessment scripts]         # Embedded in Razor pages
+│   └── [Admin scripts]
+├── images/                          # Logo, icons
+├── lib/                             # Third-party libraries
+│   ├── bootstrap/                   # Bootstrap 5.3
+│   ├── font-awesome/                # Font Awesome 6.4
+│   └── select2/                     # Select2 dropdown
+└── fonts/                           # Custom fonts
 
 | File | Purpose |
 |------|---------|
@@ -281,10 +281,10 @@ wwwroot/
 | `site.js` | Global utilities: `buildApiUrl()`, `showLoader()`, `showAlert()`, modal helpers |
 
 ### **Configuration Files**
-??? appsettings.json                 # Base configuration
-??? appsettings.Development.json     # Development overrides
-??? appsettings.Production.json      # Production overrides
-??? Program.cs                       # Application startup configuration
+├── appsettings.json                 # Base configuration
+├── appsettings.Development.json     # Development overrides
+├── appsettings.Production.json      # Production overrides
+└── Program.cs                       # Application startup configuration
 
 | File | Purpose |
 |------|---------|
@@ -293,7 +293,7 @@ wwwroot/
 
 ---
 
-## ?? Installation & Setup
+## 🚀 Installation & Setup
 
 ### Prerequisites
 - .NET 8 SDK or later
@@ -335,7 +335,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ?? Configuration
+## ⚙️ Configuration
 
 ### appsettings.json Structure
 {
@@ -373,7 +373,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ? Key Features
+## ✨ Key Features
 
 ### 1. **Assessment Types**
 - **Image Quality Assessment**: Rate image quality on a 7-point scale
@@ -406,7 +406,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ?? Assessment Types
+## 📊 Assessment Types
 
 ### Image Quality Assessment (7-Point Likert Scale)
 | Score | Label | Meaning |
@@ -436,7 +436,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ?? API Endpoints
+## 🔌 API Endpoints
 
 ### Assessment Endpoints
 POST   /Assessment/SubmitResponses              # Submit survey responses
@@ -466,7 +466,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## ??? Database Schema
+## 🗄️ Database Schema
 
 ### Core Tables
 
@@ -502,7 +502,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## ?? Contributing
+## 🤝 Contributing
 
 ### Development Workflow
 1. Create feature branch: `git checkout -b feature/your-feature`
@@ -526,13 +526,13 @@ dotnet test /p:CollectCoverage=true
 
 ---
 
-## ?? License
+## 📝 License
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-## ?? Additional Resources
+## 🔗 Additional Resources
 
 - [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
 - [Razor Pages Guide](https://docs.microsoft.com/aspnet/core/razor-pages)
@@ -540,7 +540,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-## ?? Support & Contact
+## 👥 Support & Contact
 
 For issues, questions, or contributions:
 - **GitHub Issues**: [Report a bug](https://github.com/dutta-agh/IQA_SOURCE/issues)
