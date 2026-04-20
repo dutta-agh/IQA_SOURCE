@@ -421,7 +421,7 @@ Access the application at: `http://localhost:5000/IQA`
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=IQA_DB;User=...;Password=...;SslMode=Preferred;"
+    "DefaultConnection": "Server=...;Database=IQA_DB;..."
   },
   "Db": {
     "ConnectionString": "...",

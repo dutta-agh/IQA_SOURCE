@@ -16,13 +16,12 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 - [Project Structure](#project-structure)
 - [File Directory Guide](#file-directory-guide)
 - [Module-Wise API Details](#module-wise-api-details)
+- [MySQL Database Structure](#mysql-database-structure)
 - [Installation & Setup](#installation--setup)
 - [Configuration](#configuration)
 - [Deployment Configuration](#deployment-configuration)
 - [Key Features](#key-features)
 - [Assessment Types](#assessment-types)
-- [API Endpoints](#api-endpoints)
-- [MySQL Database Structure](#mysql-database-structure)
 - [Contributing](#contributing)
 - [License](#license)
 - [Additional Resources](#additional-resources)
@@ -373,7 +372,7 @@ wwwroot/
 
 ### Prerequisites
 - .NET 8 SDK or later
-- MySQL 8.0+ or compatible database
+- SQL Server 2019+ or compatible database
 - Visual Studio 2022 (recommended) or VS Code
 
 ### Step 1: Clone Repository
@@ -421,7 +420,7 @@ Access the application at: `http://localhost:5000/IQA`
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=IQA_DB;User=...;Password=...;SslMode=Preferred;"
+    "DefaultConnection": "Server=...;Database=IQA_DB;..."
   },
   "Db": {
     "ConnectionString": "...",
@@ -446,30 +445,6 @@ Access the application at: `http://localhost:5000/IQA`
 - `appsettings.Development.json` - Local development
 - `appsettings.Production.json` - Production deployment
 - `appsettings.Linux.json` - Linux-specific paths
-
----
-
-## Deployment Configuration
-
-### Reverse Proxy (nginx/Apache)
-- Configure `X-Forwarded-For` and `X-Forwarded-Proto` headers.
-- Ensure the reverse proxy forwards the `SubApplicationPath` if hosted under a sub-path.
-
-### Kestrel Limits
-- `MaxRequestBodySize` and `MultipartBodyLengthLimit` are set for large image uploads.
-- Update these in `Program.cs` and corresponding reverse proxy limits if needed.
-
-### Static File Storage
-- `ImageStorage:BasePath` must be writable by the app identity.
-- `ImageStorage:WebBasePath` must map to the file provider used in `Program.cs`.
-
-### Environment Variables
-- `ASPNETCORE_ENVIRONMENT=Production`
-- `Db__ConnectionString=Server=...;Database=...;User=...;Password=...;`
-- `AppSettings__SubApplicationPath=/IQA`
-
-### Health Check
-- `GET /isalive` returns environment info for monitoring.
 
 ---
 

@@ -16,13 +16,13 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 - [Project Structure](#project-structure)
 - [File Directory Guide](#file-directory-guide)
 - [Module-Wise API Details](#module-wise-api-details)
+- [MySQL Database Structure](#mysql-database-structure)
 - [Installation & Setup](#installation--setup)
 - [Configuration](#configuration)
 - [Deployment Configuration](#deployment-configuration)
 - [Key Features](#key-features)
 - [Assessment Types](#assessment-types)
 - [API Endpoints](#api-endpoints)
-- [MySQL Database Structure](#mysql-database-structure)
 - [Contributing](#contributing)
 - [License](#license)
 - [Additional Resources](#additional-resources)
@@ -421,7 +421,7 @@ Access the application at: `http://localhost:5000/IQA`
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=IQA_DB;User=...;Password=...;SslMode=Preferred;"
+    "DefaultConnection": "Server=...;Database=IQA_DB;..."
   },
   "Db": {
     "ConnectionString": "...",

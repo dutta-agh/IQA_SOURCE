@@ -16,13 +16,12 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 - [Project Structure](#project-structure)
 - [File Directory Guide](#file-directory-guide)
 - [Module-Wise API Details](#module-wise-api-details)
+- [MySQL Database Structure](#mysql-database-structure)
 - [Installation & Setup](#installation--setup)
 - [Configuration](#configuration)
 - [Deployment Configuration](#deployment-configuration)
 - [Key Features](#key-features)
 - [Assessment Types](#assessment-types)
-- [API Endpoints](#api-endpoints)
-- [MySQL Database Structure](#mysql-database-structure)
 - [Contributing](#contributing)
 - [License](#license)
 - [Additional Resources](#additional-resources)
@@ -60,7 +59,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 ### Backend
 - **Framework**: ASP.NET Core 8.0
 - **Language**: C# 12.0
-- **Database**: MySQL 8.x (configurable)
+- **Database**: SQL Server (configurable)
 - **ORM**: ADO.NET (custom data access layer)
 
 ### Frontend
@@ -124,37 +123,6 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
    └──────────┘            └───────────────┘
 
    └───────────┘            └───────────────┘
-
-## Architecture Modules
-
-### 1. Presentation Layer (Razor Pages)
-- Responsible for rendering assessment and admin UI flows.
-- Uses server-rendered views with minimal client-side scripting.
-- Key paths: `Views/Assessment/`, `Views/Admin/`, `Views/Shared/`.
-
-### 2. Middleware Layer
-- Enforces assessment progression, session validation, and logging.
-- Ensures users cannot skip required steps in a session.
-- Key components: `AssessmentSequenceMiddleware`, `ActionLoggingMiddleware`.
-
-### 3. Controller Layer (HTTP Endpoints)
-- Handles request routing and input validation.
-- Executes business flows via service interfaces.
-- Key controllers: `AssessmentController`, `AdminController`, `HomeController`.
-
-### 4. Service Layer (Business Logic)
-- Implements assessment sequencing, image metadata checks, and session rules.
-- Coordinates repository operations and validation rules.
-- Key services: `AssessmentSequenceService`, `ImageMetadataService`, `SessionService`.
-
-### 5. Data Access Layer (Repositories)
-- ADO.NET-based repositories for all CRUD operations.
-- Centralized connection/command helpers for MySQL.
-- Key classes: `DbHelper`, `ImageQualityRepository`, `UserResponseRepository`.
-
-### 6. Storage Layer
-- File system storage for images, with database references.
-- Configurable base paths via `appsettings.json`.
 
 ## Project Structure
 
@@ -335,45 +303,11 @@ wwwroot/
 
 ---
 
-## Module-Wise API Details
-
-### Assessment Module (`AssessmentController`)
-- `GET /Assessment/{type}`: Entry point for assessment flow (consent and overview).
-- `GET /Assessment/{type}/Questions`: Loads survey questions for the session.
-- `GET /Assessment/{type}/SpeedTest`: Loads speed test UI and session state.
-- `GET /Assessment/{type}/ImageAssessment`: Loads image rating view.
-- `GET /Assessment/{type}/SortAssessment`: Loads sort assessment view.
-- `GET /Assessment/{type}/ColorblindnessTest`: Loads Ishihara test view.
-- `POST /Assessment/SubmitResponses`: Persists survey answers for a session.
-- `POST /Assessment/SubmitImageQualityRating`: Stores a single image rating.
-- `POST /Assessment/SubmitSortRatings`: Stores sort ratings with timing metrics.
-- `POST /Assessment/SubmitColorblindnessResponses`: Stores color vision results.
-- `GET /Assessment/GetSessionInfo`: Returns session progress state.
-- `GET /Assessment/GetImageAssessmentProgress`: Returns image assessment progress.
-- `GET /Assessment/GetColorblindnessImagesForTest`: Returns image list for Ishihara tests.
-
-### Admin Module (`AdminController`)
-- `POST /Admin/Login`: Authenticates admin users.
-- `GET /Admin/Dashboard`: Loads analytics and admin overview.
-- `POST /Admin/SaveContent`: Creates or updates assessment instructions.
-- `POST /Admin/DeleteContent`: Removes assessment content.
-- `POST /Admin/SaveQuestion`: Creates or updates a survey question.
-- `POST /Admin/DeleteQuestion`: Deletes a survey question.
-- `POST /Admin/UploadImages`: Uploads images and stores metadata.
-- `GET /Admin/DownloadQuestionAnswersExcel`: Exports question responses.
-- `GET /Admin/DownloadSpeedTestLogsExcel`: Exports speed test logs.
-
-### Home Module (`HomeController`)
-- `GET /`: Redirects to the application landing page.
-- `GET /Home/Error`: Error display page for unhandled exceptions.
-
----
-
 ## Installation & Setup
 
 ### Prerequisites
 - .NET 8 SDK or later
-- MySQL 8.0+ or compatible database
+- SQL Server 2019+ or compatible database
 - Visual Studio 2022 (recommended) or VS Code
 
 ### Step 1: Clone Repository
@@ -421,7 +355,7 @@ Access the application at: `http://localhost:5000/IQA`
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=IQA_DB;User=...;Password=...;SslMode=Preferred;"
+    "DefaultConnection": "Server=...;Database=IQA_DB;..."
   },
   "Db": {
     "ConnectionString": "...",
@@ -446,30 +380,6 @@ Access the application at: `http://localhost:5000/IQA`
 - `appsettings.Development.json` - Local development
 - `appsettings.Production.json` - Production deployment
 - `appsettings.Linux.json` - Linux-specific paths
-
----
-
-## Deployment Configuration
-
-### Reverse Proxy (nginx/Apache)
-- Configure `X-Forwarded-For` and `X-Forwarded-Proto` headers.
-- Ensure the reverse proxy forwards the `SubApplicationPath` if hosted under a sub-path.
-
-### Kestrel Limits
-- `MaxRequestBodySize` and `MultipartBodyLengthLimit` are set for large image uploads.
-- Update these in `Program.cs` and corresponding reverse proxy limits if needed.
-
-### Static File Storage
-- `ImageStorage:BasePath` must be writable by the app identity.
-- `ImageStorage:WebBasePath` must map to the file provider used in `Program.cs`.
-
-### Environment Variables
-- `ASPNETCORE_ENVIRONMENT=Production`
-- `Db__ConnectionString=Server=...;Database=...;User=...;Password=...;`
-- `AppSettings__SubApplicationPath=/IQA`
-
-### Health Check
-- `GET /isalive` returns environment info for monitoring.
 
 ---
 
@@ -566,62 +476,39 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## MySQL Database Structure
+## Database Schema
 
-### Core Tables (Logical Model)
+### Core Tables
 
-#### `AssessmentType`
-- **Purpose**: Defines assessment types and activation flags.
-- **Key Columns**: `AssessmentTypeId` (PK), `AssessmentCode` (unique), `AssessmentName`, `Type`, `IsActive`.
-- **Logic**: Used to drive available assessments in UI and routing.
+#### `dbo.AssessmentType`
+- **Purpose**: Assessment configuration
+- **Columns**: AssessmentTypeId, AssessmentCode, AssessmentName, Type (Sort/Rating/Speed)
+- **Key Fields**: AssessmentCode (unique), IsActive
 
-#### `Session`
-- **Purpose**: Tracks user assessment session state and timestamps.
-- **Key Columns**: `SessionId` (PK), `AssessmentTypeId` (FK), `StartTime`, `EndTime`, `Status`.
-- **Logic**: Drives sequencing and prevents cross-session data mixing.
+#### `dbo.ImageQuality`
+- **Purpose**: Image quality ratings
+- **Columns**: ImageQualityId, SessionId, ImageId, RawImageSetId, Rating (-3 to 3)
+- **Metrics**: TimeTakenMilliseconds, RatingTimestamp
 
-#### `Image`
-- **Purpose**: Stores metadata for uploaded images.
-- **Key Columns**: `ImageId` (PK), `FileName`, `RelativePath`, `Width`, `Height`, `Format`.
-- **Logic**: Coordinates image display in image and sort assessments.
+#### `dbo.SpeedTestLog`
+- **Purpose**: Network performance data
+- **Columns**: SpeedTestLogId, SessionId, DownloadSpeed, UploadSpeed, Latency
+- **Metrics**: TestTimestamp, ClientIPAddress
 
-#### `ImageQuality`
-- **Purpose**: Stores image rating data for single-image assessments.
-- **Key Columns**: `ImageQualityId` (PK), `SessionId` (FK), `ImageId` (FK), `Rating`, `TimeTakenMilliseconds`, `RatingTimestamp`.
-- **Logic**: Captures rating plus timing metrics to support analysis.
+#### `dbo.QuestionAnswers`
+- **Purpose**: User survey responses
+- **Columns**: QuestionAnswerId, SessionId, QuestionId, SelectedAnswer
+- **Timestamps**: SubmittedAt
 
-#### `SortAssessmentRating`
-- **Purpose**: Stores ratings for each test image relative to a reference.
-- **Key Columns**: `SortRatingId` (PK), `SessionId` (FK), `ReferenceImageId` (FK), `TestImageId` (FK), `Rating`, `TimeTakenMilliseconds`.
-- **Logic**: One record per test image rated against a reference.
+#### `dbo.ColorblindnessResult`
+- **Purpose**: Vision test results
+- **Columns**: ColorblindnessId, SessionId, TestResultCode, IsCorrect
+- **Result Types**: NormalVision, Protanopia, Deuteranopia, Tritanopia
 
-#### `Question`
-- **Purpose**: Stores survey question metadata.
-- **Key Columns**: `QuestionId` (PK), `Text`, `AnswerType`, `IsActive`, `OrderIndex`.
-- **Logic**: Drives dynamic rendering of survey pages.
-
-#### `QuestionAnswer`
-- **Purpose**: Stores selected answers for a session.
-- **Key Columns**: `QuestionAnswerId` (PK), `SessionId` (FK), `QuestionId` (FK), `SelectedAnswer`, `SubmittedAt`.
-- **Logic**: Keeps session-scoped responses for reporting.
-
-#### `SpeedTestLog`
-- **Purpose**: Stores network performance data.
-- **Key Columns**: `SpeedTestLogId` (PK), `SessionId` (FK), `DownloadSpeed`, `UploadSpeed`, `Latency`, `TestTimestamp`, `ClientIPAddress`.
-
-#### `ColorblindnessResult`
-- **Purpose**: Stores Ishihara test outcomes.
-- **Key Columns**: `ColorblindnessId` (PK), `SessionId` (FK), `PlateId`, `TestResultCode`, `IsCorrect`.
-
-#### `ActionLog`
-- **Purpose**: Audit trail of user actions.
-- **Key Columns**: `ActionLogId` (PK), `SessionId` (FK), `Action`, `Timestamp`, `UserAgent`, `ClientIP`.
-
-### Relationship Summary
-- `AssessmentType` 1..* `Session`
-- `Session` 1..* `ImageQuality`, `SortAssessmentRating`, `QuestionAnswer`, `SpeedTestLog`, `ColorblindnessResult`, `ActionLog`
-- `Question` 1..* `QuestionAnswer`
-- `Image` 1..* `ImageQuality` and `SortAssessmentRating`
+#### `dbo.ActionLog`
+- **Purpose**: Audit trail
+- **Columns**: ActionLogId, SessionId, Action, Timestamp, UserAgent, ClientIP
+- **Tracks**: All user interactions for compliance
 
 ---
 
