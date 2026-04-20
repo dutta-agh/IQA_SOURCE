@@ -1,0 +1,1070 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Images Master";
+}
+
+@section Styles {
+    <!-- All styles remain the same -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet" />
+    <style>
+        .images-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .folder-dropzone {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 200px;
+        }
+
+            .folder-dropzone:hover {
+                background: #e9ecef;
+                border-color: #764ba2;
+            }
+
+            .folder-dropzone.dz-drag-hover {
+                background: #e7f1ff;
+                border-color: #0066cc;
+            }
+
+        .folder-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+            .upload-progress-container.show {
+                display: block;
+            }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+            .file-preview-item .file-icon {
+                margin-right: 10px;
+                color: #667eea;
+            }
+
+            .file-preview-item .file-name {
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .file-preview-item .file-status {
+                margin-left: 10px;
+                font-size: 0.85rem;
+            }
+
+                .file-preview-item .file-status.success {
+                    color: #28a745;
+                }
+
+                .file-preview-item .file-status.error {
+                    color: #dc3545;
+                }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+            background: white;
+        }
+
+            .image-card:hover {
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                transform: translateY(-5px);
+            }
+
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .image-details {
+            padding: 15px;
+        }
+
+        .image-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+            .meta-item i {
+                margin-right: 5px;
+                color: #667eea;
+            }
+
+        .linked-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .linked-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 3px;
+            background: #e9ecef;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .linked-badge:hover {
+                transform: scale(1.1);
+            }
+
+            .linked-badge.enhanced {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .linked-badge.degraded {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            .linked-badge.pair {
+                background: #d1ecf1;
+                color: #0c5460;
+            }
+
+        .exif-badge {
+            display: inline-block;
+            background: #e7f3ff;
+            color: #0066cc;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .exif-table {
+            font-size: 0.9rem;
+        }
+
+            .exif-table td {
+                padding: 5px 10px;
+            }
+
+            .exif-table .label {
+                font-weight: 600;
+                color: #495057;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+            .empty-state i {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                opacity: 0.3;
+            }
+
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .naming-convention {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+            .naming-convention code {
+                background: #e9ecef;
+                padding: 2px 6px;
+                border-radius: 3px;
+                color: #d63384;
+            }
+
+        .upload-summary {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+            .upload-summary.show {
+                display: block;
+            }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-images"></i> Images Master</h2>
+    <button class="btn btn-secondary" onclick="window.location.href='@Url.Action("Dashboard")'">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </button>
+</div>
+
+<!-- Assessment Type & Image Group Selection -->
+<div class="images-card">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label"><strong>Assessment Type</strong> <span class="text-danger">*</span></label>
+            <select class="form-select" id="assessmentTypeSelect">
+                <option value="">-- Select Assessment Type --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label"><strong>Image Group</strong> <span class="text-danger">*</span></label>
+            <select class="form-select" id="imageGroupSelect">
+                <option value="">-- Select or Create Group --</option>
+            </select>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" onclick="loadImages()" id="loadBtn">
+                <i class="fas fa-search"></i> Load Images
+            </button>
+            <button class="btn btn-success" onclick="refreshImages()" id="refreshBtn" style="display: none;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-row" id="statsRow" style="display: none;">
+        <div class="stat-box">
+            <div class="stat-value" id="statMasterImages">0</div>
+            <div class="stat-label">Master Images</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="statLinkedImages">0</div>
+            <div class="stat-label">Linked Images</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="statTotalSize">0 MB</div>
+            <div class="stat-label">Total Size</div>
+        </div>
+    </div>
+</div>
+
+<!-- Folder Upload Section -->
+<div class="images-card" id="uploadSection" style="display: none;">
+    <h5><i class="fas fa-folder-open"></i> Upload Images from Folder</h5>
+
+    <div class="naming-convention">
+        <strong><i class="fas fa-info-circle"></i> Image Naming Convention:</strong><br>
+        <small>
+            🖼 Master images: <code>261_center.png</code>, <code>100_0.png</code> (no + or - in name)<br>
+            ✅ Enhanced quality: <code>261_center+1.png</code>, <code>100_0+2.png</code> (+ indicates enhancement level)<br>
+            ❌ Degraded quality: <code>261_center-1.png</code>, <code>100_0-2.png</code> (- indicates degradation level)<br>
+            📁 Supported formats: JPG, JPEG, PNG, BMP, TIFF, GIF
+        </small>
+    </div>
+
+    <div class="folder-dropzone" id="folderDropzone">
+        <div class="folder-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h5>Select Folder or Drag & Drop Images Here</h5>
+        <p class="text-muted">Click to browse your computer or drag files here</p>
+        <input type="file"
+               id="folderInput"
+               webkitdirectory
+               directory
+               multiple
+               accept="image/*"
+               style="display: none;">
+        <button class="btn btn-primary mt-2" onclick="$('#folderInput').click()">
+            <i class="fas fa-folder-open"></i> Browse Folder
+        </button>
+    </div>
+
+    <div class="upload-progress-container" id="uploadProgressContainer">
+        <h6>Selected Files (<span id="selectedFileCount">0</span>)</h6>
+        <div id="filePreviewList" style="max-height: 300px; overflow-y: auto;"></div>
+
+        <div class="mt-3">
+            <div class="progress" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     role="progressbar"
+                     id="uploadProgressBar"
+                     style="width: 0%">
+                    0%
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 text-center">
+            <button class="btn btn-success btn-lg" onclick="startFolderUpload()" id="startUploadBtn">
+                <i class="fas fa-upload"></i> Start Upload
+            </button>
+            <button class="btn btn-secondary btn-lg" onclick="cancelFolderUpload()" id="cancelUploadBtn">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+
+    <div class="upload-summary" id="uploadSummary"></div>
+</div>
+
+<!-- Images Display Section -->
+<div class="images-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-images"></i> Uploaded Images</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-primary" onclick="toggleView('grid')" id="btnGrid">
+                <i class="fas fa-th"></i> Grid
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="toggleView('list')" id="btnList">
+                <i class="fas fa-list"></i> List
+            </button>
+        </div>
+    </div>
+    <div id="imagesContainer">
+        <div class="empty-state">
+            <i class="fas fa-images"></i>
+            <p>Select an assessment type and image group, then click "Load Images"</p>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalTitle">Image Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <img src="" alt="Preview" class="modal-image" id="previewImage">
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-info-circle"></i> Image Information</h6>
+                        <div id="imageInfoContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EXIF Data Modal -->
+<div class="modal fade" id="exifModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-camera"></i> EXIF Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="exifDataContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentAssessmentType = '';
+        let currentImages = [];
+        let selectedFiles = [];
+
+        $(document).ready(function() {
+            loadAssessmentTypes();
+            setupFolderUpload();
+            loadImageGroups();
+        });
+
+        function loadAssessmentTypes() {
+            console.log('Loading assessment types for dropdown...');
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    console.log('Assessment types response:', response);
+                    if (response.success && response.data) {
+                        const select = $('#assessmentTypeSelect');
+                        select.empty().append('<option value="">-- Select Assessment Type --</option>');
+
+                        response.data.forEach(type => {
+                            // Handle both camelCase and PascalCase
+                            const code = type.atmCode || type.AtmCode || '';
+                            const name = type.atmName || type.AtmName || '';
+
+                            if (code && name) {
+                                select.append(`<option value="${escapeHtml(code)}">${escapeHtml(name)}</option>`);
+                            }
+                        });
+
+                        console.log('Loaded ' + response.data.length + ' assessment types');
+                    } else {
+                        console.error('Failed to load assessment types:', response.message);
+                        showAlert('Error: ' + (response.message || 'Failed to load assessment types'), 'danger');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoader();
+                    console.error('AJAX Error loading assessment types:', error);
+                    console.error('Response:', xhr.responseText);
+                    showAlert('Error loading assessment types', 'danger');
+                }
+            });
+
+            $('#assessmentTypeSelect').on('change', function() {
+                const value = $(this).val();
+                if (value) {
+                    $('#uploadSection').show();
+                    $('#refreshBtn').show();
+                    currentAssessmentType = value;
+                    // Load groups for the selected assessment type
+                    loadImageGroups();
+                } else {
+                    $('#uploadSection').hide();
+                    $('#refreshBtn').hide();
+                    currentAssessmentType = '';
+                    // Clear and disable groups dropdown
+                    const select = $('#imageGroupSelect');
+                    select.empty().append('<option value="">-- Select Assessment Type First --</option>');
+                    select.prop('disabled', true);
+                }
+            });
+        }
+
+        function loadImageGroups() {
+            // Only load groups if assessment type is selected
+            if (!currentAssessmentType) {
+                const select = $('#imageGroupSelect');
+                select.empty().append('<option value="">-- Select Assessment Type First --</option>');
+                select.prop('disabled', true);
+                return;
+            }
+
+            console.log('Loading image groups for assessment type:', currentAssessmentType);
+            
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllImageGroups'),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const select = $('#imageGroupSelect');
+                        const currentValue = select.val();
+
+                        select.empty().append('<option value="">-- Select or Create Group --</option>');
+
+                        // Filter groups by current assessment type
+                        const filteredGroups = response.data.filter(group => 
+                            !group.igAssessmentType || group.igAssessmentType === currentAssessmentType
+                        );
+
+                        if (filteredGroups.length === 0) {
+                            select.append('<option disabled><em>No groups for this assessment type. Click "+" to create one.</em></option>');
+                        }
+
+                        filteredGroups.forEach(group => {
+                            const displayName = `${group.igName}${group.igIsCurrentActive === 'Y' ? ' (Active)' : ''}`;
+                            select.append(`<option value="${escapeHtml(group.igCode)}">${escapeHtml(displayName)}</option>`);
+                        });
+
+                        // Restore previous selection if it still exists
+                        if (currentValue && filteredGroups.some(g => g.igCode === currentValue)) {
+                            select.val(currentValue);
+                        }
+
+                        // Enable the select
+                        select.prop('disabled', false);
+
+                        console.log('Loaded ' + filteredGroups.length + ' image groups for ' + currentAssessmentType);
+                    } else {
+                        console.error('Failed to load groups:', response.message);
+                        showAlert('Error loading image groups', 'danger');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error loading groups:', error);
+                    showAlert('Error loading image groups', 'danger');
+                }
+            });
+        }
+
+        function setupFolderUpload() {
+            const dropzone = document.getElementById('folderDropzone');
+            const folderInput = document.getElementById('folderInput');
+
+            // Drag and drop events
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dz-drag-hover');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dz-drag-hover');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dz-drag-hover');
+
+                const files = e.dataTransfer.files;
+                handleFolderSelection(files);
+            });
+
+            // Folder input change
+            folderInput.addEventListener('change', (e) => {
+                handleFolderSelection(e.target.files);
+            });
+        }
+
+        function handleFolderSelection(files) {
+            if (!currentAssessmentType) {
+                showAlert('Please select an assessment type first', 'warning');
+                return;
+            }
+
+            selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+
+            if (selectedFiles.length === 0) {
+                showAlert('No image files found in the selected folder', 'warning');
+                return;
+            }
+
+            displayFilePreview();
+            $('#uploadProgressContainer').addClass('show');
+            $('#uploadSummary').removeClass('show');
+        }
+
+        function displayFilePreview() {
+            const fileList = $('#filePreviewList');
+            const fileCount = $('#selectedFileCount');
+
+            fileCount.text(selectedFiles.length);
+            fileList.empty();
+
+            // Group files for preview
+            const masterFiles = selectedFiles.filter(f => isMasterImage(f.name));
+            const linkedFiles = selectedFiles.filter(f => !isMasterImage(f.name));
+
+            fileList.append(`<h6 class="mt-2"><i class="fas fa-image"></i> Master Images (${masterFiles.length})</h6>`);
+            masterFiles.forEach((file) => {
+                const item = createFilePreviewItem(file, 'master');
+                fileList.append(item);
+            });
+
+            if (linkedFiles.length > 0) {
+                fileList.append(`<h6 class="mt-3"><i class="fas fa-images"></i> Linked Images (${linkedFiles.length})</h6>`);
+                linkedFiles.forEach((file) => {
+                    const item = createFilePreviewItem(file, 'linked');
+                    fileList.append(item);
+                });
+            }
+        }
+
+        function createFilePreviewItem(file, type) {
+            const icon = type === 'master' ? 'fa-image' : 'fa-layer-group';
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+
+            return $(`
+                <div class="file-preview-item" data-filename="${escapeHtml(file.name)}">
+                    <i class="fas ${icon} file-icon"></i>
+                    <span class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                    <span class="text-muted">(${sizeInMB} MB)</span>
+                    <span class="file-status"></span>
+                </div>
+            `);
+        }
+
+        function isMasterImage(fileName) {
+            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+            // Master: no + or - in the name, e.g. "261_center", "100_0"
+            return nameWithoutExt.indexOf('+') < 0 && nameWithoutExt.indexOf('-') < 0;
+        }
+
+                async function startFolderUpload() {
+            if (!currentAssessmentType) {
+                showAlert('Please select an assessment type', 'warning');
+                return;
+            }
+
+            const groupCode = $('#imageGroupSelect').val();
+            if (!groupCode) {
+                showAlert('Please select or create an image group', 'warning');
+                return;
+            }
+
+            if (selectedFiles.length === 0) {
+                showAlert('Please select a folder with images', 'warning');
+                return;
+            }
+
+            $('#startUploadBtn').prop('disabled', true);
+            $('#cancelUploadBtn').prop('disabled', true);
+
+            const formData = new FormData();
+            formData.append('assessmentType', currentAssessmentType);
+            formData.append('groupCode', groupCode);  // IMPORTANT: Add groupCode to FormData
+
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        updateUploadProgress(percentComplete);
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        handleUploadComplete(response);
+                    } else {
+                        showAlert('Upload failed', 'danger');
+                        resetUploadUI();
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    showAlert('Upload error occurred', 'danger');
+                    resetUploadUI();
+                });
+
+                xhr.open('POST', buildApiUrl('/Admin/UploadImages'));
+                xhr.send(formData);
+
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'danger');
+                resetUploadUI();
+            }
+        }
+
+        function updateUploadProgress(percent) {
+            const progressBar = $('#uploadProgressBar');
+            progressBar.css('width', percent + '%');
+            progressBar.text(percent + '%');
+        }
+
+        function handleUploadComplete(response) {
+            if (response.success) {
+                let summaryHtml = '<h6><i class="fas fa-check-circle text-success"></i> Upload Complete!</h6><ul class="mb-0">';
+
+                if (response.data.masterImagesUploaded > 0) {
+                    summaryHtml += `<li>${response.data.masterImagesUploaded} master image(s) uploaded</li>`;
+                }
+                if (response.data.linkedImagesUploaded > 0) {
+                    summaryHtml += `<li>${response.data.linkedImagesUploaded} linked image(s) uploaded</li>`;
+                }
+                if (response.data.skippedMasterImages > 0) {
+                    summaryHtml += `<li class="text-warning">${response.data.skippedMasterImages} master image(s) skipped (already exist)</li>`;
+                }
+                if (response.data.errorMessages && response.data.errorMessages.length > 0) {
+                    summaryHtml += `<li class="text-danger">${response.data.errorMessages.length} error(s) occurred</li>`;
+                }
+
+                summaryHtml += '</ul>';
+
+                if (response.data.skippedMasterFileNames && response.data.skippedMasterFileNames.length > 0) {
+                    summaryHtml += `<p class="mt-2 mb-0 small"><strong>Skipped files:</strong> ${response.data.skippedMasterFileNames.join(', ')}</p>`;
+                }
+
+                $('#uploadSummary').html(summaryHtml).addClass('show');
+                showAlert(response.message, 'success');
+
+                // Update file statuses
+                selectedFiles.forEach(file => {
+                    const fileItem = $(`.file-preview-item[data-filename="${escapeHtml(file.name)}"]`);
+                    fileItem.find('.file-status').html('<i class="fas fa-check text-success"></i>').addClass('success');
+                });
+
+                loadImages();
+            } else {
+                showAlert(response.message, 'danger');
+            }
+
+            resetUploadUI();
+        }
+
+        function cancelFolderUpload() {
+            selectedFiles = [];
+            $('#folderInput').val('');
+            $('#uploadProgressContainer').removeClass('show');
+            $('#uploadSummary').removeClass('show');
+            resetUploadUI();
+        }
+
+        function resetUploadUI() {
+            $('#uploadProgressBar').css('width', '0%').text('0%');
+            $('#startUploadBtn').prop('disabled', false);
+            $('#cancelUploadBtn').prop('disabled', false);
+        }
+
+        function loadImages() {
+            const assessmentType = $('#assessmentTypeSelect').val();
+            const groupCode = $('#imageGroupSelect').val();
+
+            if (!assessmentType) {
+                showAlert('Please select an assessment type', 'warning');
+                return;
+            }
+
+            if (!groupCode) {
+                showAlert('Please select an image group', 'warning');
+                return;
+            }
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetImagesByAssessmentTypeAndGroup'),
+                type: 'GET',
+                data: { assessmentType: assessmentType, groupCode: groupCode },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        currentImages = response.data || [];
+                        displayImages(currentImages);
+                        updateStatistics(currentImages);
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading images', 'danger');
+                }
+            });
+        }
+
+        function refreshImages() {
+            loadImages();
+        }
+
+        function updateStatistics(images) {
+            if (!images || images.length === 0) {
+                $('#statsRow').hide();
+                return;
+            }
+
+            let totalLinked = 0;
+            let totalSize = 0;
+
+            images.forEach(img => {
+                totalLinked += img.linkedImages ? img.linkedImages.length : 0;
+                totalSize += img.imFileSize || 0;
+                if (img.linkedImages) {
+                    img.linkedImages.forEach(linked => {
+                        totalSize += linked.ilFileSize || 0;
+                    });
+                }
+            });
+
+            $('#statMasterImages').text(images.length);
+            $('#statLinkedImages').text(totalLinked);
+            $('#statTotalSize').text((totalSize / (1024 * 1024)).toFixed(2) + ' MB');
+            $('#statsRow').show();
+        }
+
+        function displayImages(images) {
+            const container = $('#imagesContainer');
+
+            if (!images || images.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <i class="fas fa-images"></i>
+                        <p>No images found for this assessment type and group</p>
+                    </div>
+                `);
+                return;
+            }
+
+            container.html('<div class="image-grid" id="imageGrid"></div>');
+            const grid = $('#imageGrid');
+
+            images.forEach(image => {
+                const linkedBadges = image.linkedImages && image.linkedImages.length > 0
+                    ? image.linkedImages.map(linked =>
+                        `<span class="linked-badge ${linked.ilQualityType}"
+                              onclick="previewLinkedImage('${escapeHtml(linked.ilFilePath)}', '${escapeHtml(linked.ilFileName)}', ${linked.ilId})"
+                              title="Click to preview">
+                            ${escapeHtml(linked.ilQualityLevel)}
+                        </span>`
+                    ).join('')
+                    : '<span class="text-muted small">No linked images</span>';
+
+                const card = `
+                    <div class="image-card">
+                        <img src="${image.imFilePath}"
+                             alt="${escapeHtml(image.imFileName)}"
+                             class="image-preview"
+                             onerror="this.src='/images/placeholder.png'"
+                             onclick="previewImage(${image.imId}, '${escapeHtml(image.imFilePath)}', '${escapeHtml(image.imFileName)}')">
+                        <div class="image-details">
+                            <div class="file-name mb-2">${escapeHtml(image.imFileName)}</div>
+                            <div class="image-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                    ${image.imWidth || 0} × ${image.imHeight || 0}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-file-image"></i>
+                                    ${image.imFormat || 'N/A'}
+                                </div>
+                                ${image.imCameraModel ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-camera"></i>
+                                        ${escapeHtml(image.imCameraModel)}
+                                    </div>
+                                ` : ''}
+                                ${image.imIso ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-sun"></i>
+                                        ISO ${image.imIso}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${image.imExifData ? `
+                                <span class="exif-badge" onclick="showExifData(${image.imId}, '${escapeHtml(image.imFileName)}')">
+                                    <i class="fas fa-info-circle"></i> View EXIF
+                                </span>
+                            ` : ''}
+                            <div class="mt-2">
+                                <strong class="small">Linked Images:</strong><br>
+                                <div class="linked-images mt-1">
+                                    ${linkedBadges}
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-danger" onclick="deleteImage(${image.imId}, '${escapeHtml(image.imFileName)}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.append(card);
+            });
+        }
+
+        function previewImage(imageId, imagePath, fileName) {
+            const image = currentImages.find(img => img.imId === imageId);
+            if (!image) return;
+
+            $('#previewModalTitle').text(fileName);
+            $('#previewImage').attr('src', imagePath);
+
+            const info = `
+                <table class="table table-sm exif-table">
+                    <tr>
+                        <td class="label">File Name:</td>
+                        <td>${escapeHtml(image.imFileName)}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Dimensions:</td>
+                        <td>${image.imWidth || 0} × ${image.imHeight || 0}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Format:</td>
+                        <td>${image.imFormat || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">File Size:</td>
+                        <td>${((image.imFileSize || 0) / (1024 * 1024)).toFixed(2)} MB</td>
+                    </tr>
+                    ${image.imCameraModel ? `
+                        <tr>
+                            <td class="label">Camera:</td>
+                            <td>${escapeHtml(image.imCameraModel)}</td>
+                        </tr>
+                    ` : ''}
+                    ${image.imLensModel ? `
+                        <tr>
+                            <td class="label">Lens:</td>
+                            <td>${escapeHtml(image.imLensModel)}</td>
+                        </tr>
+                    ` : ''}
+                    ${image.imIso ? `
+                        <tr>
+                            <td class="label">ISO:</td>
+                            <td>${image.imIso}</td>
+                        </tr>
+                    ` : ''}
+                    ${image.imAperture ? `
+                        <tr>
+                            <td class="label">Aperture:</td>
+                            <td>${escapeHtml(image.imAperture)}</td>
+                        </tr>
+                    ` : ''}
+                    ${image.imShutterSpeed ? `
+                        <tr>
+                            <td class="label">Shutter Speed:</td>
+                            <td>${escapeHtml(image.imShutterSpeed)}</td>
+                        </tr>
+                    ` : ''}
+                    ${image.linkedImages && image.linkedImages.length > 0 ? `
+                        <tr>
+                            <td class="label">Linked Images:</td>
+                            <td>${image.linkedImages.length}</td>
+                        </tr>
+                    ` : ''}
+                </table>
+            `;
+
+            $('#imageInfoContent').html(info);
+            new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+        }
+
+        function previewLinkedImage(imagePath, fileName, linkedId) {
+            $('#previewModalTitle').text(fileName);
+            $('#previewImage').attr('src', imagePath);
+            $('#imageInfoContent').html(`<p>Linked Image: ${escapeHtml(fileName)}</p>`);
+            new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+        }
+
+        function showExifData(imageId, fileName) {
+            const image = currentImages.find(img => img.imId === imageId);
+            if (!image || !image.imExifData) return;
+
+            try {
+                const exifData = JSON.parse(image.imExifData);
+                let html = `<h6>${escapeHtml(fileName)}</h6><table class="table table-sm exif-table">`;
+
+                for (const [key, value] of Object.entries(exifData)) {
+                    html += `
+                        <tr>
+                            <td class="label">${escapeHtml(key)}:</td>
+                            <td>${escapeHtml(JSON.stringify(value))}</td>
+                        </tr>
+                    `;
+                }
+
+                html += '</table>';
+                $('#exifDataContent').html(html);
+                new bootstrap.Modal(document.getElementById('exifModal')).show();
+            } catch (e) {
+                showAlert('Error parsing EXIF data', 'danger');
+            }
+        }
+
+        function deleteImage(imageId, fileName) {
+            showConfirmationModal(
+                'Confirm Delete',
+                `Are you sure you want to delete "${fileName}" and all its linked images? This action cannot be undone.`,
+                () => performDeleteImage(imageId),
+                'Delete',
+                'btn-danger'
+            );
+        }
+
+        function performDeleteImage(imageId) {
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/DeleteImage'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(imageId),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        showAlert('Image deleted successfully', 'success');
+                        loadImages();
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error deleting image', 'danger');
+                }
+            });
+        }
+
+        function toggleView(view) {
+            if (view === 'grid') {
+                $('#btnGrid').addClass('active');
+                $('#btnList').removeClass('active');
+            } else {
+                $('#btnList').addClass('active');
+                $('#btnGrid').removeClass('active');
+            }
+        }
+    </script>
+}

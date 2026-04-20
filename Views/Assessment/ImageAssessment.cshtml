@@ -1,0 +1,974 @@
+﻿@model IQA_SOURCE.Models.ImageAssessmentViewModel
+@{
+    ViewData["Title"] = $"{Model.AssessmentName} - Image Quality Assessment";
+    Layout = "_AssessmentLayout";
+}
+
+@section Styles {
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .image-assessment-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 130px);
+            margin: 0 2%;
+            padding: 6px 0 0 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        /* ── Group Filter Section ──────────────────────────────────── */
+        .group-filter-section {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .group-filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            white-space: nowrap;
+        }
+
+        .group-filter-select {
+            padding: 5px 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .group-filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .assessment-body {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+            align-items: center;
+        }
+
+        /* ── Reference image panel ──────────────────────────────────── */
+        .raw-image-section {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: fit-content;
+        }
+
+        .raw-image-section h3 {
+            color: #2d3748;
+            margin: 0 0 6px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .raw-image-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .raw-image {
+            width: 256px;
+            height: 256px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: block;
+        }
+
+        /* ── Linked images panel ────────────────────────────────────── */
+        .linked-images-section {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            height: fit-content;
+            max-height: 100%;
+        }
+
+        .linked-images-section h3 {
+            color: #2d3748;
+            margin: 0 0 4px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .selection-hint {
+            text-align: center;
+            padding: 3px 8px;
+            background: #e6fffa;
+            border-left: 3px solid #38b2ac;
+            border-radius: 5px;
+            color: #234e52;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .linked-images-list {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 10px;
+            justify-content: flex-start;
+            align-items: flex-start;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 4px;
+        }
+
+        /* ── Individual image card ──────────────────────────────────── */
+        .linked-image-item {
+            border: 3px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            background: #f7fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+            width: 282px;
+            flex-shrink: 0;
+        }
+
+        .linked-image-item:hover  { border-color: #cbd5e0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .linked-image-item.selected {
+            border-color: #667eea;
+            background: #edf2f7;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+        }
+        .linked-image-item.unrated {
+            border-color: #fc8181;
+            box-shadow: 0 0 0 3px rgba(252,129,129,0.25);
+        }
+
+        .image-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .linked-image-wrapper {
+            width: 256px;
+            height: 256px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .linked-image-wrapper img {
+            width: 256px;
+            height: 256px;
+            object-fit: contain;
+            border-radius: 5px;
+            display: block;
+        }
+
+        /* ── Rating section ─────────────────────────────────────────── */
+        .image-rating-section {
+            width: 100%;
+            padding: 7px 8px 8px 8px;
+            background: #f0f4f8;
+            border-radius: 6px;
+            border: 2px solid #cbd5e0;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .image-rating-section.show { display: block; }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .rating-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .reset-button {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 2px 9px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-button:hover { background: #f56565; }
+
+        /* ── Step buttons + labels ──────────────────────────────────── */
+        .rating-steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .rating-step-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .rating-step-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e0;
+            background: white;
+            color: #4a5568;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .rating-step-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #edf2f7;
+        }
+
+        .rating-step-btn.active {
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Colour per score */
+        .rating-step-btn[data-score="1"].active { background: #fc8181; border-color: #fc8181; }
+        .rating-step-btn[data-score="2"].active { background: #f6ad55; border-color: #f6ad55; }
+        .rating-step-btn[data-score="3"].active { background: #ecc94b; border-color: #ecc94b; color: #2d3748; }
+        .rating-step-btn[data-score="4"].active { background: #68d391; border-color: #68d391; color: #2d3748; }
+        .rating-step-btn[data-score="5"].active { background: #48bb78; border-color: #48bb78; }
+
+        .rating-step-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #718096;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        /* Label colours match button */
+        .rating-step-wrap[data-score="1"] .rating-step-label { color: #e53e3e; }
+        .rating-step-wrap[data-score="2"] .rating-step-label { color: #c05621; }
+        .rating-step-wrap[data-score="3"] .rating-step-label { color: #b7791f; }
+        .rating-step-wrap[data-score="4"] .rating-step-label { color: #276749; }
+        .rating-step-wrap[data-score="5"] .rating-step-label { color: #276749; }
+
+        /* ── Fixed bottom submit bar ────────────────────────────────── */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 5px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 6px 22px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(72,187,120,0.25);
+            white-space: nowrap;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            box-shadow: 0 4px 14px rgba(72,187,120,0.4);
+            transform: translateY(-1px);
+        }
+
+        .submit-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .submit-info             { font-size: 0.8rem; color: #718096; }
+        .submit-info.error       { color: #e53e3e; font-weight: 600; }
+        .submit-info.success     { color: #38a169; font-weight: 600; }
+
+        /* ── Validation banner ──────────────────────────────────────── */
+        .img-validation-banner {
+            display: none;
+            background: #fff5f5;
+            border: 1px solid #fc8181;
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: #742a2a;
+            font-weight: 600;
+            font-size: 0.78rem;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .img-validation-banner.show { display: flex; }
+
+        /* ── ONE-TIME fullscreen prompt (first visit only) ───────────── */
+        .fullscreen-prompt {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            background: rgba(0, 0, 0, 0.88);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen-prompt.show { display: flex; }
+
+        .fullscreen-prompt-box {
+            background: white;
+            border-radius: 14px;
+            padding: 40px 50px;
+            text-align: center;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .fullscreen-prompt-box .fs-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 14px;
+        }
+
+        .fullscreen-prompt-box h3 {
+            color: #2d3748;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .fullscreen-prompt-box p {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
+
+        .fs-enter-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .fs-enter-btn:hover { opacity: 0.9; }
+
+        /* ── Re-enter fullscreen toast ──────────────────────────────── */
+        .fs-toast {
+            position: fixed;
+            top: 12px;
+            right: 14px;
+            z-index: 19000;
+            background: #2d3748;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .fs-toast.show { display: flex; }
+
+        /* ── Thank-you modal ────────────────────────────────────────── */
+        .thankyou-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .thankyou-modal.show { display: flex; }
+
+        .thankyou-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 80px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(102,126,234,0.5);
+            animation: slideInUp 0.5s ease-out;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        @@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+        @@keyframes slideInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to   { opacity: 1, transform: translateY(0); }
+        }
+
+        .thankyou-icon           { font-size: 5rem; color: #48bb78; margin-bottom: 20px; }
+        .thankyou-content h2     { color: white; font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; }
+        .thankyou-content p      { color: #e2e8f0; font-size: 1.2rem; line-height: 1.8; margin-bottom: 30px; }
+        .redirect-message        { color: #c7d2fe; font-size: 1rem; font-weight: 600; }
+        .redirect-timer          { display: inline-block; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; margin-left: 5px; }
+
+        .progress-header { display: none !important; }
+
+        body { padding-bottom: 48px; }
+
+        @@media (max-width: 768px) {
+            .assessment-body                  { flex-direction: column; overflow-y: auto; align-items: stretch; }
+            .linked-images-list               { flex-wrap: wrap; overflow: visible; }
+            .linked-image-item                { width: 100%; }
+            .linked-image-wrapper,
+            .linked-image-wrapper img         { width: 100%; height: auto; }
+            .image-assessment-container       { height: auto; overflow: visible; }
+            .linked-images-section            { height: auto; }
+            .fullscreen-prompt-box            { padding: 30px 20px; }
+            .group-filter-section             { flex-wrap: wrap; }
+        }
+    </style>
+}
+
+<!-- ONE-TIME fullscreen prompt — hidden by default, shown by JS only on first load -->
+<div class="fullscreen-prompt" id="fullscreenPrompt">
+    <div class="fullscreen-prompt-box">
+        <div class="fs-icon"><i class="fas fa-expand"></i></div>
+        <h3>Enter Full Screen</h3>
+        <p>For the best assessment experience, this session will run in full-screen mode.</p>
+        <button class="fs-enter-btn" onclick="enterFullscreenAndStart()">
+            <i class="fas fa-expand-arrows-alt"></i> Enter Full Screen &amp; Start
+        </button>
+    </div>
+</div>
+
+<!-- Non-blocking toast — shown only when user exits fullscreen mid-session -->
+<div class="fs-toast" id="fsToast" onclick="reEnterFullscreen()" title="Click to re-enter full screen">
+    <i class="fas fa-expand-arrows-alt"></i> Click to re-enter full screen
+</div>
+
+<div class="image-assessment-container">
+    <div class="progress-header">
+        <div class="progress-info">
+            Image Set <span id="currentSetNumber">@Model.CurrentSetNumber</span> of <span id="totalSets">@Model.TotalSets</span>
+        </div>
+    </div>
+
+    <!-- Group Filter Section -->
+    <div class="group-filter-section">
+        <label class="group-filter-label" for="groupFilterSelect">
+            <i class="fas fa-filter"></i> Filter by Group:
+        </label>
+        <select class="group-filter-select" id="groupFilterSelect" onchange="changeImageGroup()">
+            <option value="">All Images</option>
+        </select>
+    </div>
+
+    <div class="assessment-body">
+        <!-- Reference Image -->
+        <div class="raw-image-section">
+            <h3><i class="fas fa-image"></i> Reference Image</h3>
+            <div class="raw-image-wrapper">
+                <img src="@Model.RawImage.RisRawImagePath"
+                     alt="@Model.RawImage.RisName"
+                     class="raw-image"
+                     id="rawImage"
+                     loading="eager">
+            </div>
+        </div>
+
+        <!-- Linked Images -->
+        <div class="linked-images-section">
+            <h3><i class="fas fa-th-list"></i> Rate Image Quality</h3>
+            <div class="selection-hint">
+                <i class="fas fa-info-circle"></i>
+                <strong>Click an image</strong> to select it, choose a rating (1–5), then submit.
+            </div>
+
+            <div class="linked-images-list" id="linkedImagesList">
+                @foreach (var linkedImage in Model.LinkedImages)
+                {
+                    <div class="linked-image-item"
+                         id="item-@linkedImage.LiId"
+                         data-image-id="@linkedImage.LiId"
+                         onclick="selectImage(@linkedImage.LiId)">
+                        <div class="image-content">
+                            <div class="linked-image-wrapper">
+                                <img src="@linkedImage.LiImagePath"
+                                     alt="@linkedImage.LiImageLabel"
+                                     loading="lazy">
+                            </div>
+
+                            <div class="image-rating-section" id="rating-@linkedImage.LiId">
+                                <div class="rating-header">
+                                    <span class="rating-title"><i class="fas fa-star"></i> Quality Rating</span>
+                                    <button type="button"
+                                            class="reset-button"
+                                            onclick="event.stopPropagation(); resetRating(@linkedImage.LiId)">
+                                        <i class="fas fa-undo"></i> Reset
+                                    </button>
+                                </div>
+                                <div class="rating-steps" onclick="event.stopPropagation()">
+                                    @{
+                                        var stepLabels = new[] { "Bad", "Poor", "Fair", "Good", "Excellent" };
+                                    }
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        <div class="rating-step-wrap" data-score="@s">
+                                            <button type="button"
+                                                    class="rating-step-btn"
+                                                    data-score="@s"
+                                                    id="step-@(linkedImage.LiId)-@s"
+                                                    onclick="setStepRating(@linkedImage.LiId, @s)">@s</button>
+                                            <span class="rating-step-label">@stepLabels[s - 1]</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fixed submit bar -->
+<div class="submit-bar">
+    <div class="img-validation-banner" id="imgValidationBanner">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="imgValidationMsg"></span>
+    </div>
+    <div class="submit-info" id="submitInfo">Select an image and rate it.</div>
+    <button type="button"
+            class="submit-button"
+            id="submitButton"
+            onclick="submitRating()">
+        <i class="fas fa-paper-plane"></i> Submit
+    </button>
+</div>
+
+<!-- Thank You Modal -->
+<div class="thankyou-modal" id="thankyouModal">
+    <div class="thankyou-content">
+        <div class="thankyou-icon"><i class="fas fa-check-circle"></i></div>
+        <h2>Thank You!</h2>
+        <p>Your feedback has been successfully recorded. We greatly appreciate your time and valuable input in helping us improve image quality.</p>
+        <div class="redirect-message">
+            Closing in <span class="redirect-timer" id="redirectTimer">5</span> seconds...
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const sessionId      = '@Model.SessionId';
+        const assessmentCode = '@Model.AssessmentCode';
+        const rawImageSetId  = @Model.RawImage.RisId;
+
+        const FS_GRANTED_KEY = 'iqa_fs_granted';
+
+        let selectedImageId = null;
+        let selectedRating  = null;
+        let currentGroupCode = ''; // Track the currently selected group
+
+        const ratingDescriptions = { 1: 'Bad', 2: 'Poor', 3: 'Fair', 4: 'Good', 5: 'Excellent' };
+
+        let clientIpAddress = '';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('https://api.ipify.org?format=json')
+                .then(r => r.json())
+                .then(data => { clientIpAddress = data.ip || ''; })
+                .catch(() => { clientIpAddress = ''; });
+
+            loadImageGroups();
+            initFullscreen();
+        });
+
+        // ── Load Image Groups ──────────────────────────────────────────
+        async function loadImageGroups() {
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/GetImageGroups'));
+                if (!response.ok) throw new Error('Failed to load groups');
+                
+                const data = await response.json();
+                if (!data.success || !data.data) return;
+                
+                const select = document.getElementById('groupFilterSelect');
+                const fragment = document.createDocumentFragment();
+                
+                // Add "All Images" option
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = 'All Images';
+                fragment.appendChild(allOption);
+                
+                // Add each group
+                data.data.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.igCode;
+                    option.textContent = group.igName;
+                    fragment.appendChild(option);
+                });
+                
+                select.appendChild(fragment);
+                console.log('Loaded ' + data.data.length + ' image groups');
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
+
+        // ── Change Image Group ─────────────────────────────────────────
+        async function changeImageGroup() {
+            const groupSelect = document.getElementById('groupFilterSelect');
+            const newGroupCode = groupSelect.value;
+            
+            if (newGroupCode === currentGroupCode) {
+                return; // No change
+            }
+            
+            currentGroupCode = newGroupCode;
+            
+            try {
+                const response = await fetch(buildApiUrl(`/Assessment/GetAssessmentImagesByGroup?assessmentCode=${assessmentCode}&groupCode=${newGroupCode}`));
+                if (!response.ok) throw new Error('Failed to load images');
+                
+                const data = await response.json();
+                if (!data.success) {
+                    alert('Error loading images for selected group');
+                    return;
+                }
+                
+                // Refresh the page with new images
+                window.location.reload();
+            } catch (error) {
+                console.error('Error changing group:', error);
+                alert('Error loading images');
+                // Reset the select to previous value
+                groupSelect.value = currentGroupCode;
+            }
+        }
+
+        // ── Fullscreen logic ──────────────────────────────────────────
+        function isInFullscreen() {
+            return !!(document.fullscreenElement
+                   || document.webkitFullscreenElement
+                   || document.mozFullScreenElement
+                   || document.msFullscreenElement);
+        }
+
+        function initFullscreen() {
+            const alreadyGranted = sessionStorage.getItem(FS_GRANTED_KEY) === '1';
+
+            if (isInFullscreen()) {
+                sessionStorage.setItem(FS_GRANTED_KEY, '1');
+                return;
+            }
+
+            if (alreadyGranted) {
+                requestFullscreenSilently();
+            } else {
+                document.getElementById('fullscreenPrompt').classList.add('show');
+            }
+
+            document.addEventListener('fullscreenchange',       onFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+            document.addEventListener('mozfullscreenchange',    onFullscreenChange);
+            document.addEventListener('MSFullscreenChange',     onFullscreenChange);
+        }
+
+        function requestFullscreenSilently() {
+            const el  = document.documentElement;
+            const req = el.requestFullscreen
+                     || el.webkitRequestFullscreen
+                     || el.mozRequestFullScreen
+                     || el.msRequestFullscreen;
+            if (req) req.call(el).catch(() => {});
+        }
+
+        function enterFullscreenAndStart() {
+            const el  = document.documentElement;
+            const req = el.requestFullscreen
+                     || el.webkitRequestFullscreen
+                     || el.mozRequestFullScreen
+                     || el.msRequestFullscreen;
+
+            if (req) req.call(el).catch(() => {});
+
+            sessionStorage.setItem(FS_GRANTED_KEY, '1');
+            document.getElementById('fullscreenPrompt').classList.remove('show');
+        }
+
+        function reEnterFullscreen() {
+            requestFullscreenSilently();
+            document.getElementById('fsToast').classList.remove('show');
+        }
+
+        function onFullscreenChange() {
+            const toast = document.getElementById('fsToast');
+            if (isInFullscreen()) {
+                toast.classList.remove('show');
+            } else {
+                if (sessionStorage.getItem(FS_GRANTED_KEY) === '1') {
+                    toast.classList.add('show');
+                }
+            }
+        }
+
+        // ── Image selection ───────────────────────────────────────────
+        function selectImage(imageId) {
+            const id = parseInt(imageId);
+
+            if (selectedImageId === id) {
+                document.getElementById(`item-${id}`).classList.remove('selected');
+                document.getElementById(`rating-${id}`).classList.remove('show');
+                selectedImageId = null;
+                selectedRating  = null;
+                updateSubmitInfo();
+                return;
+            }
+
+            if (selectedImageId !== null) {
+                const prev  = document.getElementById(`item-${selectedImageId}`);
+                const prevR = document.getElementById(`rating-${selectedImageId}`);
+                if (prev)  prev.classList.remove('selected', 'unrated');
+                if (prevR) prevR.classList.remove('show');
+                clearStepButtons(selectedImageId);
+            }
+
+            selectedImageId = id;
+            selectedRating  = null;
+
+            document.getElementById(`item-${id}`).classList.add('selected');
+            document.getElementById(`item-${id}`).classList.remove('unrated');
+            document.getElementById(`rating-${id}`).classList.add('show');
+            clearStepButtons(id);
+            updateSubmitInfo();
+        }
+
+        function setStepRating(imageId, score) {
+            const id = parseInt(imageId);
+            selectedRating = score;
+
+            for (let s = 1; s <= 5; s++) {
+                const btn = document.getElementById(`step-${id}-${s}`);
+                if (btn) btn.classList.toggle('active', s === score);
+            }
+
+            document.getElementById(`item-${id}`).classList.remove('unrated');
+            document.getElementById('imgValidationBanner').classList.remove('show');
+            updateSubmitInfo();
+        }
+
+        function clearStepButtons(imageId) {
+            for (let s = 1; s <= 5; s++) {
+                const btn = document.getElementById(`step-${imageId}-${s}`);
+                if (btn) btn.classList.remove('active');
+            }
+        }
+
+        function resetRating(imageId) {
+            const id = parseInt(imageId);
+            if (selectedImageId !== id) return;
+            selectedRating = null;
+            clearStepButtons(id);
+            updateSubmitInfo();
+        }
+
+        function updateSubmitInfo() {
+            const submitInfo = document.getElementById('submitInfo');
+            if (selectedImageId === null) {
+                submitInfo.textContent = 'Select an image and rate it.';
+                submitInfo.className   = 'submit-info';
+            } else if (selectedRating === null) {
+                submitInfo.textContent = 'Image selected — choose a rating (1–5).';
+                submitInfo.className   = 'submit-info';
+            } else {
+                submitInfo.textContent = `Rating: ${selectedRating} / 5 — ${ratingDescriptions[selectedRating]}. Ready to submit.`;
+                submitInfo.className   = 'submit-info success';
+                document.getElementById('imgValidationBanner').classList.remove('show');
+            }
+        }
+
+        // ── Submit ────────────────────────────────────────────────────
+        async function submitRating() {
+            const banner = document.getElementById('imgValidationBanner');
+            const msg    = document.getElementById('imgValidationMsg');
+
+            if (selectedImageId === null) {
+                document.querySelectorAll('.linked-image-item').forEach(i => i.classList.add('unrated'));
+                msg.textContent = 'Please select one image before submitting.';
+                banner.classList.add('show');
+                document.getElementById('linkedImagesList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            if (selectedRating === null) {
+                document.getElementById(`item-${selectedImageId}`).classList.add('unrated');
+                msg.textContent = 'Please choose a quality rating (1–5) before submitting.';
+                banner.classList.add('show');
+                return;
+            }
+
+            const submitButton = document.getElementById('submitButton');
+            const submitInfo   = document.getElementById('submitInfo');
+
+            submitButton.disabled  = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitInfo.textContent = 'Submitting your rating...';
+            submitInfo.className   = 'submit-info';
+
+            const payload = {
+                SessionId:             sessionId,
+                AssessmentCode:        assessmentCode,
+                RawImageSetId:         rawImageSetId,
+                SelectedLinkedImageId: selectedImageId,
+                QualityRating:         selectedRating,
+                IpAddress:             clientIpAddress
+            };
+
+            try {
+                const response = await fetch(buildApiUrl('/Assessment/SubmitImageQualityRating'), {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert('❌ Submission Error\n\n' + (data.message || 'Unknown error occurred'));
+                    submitButton.disabled  = false;
+                    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                    submitInfo.textContent = 'Submission failed. Please try again.';
+                    submitInfo.className   = 'submit-info error';
+                    return;
+                }
+
+                if (data.data.isCompleted) {
+                    showThankYouModal();
+                } else {
+                    // ✅ FIX #1: Include BOTH sessionId AND assessmentCode in URL
+                    // ✅ FIX #2: Wait 500ms for database commit to be fully indexed before redirect
+                    // ✅ FIX #3: Use URLEncoded query parameters for safe URL construction
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    navigateTo(buildApiUrl(`/Assessment/ImageAssessment?sessionId=${encodeURIComponent(sessionId)}&assessmentCode=${encodeURIComponent(assessmentCode)}`));
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Network Error\n\nAn error occurred while submitting. Please check your connection and try again.');
+                submitButton.disabled  = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+                submitInfo.textContent = 'Network error. Please try again.';
+                submitInfo.className   = 'submit-info error';
+            }
+        }
+
+        // ── Thank-you modal ───────────────────────────────────────────
+        function showThankYouModal() {
+            window.disableLeavePrompt();
+
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+                document.webkitExitFullscreen();
+            }
+
+            sessionStorage.removeItem(FS_GRANTED_KEY);
+
+            const modal   = document.getElementById('thankyouModal');
+            const timerEl = document.getElementById('redirectTimer');
+            modal.classList.add('show');
+
+            let countdown = 5;
+            timerEl.textContent = countdown;
+
+            const interval = setInterval(() => {
+                countdown--;
+                timerEl.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    try {
+                        window.close();
+                        setTimeout(() => {
+                            window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
+                        }, 500);
+                    } catch (e) {
+                        window.location.replace(buildApiUrl('/Assessment/' + assessmentCode));
+                    }
+                }
+            }, 1000);
+        }
+    </script>
+}

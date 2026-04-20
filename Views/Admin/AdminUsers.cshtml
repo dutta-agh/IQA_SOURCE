@@ -1,0 +1,441 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Admin Users";
+}
+
+@section Styles {
+    <style>
+        .users-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .role-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .role-editor {
+            background: #20c997;
+            color: white;
+        }
+
+        .role-viewer {
+            background: #6c757d;
+            color: white;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> Admin Users</h2>
+    <button class="btn btn-primary" onclick="openAddUserModal()">
+        <i class="fas fa-plus"></i> Add New Admin User
+    </button>
+</div>
+
+<div class="users-card">
+    <table id="usersTable" class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-user-plus"></i> Add Admin User
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="auId" value="0">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="auUsername" required>
+                            <small class="text-muted">Unique login username</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="auPassword">
+                            <small class="text-muted" id="passwordHint">Minimum 8 characters</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="auRole" required>
+                                <option value="">-- Select Role --</option>
+                                <option value="Admin">Administrator</option>
+                                <option value="Operator">Operator</option>
+                                <option value="Viewer">Viewer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="auActive">
+                                <option value="Y">Active</option>
+                                <option value="N">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger d-none" id="formError" role="alert">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="errorMessage"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="showSaveConfirmation()">
+                    <i class="fas fa-save"></i> Save User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let usersTable;
+        let isEditMode = false;
+        let currentUsers = [];
+        let userModal; // ✅ Store modal instance globally
+
+        $(document).ready(function() {
+            // ✅ Initialize modal instance once
+            userModal = new bootstrap.Modal(document.getElementById('userModal'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            initializeTable();
+            loadUsers();
+
+            // ✅ Fix dropdown closing issue - allow clicks inside dropdown menu
+            $(document).on('click', '.modal', function(e) {
+                if ($(e.target).hasClass('dropdown-menu')) {
+                    e.stopPropagation();
+                }
+            });
+        });
+
+        function initializeTable() {
+            usersTable = $('#usersTable').DataTable({
+                data: [],
+                columns: [
+                    {
+                        data: function(row) {
+                            return row.auId || '';
+                        },
+                        defaultContent: '',
+                        render: function(data) {
+                            return `<span class="badge bg-secondary">#${escapeHtml(data)}</span>`;
+                        }
+                    },
+                    {
+                        data: 'username',
+                        defaultContent: ''
+                    },
+                    {
+                        data: 'user_role',
+                        defaultContent: '',
+                        render: function(data) {
+                            const roleClass = data === 'Admin' ? 'role-admin' : data === 'Operator' ? 'role-editor' : 'role-viewer';
+                            return `<span class="role-badge ${roleClass}">${escapeHtml(data || 'N/A')}</span>`;
+                        }
+                    },
+                    {
+                        data: 'is_active',
+                        defaultContent: '',
+                        render: function(data) {
+                            const statusClass = data === 'Y' ? 'status-active' : 'status-inactive';
+                            const statusText = data === 'Y' ? 'Active' : 'Inactive';
+                            return `<span class="status-badge ${statusClass}">${statusText}</span>`;
+                        }
+                    },
+                    {
+                        data: 'last_login',
+                        defaultContent: 'Never',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString() : '<em class="text-muted">Never</em>';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        defaultContent: '',
+                        render: function(data, type, row) {
+                            const auId = row.auId || '';
+                            if (!auId) return '';
+                            const escapedId = escapeHtml(auId.toString());
+                            return `
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-warning" onclick="editUser('${escapedId}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation('${escapedId}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                order: [[0, 'asc']],
+                processing: true,
+                language: {
+                    emptyTable: "No admin users found",
+                    loadingRecords: "Loading...",
+                    processing: "Processing..."
+                }
+            });
+        }
+
+        function loadUsers() {
+            console.log('Loading admin users...');
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllAdminUsers'),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    console.log('Users response:', response);
+                    if (response.success) {
+                        currentUsers = response.data || [];
+                        usersTable.clear();
+                        if (currentUsers.length > 0) {
+                            usersTable.rows.add(currentUsers);
+                        }
+                        usersTable.draw();
+                    } else {
+                        showAlert('Error: ' + response.message, 'danger');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoader();
+                    console.error('Error loading users:', error);
+                    showAlert('Error loading admin users. Please try again.', 'danger');
+                }
+            });
+        }
+
+        function openAddUserModal() {
+            isEditMode = false;
+            $('#modalTitle').html('<i class="fas fa-user-plus"></i> Add Admin User');
+            $('#userForm')[0].reset();
+            $('#auId').val('0');
+            $('#auUsername').prop('readonly', false);
+            $('#auPassword').prop('required', true);
+            $('#passwordHint').text('Minimum 8 characters');
+
+            // ✅ FIXED: Set default values for dropdowns
+            $('#auRole').val('');
+            $('#auActive').val('Y');
+
+            $('#formError').addClass('d-none');
+
+            // ✅ Use stored modal instance and add slight delay
+            setTimeout(function() {
+                userModal.show();
+            }, 100);
+        }
+
+        function editUser(auId) {
+            const user = currentUsers.find(u => u.auId === auId);
+            if (!user) {
+                showAlert('User not found', 'danger');
+                return;
+            }
+
+            isEditMode = true;
+            $('#modalTitle').html('<i class="fas fa-user-edit"></i> Edit Admin User');
+            $('#auId').val(user.auId || '');
+            $('#auUsername').val(user.username || '').prop('readonly', true);
+            $('#auPassword').val('').prop('required', false);
+            $('#passwordHint').text('Leave blank to keep existing password');
+
+            // ✅ FIXED: Set dropdown values explicitly
+            console.log('Setting role to:', user.user_role);
+            $('#auRole').val(user.user_role || 'Operator').trigger('change');
+
+            console.log('Setting status to:', user.is_active);
+            $('#auActive').val(user.is_active || 'Y').trigger('change');
+
+            $('#formError').addClass('d-none');
+
+            // ✅ Use stored modal instance and add slight delay
+            setTimeout(function() {
+                userModal.show();
+            }, 100);
+        }
+
+        function showSaveConfirmation() {
+            const data = {
+                auId: parseInt($('#auId').val()) || 0,
+                auUsername: $('#auUsername').val().trim(),
+                auPassword: $('#auPassword').val().trim(),
+                auRole: $('#auRole').val(),
+                auActive: $('#auActive').val()
+            };
+
+            // Validation
+            if (!data.auUsername || !data.auRole) {
+                showFormError('Please fill all required fields');
+                return;
+            }
+
+            if (isEditMode && !data.auPassword) {
+                // Password not required for edit
+            } else if (!isEditMode && !data.auPassword) {
+                showFormError('Password is required for new users');
+                return;
+            } else if (data.auPassword && data.auPassword.length < 8) {
+                showFormError('Password must be at least 8 characters');
+                return;
+            }
+
+            const message = isEditMode
+                ? `Are you sure you want to update user "${data.auUsername}"?`
+                : `Are you sure you want to create new admin user "${data.auUsername}"?`;
+
+            showConfirmationModal(
+                'Confirm Save',
+                message,
+                () => saveUser(),
+                'Save',
+                'btn-primary'
+            );
+        }
+
+        function saveUser() {
+            const data = {
+                // ✅ CRITICAL: Match the [JsonPropertyName] attributes in AdminUser model
+                auId: $('#auId').val().trim() || "",
+                username: $('#auUsername').val().trim(),        // Maps to [JsonPropertyName("username")] -> AuUsername
+                user_role: $('#auRole').val(),                  // Maps to [JsonPropertyName("user_role")] -> AuRole
+                is_active: $('#auActive').val(),                // Maps to [JsonPropertyName("is_active")] -> AuActive
+                password_hash: $('#auPassword').val().trim()    // Maps to [JsonPropertyName("password_hash")] -> AuPasswordHash
+            };
+
+            console.log('Sending data to server:', data); // ✅ Debug log
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/SaveAdminUser'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    hideLoader();
+                    console.log('Save response:', response); // ✅ Debug log
+                    if (response.success) {
+                        userModal.hide();
+                        loadUsers();
+                        showAlert(response.message || 'User saved successfully', 'success');
+                    } else {
+                        showFormError(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    hideLoader();
+                    console.error('Save error:', xhr); // ✅ Debug log
+                    const errorMsg = xhr.responseJSON?.message || 'An error occurred while saving';
+                    showFormError(errorMsg);
+                }
+            });
+        }
+
+        function showFormError(message) {
+            $('#formError').removeClass('d-none');
+            $('#errorMessage').text(message);
+        }
+
+        function showDeleteConfirmation(auId) {
+            const user = currentUsers.find(u => u.auId === auId);
+            const username = user ? user.username : 'User';
+
+            showConfirmationModal(
+                'Confirm Delete',
+                `Are you sure you want to delete admin user "${username}"? This action cannot be undone.`,
+                () => deleteUser(auId),
+                'Delete',
+                'btn-danger'
+            );
+        }
+
+        function deleteUser(auId) {
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/DeleteAdminUser'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(auId),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        loadUsers();
+                        showAlert('Admin user deleted successfully', 'success');
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error deleting admin user', 'danger');
+                }
+            });
+        }
+    </script>
+}

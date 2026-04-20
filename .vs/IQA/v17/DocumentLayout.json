@@ -3,12 +3,32 @@
   "WorkspaceRootPath": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\assessment\\sortassessment.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\assessment\\sortassessment.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\admin\\contentmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\admin\\contentmaster.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\views\\shared\\_assessmentlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:views\\shared\\_assessmentlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\services\\assessmentsequenceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:services\\assessmentsequenceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\middleware\\assessmentsequencemiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:middleware\\assessmentsequencemiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\models\\admin\\assessmentsequence.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:models\\admin\\assessmentsequence.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|c:\\users\\student\\downloads\\dd\\7\\iqa_source\\services\\iassessmentsequenceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED284FF9-C476-45D3-8816-42ED90709678}|IQA.csproj|solutionrelative:services\\iassessmentsequenceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,32 +38,97 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Dashboard.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\Dashboard.cshtml",
-              "RelativeDocumentMoniker": "Views\\Admin\\Dashboard.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\Dashboard.cshtml",
-              "RelativeToolTip": "Views\\Admin\\Dashboard.cshtml",
-              "ViewState": "AgIAABAAAAAAAAAAAAAjwAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "_AssessmentLayout.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AssessmentLayout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_AssessmentLayout.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Shared\\_AssessmentLayout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_AssessmentLayout.cshtml",
+              "ViewState": "AgIAABUCAAAAAAAAAAAQwCACAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-28T09:03:18.8Z",
+              "WhenOpened": "2026-03-30T08:36:32.143Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ContentMaster.cshtml",
-              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ContentMaster.cshtml",
-              "RelativeDocumentMoniker": "Views\\Admin\\ContentMaster.cshtml",
-              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Admin\\ContentMaster.cshtml",
-              "RelativeToolTip": "Views\\Admin\\ContentMaster.cshtml",
-              "ViewState": "AgIAAAMCAAAAAAAAAAAkwAEAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "SortAssessment.cshtml",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SortAssessment.cshtml",
+              "RelativeDocumentMoniker": "Views\\Assessment\\SortAssessment.cshtml",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Views\\Assessment\\SortAssessment.cshtml",
+              "RelativeToolTip": "Views\\Assessment\\SortAssessment.cshtml",
+              "ViewState": "AgIAAHgEAAAAAAAAAAAAwKAEAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-28T08:50:33.508Z",
+              "WhenOpened": "2026-03-29T19:16:54.187Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AssessmentSequence.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\Admin\\AssessmentSequence.cs",
+              "RelativeDocumentMoniker": "Models\\Admin\\AssessmentSequence.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Models\\Admin\\AssessmentSequence.cs",
+              "RelativeToolTip": "Models\\Admin\\AssessmentSequence.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-24T16:24:20.721Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAAAHMAAABPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-24T16:23:37.496Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AssessmentSequenceService.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Services\\AssessmentSequenceService.cs",
+              "RelativeDocumentMoniker": "Services\\AssessmentSequenceService.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Services\\AssessmentSequenceService.cs",
+              "RelativeToolTip": "Services\\AssessmentSequenceService.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAArwBcAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-24T16:22:32.618Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "IAssessmentSequenceService.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Services\\IAssessmentSequenceService.cs",
+              "RelativeDocumentMoniker": "Services\\IAssessmentSequenceService.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Services\\IAssessmentSequenceService.cs",
+              "RelativeToolTip": "Services\\IAssessmentSequenceService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-24T16:21:52.266Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AssessmentSequenceMiddleware.cs",
+              "DocumentMoniker": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Middleware\\AssessmentSequenceMiddleware.cs",
+              "RelativeDocumentMoniker": "Middleware\\AssessmentSequenceMiddleware.cs",
+              "ToolTip": "C:\\Users\\student\\Downloads\\DD\\7\\IQA_SOURCE\\Middleware\\AssessmentSequenceMiddleware.cs",
+              "RelativeToolTip": "Middleware\\AssessmentSequenceMiddleware.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAAAB0AAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-24T16:16:09.391Z",
               "EditorCaption": ""
             }
           ]

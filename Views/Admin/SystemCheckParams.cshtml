@@ -1,0 +1,278 @@
+@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "System Check Parameters";
+}
+
+@section Styles {
+    <style>
+        .param-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .param-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .badge-int     { background: #3182ce;  color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; }
+        .badge-decimal { background: #d69e2e;  color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; }
+        .badge-bool    { background: #38a169;  color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; }
+        .badge-string  { background: #718096;  color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; }
+
+        .edit-input {
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 5px 10px;
+            width: 100%;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .save-btn:hover   { opacity: 0.9; transform: translateY(-1px); }
+        .save-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .info-banner {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            color: #2b6cb0;
+            font-size: 0.95rem;
+        }
+
+        .param-code { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #553c9a; font-weight: 600; }
+
+        /* active toggle */
+        .active-select { width: 70px; }
+
+        tr.dirty td { background: #fffff0; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-sliders-h"></i> System Check Parameters</h2>
+    <span class="badge bg-secondary fs-6" id="paramCount">Loading…</span>
+</div>
+
+<div class="info-banner">
+    <i class="fas fa-info-circle"></i>
+    These parameters control the thresholds applied during the <strong>Speed Test / System Check</strong> page.
+    Changes take effect immediately — no server restart required.
+</div>
+
+<div class="param-card">
+    <div class="table-responsive">
+        <table class="table table-bordered param-table align-middle mb-0" id="paramsTable">
+            <thead>
+                <tr>
+                    <th style="width:180px;">Parameter Code</th>
+                    <th style="width:200px;">Name</th>
+                    <th style="width:90px;">Type</th>
+                    <th style="width:220px;">Value</th>
+                    <th>Description</th>
+                    <th style="width:80px;">Active</th>
+                    <th style="width:160px;">Last Modified</th>
+                    <th style="width:100px;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="paramsTableBody">
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading parameters…
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', loadParams);
+
+        let paramsData = [];
+
+        async function loadParams() {
+            try {
+                const resp = await fetch(buildApiUrl('/Admin/GetAllSystemCheckParams'));
+                const json = await resp.json();
+
+                const tbody = document.getElementById('paramsTableBody');
+
+                if (!json.success || !json.data?.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No parameters found. Run the seed SQL to populate defaults.</td></tr>';
+                    document.getElementById('paramCount').textContent = '0 params';
+                    return;
+                }
+
+                paramsData = json.data;
+                document.getElementById('paramCount').textContent = `${paramsData.length} params`;
+                renderTable(paramsData);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('paramsTableBody').innerHTML =
+                    '<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle"></i> Error loading parameters.</td></tr>';
+            }
+        }
+
+        function renderTable(params) {
+            const tbody = document.getElementById('paramsTableBody');
+            tbody.innerHTML = params.map(p => buildRow(p)).join('');
+        }
+
+        function buildRow(p) {
+            const valueInput = buildValueInput(p);
+            const modDate    = p.scpModifiedDate
+                ? new Date(p.scpModifiedDate).toLocaleString()
+                : (p.scpCreatedDate ? new Date(p.scpCreatedDate).toLocaleString() : '—');
+
+            return `
+            <tr id="row-${p.scpId}">
+                <td><span class="param-code">${escapeHtml(p.scpParamCode)}</span></td>
+                <td>${escapeHtml(p.scpParamName)}</td>
+                <td><span class="badge-${p.scpDataType}">${escapeHtml(p.scpDataType)}</span></td>
+                <td>${valueInput}</td>
+                <td class="text-muted small">${escapeHtml(p.scpDescription ?? '—')}</td>
+                <td>
+                    <select class="edit-input active-select"
+                            id="active-${p.scpId}"
+                            onchange="markDirty(${p.scpId})">
+                        <option value="Y" ${p.scpActive === 'Y' ? 'selected' : ''}>Y</option>
+                        <option value="N" ${p.scpActive === 'N' ? 'selected' : ''}>N</option>
+                    </select>
+                </td>
+                <td class="small text-muted" id="mod-${p.scpId}">${escapeHtml(modDate)}</td>
+                <td>
+                    <button class="save-btn"
+                            id="btn-${p.scpId}"
+                            onclick="saveParam(${p.scpId})">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </td>
+            </tr>`;
+        }
+
+        function buildValueInput(p) {
+            if (p.scpDataType === 'bool') {
+                return `
+                <select class="edit-input" id="val-${p.scpId}" onchange="markDirty(${p.scpId})">
+                    <option value="Y" ${p.scpParamValue === 'Y' ? 'selected' : ''}>Y — Required</option>
+                    <option value="N" ${p.scpParamValue === 'N' ? 'selected' : ''}>N — Not required</option>
+                </select>`;
+            }
+
+            const inputType = (p.scpDataType === 'int' || p.scpDataType === 'decimal') ? 'number' : 'text';
+            const step      = p.scpDataType === 'decimal' ? 'step="0.1"' : '';
+            const min       = (p.scpDataType === 'int' || p.scpDataType === 'decimal') ? 'min="0"' : '';
+
+            return `<input class="edit-input"
+                           type="${inputType}"
+                           id="val-${p.scpId}"
+                           value="${escapeHtml(p.scpParamValue)}"
+                           ${step} ${min}
+                           oninput="markDirty(${p.scpId})">`;
+        }
+
+        function markDirty(id) {
+            const row = document.getElementById(`row-${id}`);
+            if (row) row.classList.add('dirty');
+        }
+
+        async function saveParam(id) {
+            const param = paramsData.find(p => p.scpId === id);
+            if (!param) return;
+
+            const valueEl  = document.getElementById(`val-${id}`);
+            const activeEl = document.getElementById(`active-${id}`);
+            const btn      = document.getElementById(`btn-${id}`);
+
+            const value  = valueEl?.value?.trim();
+            const active = activeEl?.value;
+
+            if (!value) {
+                showAlert('Value cannot be empty.', 'warning');
+                valueEl?.focus();
+                return;
+            }
+
+            // Type validation
+            if (param.scpDataType === 'int' && !/^\d+$/.test(value)) {
+                showAlert(`"${escapeHtml(param.scpParamName)}" must be a whole number.`, 'warning');
+                return;
+            }
+            if (param.scpDataType === 'decimal' && isNaN(parseFloat(value))) {
+                showAlert(`"${escapeHtml(param.scpParamName)}" must be a number.`, 'warning');
+                return;
+            }
+
+            btn.disabled     = true;
+            btn.innerHTML    = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const payload = {
+                    scpParamCode:  param.scpParamCode,
+                    scpParamName:  param.scpParamName,
+                    scpParamValue: value,
+                    scpDataType:   param.scpDataType,
+                    scpDescription: param.scpDescription,
+                    scpActive:     active
+                };
+
+                const resp = await fetch(buildApiUrl('/Admin/UpsertSystemCheckParam'), {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                });
+
+                const json = await resp.json();
+
+                if (json.success) {
+                    // Update local cache
+                    param.scpParamValue = value;
+                    param.scpActive     = active;
+
+                    const now = new Date().toLocaleString();
+                    document.getElementById(`mod-${id}`).textContent = now;
+                    document.getElementById(`row-${id}`).classList.remove('dirty');
+
+                    showAlert(`<strong>${escapeHtml(param.scpParamName)}</strong> saved successfully.`, 'success');
+                } else {
+                    showAlert('Save failed: ' + escapeHtml(json.message), 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('Network error while saving.', 'danger');
+            } finally {
+                btn.disabled  = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save';
+            }
+        }
+    </script>
+}

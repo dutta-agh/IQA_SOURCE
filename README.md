@@ -1,2 +1,554 @@
-# IQA_SOURCE
-IQA_SOURCE
+﻿Here's the improved `README.md` file, incorporating the new content while maintaining the existing structure and information:
+
+# IQA SOURCE - Image Quality Assessment Platform
+
+A comprehensive web-based assessment platform built with ASP.NET Core 8 for conducting image quality evaluations, speed tests, and specialized vision assessments. Designed for research and educational purposes.
+
+---
+
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Technology Stack](#technology-stack)
+- [System Architecture](#system-architecture)
+- [Project Structure](#project-structure)
+- [Installation & Setup](#installation--setup)
+- [Configuration](#configuration)
+- [Key Features](#key-features)
+- [Assessment Types](#assessment-types)
+- [File Directory Guide](#file-directory-guide)
+- [Database Schema](#database-schema)
+- [API Endpoints](#api-endpoints)
+- [Contributing](#contributing)
+- [License](#license)
+- [Additional Resources](#additional-resources)
+- [Support & Contact](#support--contact)
+
+---
+
+## Project Overview
+
+**IQA SOURCE** is an enterprise-grade assessment platform that enables:
+
+- **Image Quality Assessment**: Rate image quality on a 7-point semantic scale (Much Worse to Much Better)
+- **Sort Assessment**: Compare and sort images relative to reference images
+- **Speed & Connectivity Tests**: Measure client-side network performance
+- **Vision Tests**: Colorblindness detection (Ishihara test implementation)
+- **Survey Management**: Dynamic question-based surveys
+- **Admin Dashboard**: Comprehensive analytics and user management
+
+### Target Audience
+- Research institutions conducting image perception studies
+- Educational institutions for vision assessment
+- Quality assurance teams for image processing evaluation
+
+---
+
+## Technology Stack
+
+### Backend
+- **Framework**: ASP.NET Core 8.0
+- **Language**: C# 12.0
+- **Database**: SQL Server (configurable)
+- **ORM**: ADO.NET (custom data access layer)
+
+### Frontend
+- **Markup**: Razor Pages / HTML5
+- **Styling**: CSS3 (Custom + Bootstrap 5.3)
+- **JavaScript**: Vanilla JS (no dependencies)
+- **Libraries**: Font Awesome 6.4, Select2 4.1
+
+### DevOps
+- **Server**: Kestrel (behind reverse proxy)
+- **Deployment**: Linux (nginx/Apache reverse proxy support)
+- **Session**: Distributed Memory Cache
+- **Logging**: Structured logging via middleware
+
+---
+
+## System Architecture
+
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT BROWSER                        │
+│              (Razor Pages + JavaScript)                  │
+└──────────────────────┬──────────────────────────────────┘
+                       │ HTTP/HTTPS
+┌──────────────────────▼──────────────────────────────────┐
+│              ASP.NET CORE 8 APPLICATION                 │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │         Middleware Pipeline                      │  │
+│  │  - Exception Handling                            │  │
+│  │  - Action Logging                                │  │
+│  │  - Session Management                            │  │
+│  │  - CORS & Security Headers                       │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │         Controllers (API & Pages)                │  │
+│  │  - Assessment Controller                         │  │
+│  │  - Admin Controller                              │  │
+│  │  - Home Controller                               │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Services & Business Logic                       │  │
+│  │  - AssessmentSequenceService                     │  │
+│  │  - ImageMetadataService                          │  │
+│  │  - SessionService                                │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Repositories & Data Access                      │  │
+│  │  - Assessment Repositories                       │  │
+│  │  - Image Repositories                            │  │
+│  │  - User Response Repositories                    │  │
+│  └──────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+   ┌────▼─────┐            ┌────────▼──────┐
+   │ MYSQL│            │ FILE STORAGE  │
+   │ DATABASE  │            │ (Linux Path)  │
+   └──────────┘            └───────────────┘
+
+   └───────────┘            └───────────────┘
+
+## Project Structure
+
+### Root Directory
+IQA_SOURCE/
+├── Controllers/              # ASP.NET Core Controllers
+├── Models/                   # Data Models & ViewModels
+├── Services/                 # Business Logic Layer
+├── Data/                     # Database Access Layer (Repositories)
+├── Middleware/               # Custom HTTP Middleware
+├── Views/                    # Razor Pages & Layouts
+│   ├── Assessment/          # Assessment-specific views
+│   ├── Admin/               # Admin dashboard views
+│   └── Shared/              # Shared layouts
+├── wwwroot/                 # Static files (CSS, JS, fonts)
+├── appsettings.json         # Application configuration
+├── Program.cs               # Application startup
+└── README.md                # This file
+
+---
+
+## File Directory Guide
+
+### **Controllers/** - Request Handling
+Controllers/
+├── AssessmentController.cs      # Assessment endpoints (Image/Sort/Speed/Colorblindness)
+├── AdminController.cs           # Admin dashboard & management
+├── HomeController.cs            # Application home page
+└── [Other]Controller.cs
+
+| File | Purpose |
+|------|---------|
+| `AssessmentController.cs` | Handles all assessment types: Index, ImageAssessment, SortAssessment, SpeedTest, Questions, ColorblindnessTest; Processes submissions and progress tracking |
+| `AdminController.cs` | Admin authentication, dashboard, content/question/image management, reporting |
+| `HomeController.cs` | Home page and general navigation |
+
+### **Models/** - Data & View Models
+Models/
+├── Admin/
+│   ├── AssessmentSequence.cs    # Assessment progression state machine
+│   ├── AssessmentType.cs        # Assessment type definitions
+│   ├── ImageQuality.cs          # Image quality rating data
+│   └── [Others]
+├── Assessment/
+│   ├── SortAssessmentViewModel.cs
+│   ├── ImageAssessmentViewModel.cs
+│   └── [Others]
+└── [Domain Models]
+
+| File | Purpose |
+|------|---------|
+| `AssessmentSequence.cs` | Enum & model for assessment step progression (Index → ColorblindnessTest → SpeedTest → Questions → ImageAssessment) |
+| `ImageQuality.cs` | Image quality rating records (-3 to +3 scale) |
+| `SortAssessmentViewModel.cs` | ViewModel for sort assessment page with image lists |
+| `ImageAssessmentViewModel.cs` | ViewModel for image rating assessment |
+
+### **Services/** - Business Logic
+Services/
+├── IAssessmentSequenceService.cs    # Interface for sequence management
+├── AssessmentSequenceService.cs     # Sequence state management & validation
+├── IImageMetadataService.cs         # Image metadata handling interface
+├── ImageMetadataService.cs          # Image format/size/EXIF extraction
+├── ISessionService.cs               # Session management interface
+├── SessionService.cs                # User session handling
+└── [Other Services]
+
+| File | Purpose |
+|------|---------|
+| `AssessmentSequenceService.cs` | Manages progression through assessment steps; validates state transitions; prevents step skipping |
+| `ImageMetadataService.cs` | Extracts image dimensions, format, EXIF data; validates image files |
+| `SessionService.cs` | Manages user sessions and authentication state |
+
+### **Data/** - Database Access Layer (Repositories)
+Data/
+├── DbHelper.cs                      # Database connection management
+├── IDbHelper.cs                     # DbHelper interface
+├── DbOptions.cs                     # Database configuration
+├── Repositories/
+│   ├── IImageQualityRepository.cs   # Image quality data interface
+│   ├── ImageQualityRepository.cs    # Image quality CRUD operations
+│   ├── IUserResponseRepository.cs   # User response interface
+│   ├── UserResponseRepository.cs    # User response data access
+│   ├── IImageRepository.cs          # Image management interface
+│   ├── ImageRepository.cs           # Image CRUD operations
+│   ├── IAssessmentTypeRepository.cs # Assessment type interface
+│   ├── AssessmentTypeRepository.cs  # Assessment type data access
+│   ├── IAdminRepository.cs          # Admin interface
+│   ├── AdminRepository.cs           # Admin functions
+│   └── [Other Repositories]
+
+| File | Purpose |
+|------|---------|
+| `DbHelper.cs` | Handles all database connections, command execution, and SQL operations |
+| `ImageQualityRepository.cs` | CRUD for image quality ratings, supports batch operations |
+| `UserResponseRepository.cs` | Stores and retrieves user assessment responses |
+| `ImageRepository.cs` | Image metadata storage and retrieval |
+| `AssessmentTypeRepository.cs` | Assessment configuration and definitions |
+
+### **Middleware/** - HTTP Pipeline
+Middleware/
+├── GlobalExceptionHandlingMiddleware.cs   # Global error handling
+├── ActionLoggingMiddleware.cs             # Request/response logging
+├── AssessmentSequenceMiddleware.cs        # Assessment state validation
+└── [Other Middleware]
+
+| File | Purpose |
+|------|---------|
+| `GlobalExceptionHandlingMiddleware.cs` | Catches unhandled exceptions, logs them, returns JSON error responses |
+| `ActionLoggingMiddleware.cs` | Logs all user actions for audit trail; captures timestamps, user IDs, endpoints |
+| `AssessmentSequenceMiddleware.cs` | Validates assessment sequence before accessing pages |
+
+### **Views/** - Razor Pages & Layouts
+Views/
+├── Shared/
+│   ├── _Layout.cshtml               # Main application layout
+│   ├── _AssessmentLayout.cshtml     # Assessment-specific layout (fullscreen)
+│   ├── _AdminLayout.cshtml          # Admin dashboard layout
+│   └── [Other shared views]
+├── Assessment/
+│   ├── Index.cshtml                 # Assessment introduction/consent
+│   ├── Questions.cshtml             # Survey questions page
+│   ├── SpeedTest.cshtml             # Speed test page
+│   ├── ColorblindnessTest.cshtml    # Vision test page
+│   ├── ImageAssessment.cshtml       # Image rating page
+│   ├── SortAssessment.cshtml        # Image sorting page (most complex)
+│   └── [Other assessment views]
+├── Admin/
+│   ├── Login.cshtml                 # Admin login
+│   ├── Dashboard.cshtml             # Admin dashboard
+│   ├── ContentMaster.cshtml         # Content management
+│   ├── ImagesMaster.cshtml          # Image upload
+│   ├── AssessmentImages.cshtml      # Assessment image assignment
+│   ├── QuestionMaster.cshtml        # Question management
+│   └── [Other admin views]
+└── Home/
+    ├── Index.cshtml                 # Application home
+    └── Error.cshtml                 # Error page
+
+| File | Purpose |
+|------|---------|
+| `_AssessmentLayout.cshtml` | Fullscreen layout for assessments; manages viewport and scrolling |
+| `SortAssessment.cshtml` | Complex 3-column grid layout for comparing images to reference; includes fullscreen prompt, rating buttons, progress tracking |
+| `ImageAssessment.cshtml` | Single image rating interface with 7-point scale |
+| `ContentMaster.cshtml` | Admin page for managing assessment instructions/content |
+| `QuestionMaster.cshtml` | Admin page for creating/editing survey questions |
+
+### **wwwroot/** - Static Assets
+wwwroot/
+├── css/
+│   ├── site.css                     # Global styles (admin + assessment)
+│   └── [Additional stylesheets]
+├── js/
+│   ├── site.js                      # Global JavaScript utilities
+│   ├── [Assessment scripts]         # Embedded in Razor pages
+│   └── [Admin scripts]
+├── images/                          # Logo, icons
+├── lib/                             # Third-party libraries
+│   ├── bootstrap/                   # Bootstrap 5.3
+│   ├── font-awesome/                # Font Awesome 6.4
+│   └── select2/                     # Select2 dropdown
+└── fonts/                           # Custom fonts
+
+| File | Purpose |
+|------|---------|
+| `site.css` | Global theme, component styles, responsive design, admin sidebar, assessment layouts |
+| `site.js` | Global utilities: `buildApiUrl()`, `showLoader()`, `showAlert()`, modal helpers |
+
+### **Configuration Files**
+├── appsettings.json                 # Base configuration
+├── appsettings.Development.json     # Development overrides
+├── appsettings.Production.json      # Production overrides
+└── Program.cs                       # Application startup configuration
+
+| File | Purpose |
+|------|---------|
+| `appsettings.json` | Database connection, image storage paths, app settings, sub-application path |
+| `Program.cs` | Dependency injection setup, middleware pipeline, route configuration, CORS/HTTPS setup |
+
+---
+
+## Installation & Setup
+
+### Prerequisites
+- .NET 8 SDK or later
+- SQL Server 2019+ or compatible database
+- Visual Studio 2022 (recommended) or VS Code
+
+### Step 1: Clone Repository
+git clone https://github.com/dutta-agh/IQA_SOURCE.git
+cd IQA_SOURCE
+
+### Step 2: Install Dependencies
+dotnet restore
+
+### Step 3: Configure appsettings.json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=IQA_DB;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=true;"
+  },
+  "AppSettings": {
+    "SubApplicationPath": "/IQA"
+  },
+  "ImageStorage": {
+    "BasePath": "/var/www/iqa_images",
+    "WebBasePath": "/images"
+  }
+}
+
+### Step 4: Create Database
+# Using Entity Framework (if migrations exist)
+dotnet ef database update
+
+# Or run SQL scripts in Data/ folder manually
+
+### Step 5: Build & Run
+dotnet build
+dotnet run
+
+Access the application at: `http://localhost:5000/IQA`
+
+---
+
+## Configuration
+
+### appsettings.json Structure
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=...;Database=IQA_DB;..."
+  },
+  "Db": {
+    "ConnectionString": "...",
+    "CommandTimeout": 300
+  },
+  "AppSettings": {
+    "SubApplicationPath": "/IQA",
+    "MaxUploadSizeMB": 100,
+    "AllowedImageFormats": ["jpg", "jpeg", "png", "bmp", "tiff"]
+  },
+  "ImageStorage": {
+    "BasePath": "/var/www/iqa_images",
+    "WebBasePath": "/images",
+    "MaxImageDimensionsPixels": 4096
+  },
+  "Session": {
+    "IdleTimeoutMinutes": 30
+  }
+}
+
+### Environment-Specific Overrides
+- `appsettings.Development.json` - Local development
+- `appsettings.Production.json` - Production deployment
+- `appsettings.Linux.json` - Linux-specific paths
+
+---
+
+## Key Features
+
+### 1. **Assessment Types**
+- **Image Quality Assessment**: Rate image quality on a 7-point scale
+- **Sort Assessment**: Compare images relative to reference image
+- **Speed Test**: Measure network connectivity
+- **Colorblindness Test**: Ishihara plates for vision screening
+- **Survey Questions**: Custom question sets
+
+### 2. **Admin Dashboard**
+- User management
+- Assessment configuration
+- Image upload & organization
+- Question management
+- Results analytics & export
+- Action logging & audit trail
+
+### 3. **Assessment Features**
+- Fullscreen mode for focused assessment
+- Real-time progress tracking
+- Session persistence
+- Multi-step progression validation
+- Comprehensive timing analytics (millisecond-precision)
+
+### 4. **Security**
+- Session-based authentication
+- CSRF protection
+- SQL injection prevention (parameterized queries)
+- Secure image serving
+- Audit logging of all actions
+
+---
+
+## Assessment Types
+
+### Image Quality Assessment (7-Point Likert Scale)
+| Score | Label | Meaning |
+|-------|-------|---------|
+| -3 | Much Worse | Significantly lower quality |
+| -2 | Worse | Moderately lower quality |
+| -1 | Slightly Worse | Noticeably lower quality |
+| 0 | Same | Equivalent quality |
+| 1 | Slightly Better | Noticeably higher quality |
+| 2 | Better | Moderately higher quality |
+| 3 | Much Better | Significantly higher quality |
+
+### Sort Assessment
+- Compare up to 4 test images against 1 reference image
+- Rate each relative to reference using the same 7-point scale
+- Time tracking for each rating decision
+
+### Speed Test
+- Network connectivity measurement
+- Download/upload bandwidth estimation
+- Latency measurement
+
+### Colorblindness Test
+- Ishihara plate implementation
+- Multiple test plates with pattern recognition
+- Results logging
+
+---
+
+## API Endpoints
+
+### Assessment Endpoints
+POST   /Assessment/SubmitResponses              # Submit survey responses
+POST   /Assessment/SubmitImageQualityRating     # Submit image rating
+POST   /Assessment/SubmitSortRatings           # Submit sort assessment
+POST   /Assessment/SubmitColorblindnessResponses # Submit vision test
+GET    /Assessment/{type}                       # Assessment intro page
+GET    /Assessment/{type}/Questions             # Questions page
+GET    /Assessment/{type}/SpeedTest             # Speed test page
+GET    /Assessment/{type}/ImageAssessment       # Image rating page
+GET    /Assessment/{type}/SortAssessment        # Sort assessment page
+GET    /Assessment/{type}/ColorblindnessTest    # Vision test page
+GET    /Assessment/GetSessionInfo               # Get session state
+GET    /Assessment/GetImageAssessmentProgress   # Get progress
+GET    /Assessment/GetColorblindnessImagesForTest # Get test images
+
+### Admin Endpoints
+POST   /Admin/Login                             # Admin authentication
+GET    /Admin/Dashboard                         # Dashboard
+POST   /Admin/SaveContent                       # Save assessment content
+POST   /Admin/DeleteContent                     # Delete content
+POST   /Admin/SaveQuestion                      # Save question
+POST   /Admin/DeleteQuestion                    # Delete question
+POST   /Admin/UploadImages                      # Upload images
+GET    /Admin/DownloadQuestionAnswersExcel      # Export responses
+GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
+
+---
+
+## Database Schema
+
+### Core Tables
+
+#### `dbo.AssessmentType`
+- **Purpose**: Assessment configuration
+- **Columns**: AssessmentTypeId, AssessmentCode, AssessmentName, Type (Sort/Rating/Speed)
+- **Key Fields**: AssessmentCode (unique), IsActive
+
+#### `dbo.ImageQuality`
+- **Purpose**: Image quality ratings
+- **Columns**: ImageQualityId, SessionId, ImageId, RawImageSetId, Rating (-3 to 3)
+- **Metrics**: TimeTakenMilliseconds, RatingTimestamp
+
+#### `dbo.SpeedTestLog`
+- **Purpose**: Network performance data
+- **Columns**: SpeedTestLogId, SessionId, DownloadSpeed, UploadSpeed, Latency
+- **Metrics**: TestTimestamp, ClientIPAddress
+
+#### `dbo.QuestionAnswers`
+- **Purpose**: User survey responses
+- **Columns**: QuestionAnswerId, SessionId, QuestionId, SelectedAnswer
+- **Timestamps**: SubmittedAt
+
+#### `dbo.ColorblindnessResult`
+- **Purpose**: Vision test results
+- **Columns**: ColorblindnessId, SessionId, TestResultCode, IsCorrect
+- **Result Types**: NormalVision, Protanopia, Deuteranopia, Tritanopia
+
+#### `dbo.ActionLog`
+- **Purpose**: Audit trail
+- **Columns**: ActionLogId, SessionId, Action, Timestamp, UserAgent, ClientIP
+- **Tracks**: All user interactions for compliance
+
+---
+
+## Contributing
+
+### Development Workflow
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Follow existing code style (see `.editorconfig` if present)
+3. Add unit tests for new functionality
+4. Commit with descriptive messages
+5. Push and create Pull Request
+
+### Code Style
+- **Naming**: PascalCase for classes/methods, camelCase for variables
+- **Comments**: XML documentation for public APIs
+- **Async**: Use `async/await` for I/O operations
+- **Error Handling**: Try-catch with proper logging
+
+### Testing
+# Run unit tests
+dotnet test
+
+# Run with coverage
+dotnet test /p:CollectCoverage=true
+
+---
+
+## License
+
+This project is licensed under the MIT License - see LICENSE file for details.
+
+---
+
+## Additional Resources
+
+- [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
+- [Razor Pages Guide](https://docs.microsoft.com/aspnet/core/razor-pages)
+- [Entity Framework Core](https://docs.microsoft.com/ef/core/)
+
+---
+
+## Support & Contact
+
+For issues, questions, or contributions:
+- **GitHub Issues**: [Report a bug](https://github.com/dutta-agh/IQA_SOURCE/issues)
+- **Email**: Contact project maintainers
+- **Documentation**: See `/docs` folder for detailed guides
+
+---
+
+**Last Updated**: April 2026  
+**Current Version**: 1.0.0  
+**Status**: Active Development      

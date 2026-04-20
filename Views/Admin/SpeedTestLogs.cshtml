@@ -1,0 +1,728 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Speed Test Logs";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --danger-gradient:  linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            --border-radius: 12px;
+        }
+
+        /* ── Stats bar ── */
+        .stats-summary { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+        .stat-item { padding: 15px; text-align: center; border-right: 1px solid #e9ecef; }
+        .stat-item:last-child { border-right: none; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #667eea; }
+        .stat-label { color: #666; font-size: 0.9rem; margin-top: 5px; }
+
+        /* ── Filter card ── */
+        .filter-card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+
+        /* ── Table card ── */
+        .logs-table-card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); }
+        .table-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
+
+        /* ── Badges ── */
+        .badge-passed { background: var(--success-gradient); color: white; }
+        .badge-failed  { background: var(--danger-gradient);  color: white; }
+
+        /* ── Failure indicators inside popup ── */
+        .check-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .check-row:last-child { border-bottom: none; }
+        .check-label { font-weight: 500; color: #495057; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
+        .check-val   { font-size: 0.88rem; font-weight: 600; }
+        .check-val.pass  { color: #28a745; }
+        .check-val.fail  { color: #dc3545; }
+        .check-val.info  { color: #0d6efd; }
+        .check-val.warn  { color: #ffc107; }
+
+        .detail-section-title {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #adb5bd;
+            margin: 18px 0 10px;
+        }
+        .detail-section-title:first-child { margin-top: 0; }
+
+        /* Failure summary banner */
+        .fail-banner {
+            border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem;
+        }
+        .fail-banner.overall-fail { background: #fef2f2; color: #dc3545; border: 1px solid #fecaca; }
+        .fail-banner.overall-pass { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+        /* Pill list of failure reasons */
+        .fail-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+        .fail-pill {
+            background: #fef2f2; color: #dc3545; border: 1px solid #fecaca;
+            border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; font-weight: 600;
+        }
+        .pass-pill {
+            background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+            border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; font-weight: 600;
+        }
+
+        /* Metric grid */
+        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .metric-box {
+            background: #f8f9fa; border-radius: 8px; padding: 12px;
+            text-align: center; border: 1px solid #e9ecef;
+        }
+        .metric-box .m-val { font-size: 1.4rem; font-weight: 700; }
+        .metric-box .m-lbl { font-size: 0.72rem; color: #6c757d; margin-top: 3px; }
+        .metric-box.m-pass .m-val { color: #16a34a; }
+        .metric-box.m-fail .m-val { color: #dc3545; }
+        .metric-box.m-info .m-val { color: #0d6efd; }
+
+        /* Filter pills */
+        .filter-pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-pill {
+            padding: 6px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; border: 2px solid transparent; transition: all 0.18s;
+            user-select: none;
+        }
+        .filter-pill.all    { background: #e9ecef; color: #495057; border-color: #dee2e6; }
+        .filter-pill.passed { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .filter-pill.failed { background: #fef2f2; color: #dc3545; border-color: #fecaca; }
+        .filter-pill.active.all    { background: #667eea; color: white; border-color: #667eea; }
+        .filter-pill.active.passed { background: #16a34a; color: white; border-color: #16a34a; }
+        .filter-pill.active.failed { background: #dc3545; color: white; border-color: #dc3545; }
+
+        /* Delete button styles */
+        .btn-delete-logs { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none; }
+        .btn-delete-logs:hover { background: linear-gradient(135deg, #f093fb, #f5576c); opacity: 0.9; color: white; }
+        .btn-delete-logs:disabled { background-color: #6c757d; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt"></i> Speed Test Logs</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" onclick="downloadExcel()">
+            <i class="fas fa-file-excel"></i> Download Excel
+        </button>
+        <button class="btn btn-delete-logs" id="btnDeleteLogs" onclick="openDeleteLogsModal()" disabled
+                title="Delete speed test logs by assessment">
+            <i class="fas fa-trash"></i> Delete Logs
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Summary -->
+<div class="stats-summary">
+    <div class="row">
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value" id="totalLogs">0</div>
+            <div class="stat-label"><i class="fas fa-list"></i> Total Tests</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-success" id="passedLogs">0</div>
+            <div class="stat-label"><i class="fas fa-check-circle"></i> Passed</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-danger" id="failedLogs">0</div>
+            <div class="stat-label"><i class="fas fa-times-circle"></i> Failed</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-info" id="privateModeCount">0</div>
+            <div class="stat-label"><i class="fas fa-user-secret"></i> Private Mode</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-card">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fw-semibold"><i class="fas fa-clipboard-list"></i> Assessment</label>
+            <select class="form-select" id="assessmentFilter">
+                <option value="">All Assessments</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold"><i class="fas fa-calendar-alt"></i> Start Date</label>
+            <input type="date" class="form-control" id="startDate">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold"><i class="fas fa-calendar-alt"></i> End Date</label>
+            <input type="date" class="form-control" id="endDate">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold"><i class="fas fa-filter"></i> Pass / Fail</label>
+            <div class="filter-pill-group" id="statusFilterGroup">
+                <span class="filter-pill all active"    data-status="all"    onclick="setStatusFilter(this)">All</span>
+                <span class="filter-pill passed"         data-status="passed" onclick="setStatusFilter(this)">✓ Passed</span>
+                <span class="filter-pill failed"         data-status="failed" onclick="setStatusFilter(this)">✗ Failed</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="loadLogs()">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Table -->
+<div class="logs-table-card">
+    <div class="table-actions">
+        <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle" id="logsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Session</th>
+                    <th>Assessment</th>
+                    <th>Date / Time</th>
+                    <th>IP Address</th>
+                    <th>Device</th>
+                    <th>Resolution</th>
+                    <th>Download</th>
+                    <th>Upload</th>
+                    <th>Latency</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <tr>
+                    <td colspan="12" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 mb-0">Loading logs…</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     DETAIL POPUP MODAL
+═══════════════════════════════════════ -->
+<div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailModalLabel">
+                    <i class="fas fa-clipboard-list"></i> Speed Test Detail
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="logDetailBody">
+                <!-- filled by JS -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     DELETE LOGS MODAL
+═══════════════════════════════════════ -->
+<div class="modal fade" id="deleteLogsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none;">
+                <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Delete Speed Test Logs</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-filter"></i> Assessment Type</label>
+                    <select class="form-select no-select2" id="deleteLogsAssessment">
+                        <option value="">-- Select Assessment Type --</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">Required: Select the assessment type to delete logs for</small>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-calendar-alt"></i> Date Range (Optional)</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="date" class="form-control" id="deleteLogsStartDate" placeholder="Start Date">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" class="form-control" id="deleteLogsEndDate" placeholder="End Date">
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-1">Leave empty to delete all logs for the assessment</small>
+                </div>
+                <div id="deleteLogsPreview" style="display: none;">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle"></i> Preview:</strong>
+                        <div id="deletePreviewStats" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteLogs()">
+                    <i class="fas fa-trash"></i> Delete Logs
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentLogs  = [];
+    let statusFilter = 'all'; // 'all' | 'passed' | 'failed'
+    let dtInstance   = null;
+
+    /* ═══════════════════════════════════════
+       Init
+    ═══════════════════════════════════════ */
+    $(document).ready(function () {
+        loadAssessmentTypes();
+        loadDeleteLogsAssessmentTypes();
+        loadLogs();
+
+        // ✅ FIX: Proper event binding for delete logs modal
+        $(document).off('change', '#deleteLogsAssessment').on('change', '#deleteLogsAssessment', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
+
+        $(document).off('change', '#deleteLogsStartDate').on('change', '#deleteLogsStartDate', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
+
+        $(document).off('change', '#deleteLogsEndDate').on('change', '#deleteLogsEndDate', function(e) {
+            e.stopPropagation();
+            getDeleteLogsPreview();
+        });
+    });
+
+    /* ═══════════════════════════════════════
+       Status pill filter
+    ═══════════════════════════════════════ */
+    function setStatusFilter(el) {
+        statusFilter = el.dataset.status;
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        applyStatusFilter();
+    }
+
+    function applyStatusFilter() {
+        let filtered = currentLogs;
+        if (statusFilter === 'passed') filtered = currentLogs.filter(l => l.overallPassed);
+        if (statusFilter === 'failed')  filtered = currentLogs.filter(l => !l.overallPassed);
+        renderTable(filtered);
+    }
+
+    /* ═══════════════════════════════════════
+       API
+    ═══════════════════════════════════════ */
+    function loadAssessmentTypes() {
+        $.ajax({
+            url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+            type: 'GET',
+            success: function (res) {
+                if (res.success && res.data) {
+                    const sel = $('#assessmentFilter');
+                    res.data.forEach(a => {
+                        sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                    });
+                    
+                    // Enable delete button now that assessments are loaded
+                    $('#assessmentFilter').on('change', function() {
+                        const btn = document.getElementById('btnDeleteLogs');
+                        btn.disabled = !$(this).val();
+                    });
+                }
+            }
+        });
+    }
+
+    function loadDeleteLogsAssessmentTypes() {
+        $.ajax({
+            url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+            type: 'GET',
+            success: function (res) {
+                if (res.success && res.data) {
+                    const sel = $('#deleteLogsAssessment');
+                    res.data.forEach(a => {
+                        sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                    });
+                }
+            }
+        });
+    }
+
+    function loadLogs() {
+        showLoader();
+        const assessmentCode = $('#assessmentFilter').val();
+        const url = assessmentCode
+            ? buildApiUrl(`/Admin/GetSpeedTestLogsByAssessment?assessmentCode=${encodeURIComponent(assessmentCode)}`)
+            : buildApiUrl('/Admin/GetAllSpeedTestLogs');
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (res) {
+                hideLoader();
+                if (res.success && res.data) {
+                    currentLogs = res.data;
+                    updateStatistics(currentLogs);
+                    applyStatusFilter();
+                } else {
+                    showAlert('Failed to load logs: ' + (res.message || 'Unknown error'), 'danger');
+                }
+            },
+            error: function () {
+                hideLoader();
+                showAlert('Error loading logs. Please try again.', 'danger');
+            }
+        });
+    }
+
+    function refreshLogs() { loadLogs(); }
+
+    /* ═══════════════════════════════════════
+       Statistics
+    ═══════════════════════════════════════ */
+    function updateStatistics(logs) {
+        const passed      = logs.filter(l => l.overallPassed).length;
+        const privateMode = logs.filter(l => l.privateModeDetected).length;
+        $('#totalLogs').text(logs.length);
+        $('#passedLogs').text(passed);
+        $('#failedLogs').text(logs.length - passed);
+        $('#privateModeCount').text(privateMode);
+    }
+
+    /* ═══════════════════════════════════════
+       Table Rendering
+    ═══════════════════════════════════════ */
+    function renderTable(logs) {
+        // Destroy existing DataTable instance
+        if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
+
+        const tbody = $('#logsTableBody');
+        tbody.empty();
+
+        if (!logs.length) {
+            tbody.append(`<tr><td colspan="12" class="text-center py-4">
+                <div class="alert alert-info mb-0"><i class="fas fa-info-circle"></i> No logs found</div>
+            </td></tr>`);
+            return;
+        }
+
+        logs.forEach(function (log, idx) {
+            const resolution  = (log.screenWidth && log.screenHeight) ? `${log.screenWidth}×${log.screenHeight}` : '—';
+            const download    = log.downloadSpeedMbps != null ? `${(+log.downloadSpeedMbps).toFixed(2)} Mbps` : '—';
+            const upload      = log.uploadSpeedMbps   != null ? `${(+log.uploadSpeedMbps).toFixed(2)} Mbps`   : '—';
+            const latency     = log.latency            != null ? `${log.latency} ms`                           : '—';
+            const sessionShrt = log.sessionId ? log.sessionId.substring(0, 8) + '…' : '—';
+            const dateStr     = log.testDateTime ? new Date(log.testDateTime).toLocaleString() : '—';
+
+            const statusBadge = log.overallPassed
+                ? '<span class="badge badge-passed px-3 py-1">✓ Passed</span>'
+                : '<span class="badge badge-failed  px-3 py-1">✗ Failed</span>';
+
+            // Store full log in data attribute as JSON index
+            tbody.append(`<tr>
+                <td>${log.id}</td>
+                <td><small class="text-muted font-monospace" title="${escapeHtml(log.sessionId||'')}">${sessionShrt}</small></td>
+                <td><strong>${escapeHtml(log.assessmentCode||'—')}</strong></td>
+                <td>${dateStr}</td>
+                <td><code>${escapeHtml(log.ipAddress||'—')}</code></td>
+                <td>${escapeHtml(log.deviceType||'—')}</td>
+                <td>${resolution}</td>
+                <td class="${log.speedPassed ? 'text-success' : 'text-danger'} fw-semibold">${download}</td>
+                <td>${upload}</td>
+                <td>${latency}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetail(${idx})" title="View Details">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>`);
+        });
+
+        dtInstance = $('#logsTable').DataTable({
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true,
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+            columnDefs: [{ orderable: false, targets: 11 }]
+        });
+    }
+
+    /* ═══════════════════════════════════════
+       Detail Modal
+    ═══════════════════════════════════════ */
+    function viewDetail(idx) {
+        // idx is position in the currently rendered filtered array —
+        // we track it via the closure over the filtered logs array.
+        // To keep it simple we re-filter here to match renderTable ordering.
+        let filtered = currentLogs;
+        if (statusFilter === 'passed') filtered = currentLogs.filter(l => l.overallPassed);
+        if (statusFilter === 'failed')  filtered = currentLogs.filter(l => !l.overallPassed);
+
+        const log = filtered[idx];
+        if (!log) return;
+
+        const body = buildDetailHtml(log);
+        document.getElementById('logDetailBody').innerHTML = body;
+
+        const title = log.overallPassed
+            ? `<i class="fas fa-check-circle text-success"></i> Speed Test Passed — #${log.id}`
+            : `<i class="fas fa-times-circle text-danger"></i>  Speed Test Failed — #${log.id}`;
+        document.getElementById('logDetailModalLabel').innerHTML = title;
+
+        new bootstrap.Modal(document.getElementById('logDetailModal')).show();
+    }
+
+    function buildDetailHtml(log) {
+        /* ── Determine what failed ── */
+        const failures = [];
+        if (!log.overallPassed) {
+            if (!log.speedPassed)           failures.push('Speed (Download/Upload/Latency)');
+            if (!(log.resolutionPassed > 0))failures.push('Screen Resolution');
+            if (log.privateModeDetected)    failures.push('Private / Incognito Mode');
+        }
+
+        /* ── Overall banner ── */
+        const banner = log.overallPassed
+            ? `<div class="fail-banner overall-pass"><i class="fas fa-check-circle fa-lg"></i> This session passed all checks.</div>`
+            : `<div class="fail-banner overall-fail"><i class="fas fa-times-circle fa-lg"></i> This session FAILED. Reason(s): ${failures.map(f => `<span class="fail-pill">${escapeHtml(f)}</span>`).join('')}</div>`;
+
+        /* ── Check summary pills ── */
+        const pills = [
+            { label: 'Speed',       pass: log.speedPassed },
+            { label: 'Resolution',  pass: log.resolutionPassed > 0 },
+            { label: 'Overall',     pass: log.overallPassed },
+            { label: 'No Private Mode', pass: !log.privateModeDetected },
+        ].map(c => `<span class="${c.pass ? 'pass-pill' : 'fail-pill'}">${c.pass ? '✓' : '✗'} ${c.label}</span>`).join('');
+
+        /* ── Speed metrics ── */
+        const dl   = log.downloadSpeedMbps != null ? (+log.downloadSpeedMbps).toFixed(2) + ' Mbps' : '—';
+        const ul   = log.uploadSpeedMbps   != null ? (+log.uploadSpeedMbps).toFixed(2)   + ' Mbps' : '—';
+        const lat  = log.latency           != null ? log.latency + ' ms'                            : '—';
+
+        const metricGrid = `
+            <div class="metric-grid">
+                <div class="metric-box ${log.downloadSpeedMbps != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${dl}</div>
+                    <div class="m-lbl"><i class="fas fa-arrow-down"></i> Download</div>
+                </div>
+                <div class="metric-box ${log.uploadSpeedMbps != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${ul}</div>
+                    <div class="m-lbl"><i class="fas fa-arrow-up"></i> Upload</div>
+                </div>
+                <div class="metric-box ${log.latency != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${lat}</div>
+                    <div class="m-lbl"><i class="fas fa-clock"></i> Latency</div>
+                </div>
+                <div class="metric-box ${log.resolutionPassed > 0 ? 'm-pass' : 'm-fail'}">
+                    <div class="m-val">${log.screenWidth || '—'}×${log.screenHeight || '—'}</div>
+                    <div class="m-lbl"><i class="fas fa-desktop"></i> Resolution</div>
+                </div>
+            </div>`;
+
+        /* ── Check rows helper ── */
+        const chk = (icon, label, pass, detail) => `
+            <div class="check-row">
+                <span class="check-label"><i class="fas ${icon}"></i> ${label}</span>
+                <span class="check-val ${pass ? 'pass' : 'fail'}">${pass ? '✓ Pass' : '✗ Fail'}${detail ? ` <small class="text-muted fw-normal">(${escapeHtml(detail)})</small>` : ''}</span>
+            </div>`;
+
+        const infoRow = (icon, label, val) => `
+            <div class="check-row">
+                <span class="check-label"><i class="fas ${icon}"></i> ${label}</span>
+                <span class="check-val info">${escapeHtml(String(val ?? '—'))}</span>
+            </div>`;
+
+        return `
+            ${banner}
+            <div class="fail-reasons">${pills}</div>
+
+            <!-- Speed Metrics -->
+            <div class="detail-section-title">Speed Metrics</div>
+            ${metricGrid}
+
+            <!-- Check Results -->
+            <div class="detail-section-title">Check Results</div>
+            ${chk('bolt',       'Speed Check',      log.speedPassed,                `DL: ${dl} / UL: ${ul} / Lat: ${lat}`)}
+            ${chk('desktop',    'Resolution Check', log.resolutionPassed > 0,       `${log.screenWidth||'—'}×${log.screenHeight||'—'} px`)}
+            ${chk('user-secret','Private Mode',     !log.privateModeDetected,        log.privateModeDetected ? `Detected via ${log.privateModeBrowser||'unknown'}` : 'Not detected')}
+            ${chk('check-circle','Overall Result',  log.overallPassed,              '')}
+
+            <!-- Session Info -->
+            <div class="detail-section-title">Session Information</div>
+            ${infoRow('hashtag',       'Test ID',          log.id)}
+            ${infoRow('id-badge',      'Session ID',       log.sessionId)}
+            ${infoRow('clipboard-list','Assessment Code',  log.assessmentCode)}
+            ${infoRow('calendar-alt',  'Test Date / Time', log.testDateTime ? new Date(log.testDateTime).toLocaleString() : '—')}
+            ${infoRow('network-wired', 'IP Address',       log.ipAddress)}
+            ${infoRow('link',          'Referrer URL',     log.referrerUrl)}
+
+            <!-- Device & Browser -->
+            <div class="detail-section-title">Device &amp; Browser</div>
+            ${infoRow('mobile-alt',  'Device Type',        log.deviceType)}
+            ${infoRow('globe',       'Browser (Private)',   log.privateModeBrowser)}
+            ${infoRow('user-agent',  'User Agent',         log.userAgent)}
+        `;
+    }
+
+    /* ═══════════════════════════════════════
+       DELETE LOGS FUNCTIONS
+    ═══════════════════════════════════════ */
+    function openDeleteLogsModal() {
+        const modal = new bootstrap.Modal(document.getElementById('deleteLogsModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+        modal.show();
+    }
+
+    async function loadDeleteLogsAssessmentTypes() {
+        try {
+            const res = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+            const json = await res.json();
+            
+            if (json.success && json.data) {
+                const sel = $('#deleteLogsAssessment');
+                sel.find('option').not(':first').remove();
+                json.data.forEach(a => {
+                    sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading delete logs assessment types:', error);
+        }
+    }
+
+    function getDeleteLogsPreview() {
+        const assessmentCode = $('#deleteLogsAssessment').val();
+        const startDate = $('#deleteLogsStartDate').val();
+        const endDate = $('#deleteLogsEndDate').val();
+
+        if (!assessmentCode) {
+            $('#deleteLogsPreview').hide();
+            return;
+        }
+
+        console.log('Getting delete preview for:', { assessmentCode, startDate, endDate });
+        
+        // Calculate from current data
+        let logsToDelete = currentLogs.filter(l => l.assessmentCode === assessmentCode);
+
+        if (startDate) {
+            const start = new Date(startDate);
+            logsToDelete = logsToDelete.filter(l => new Date(l.testDateTime) >= start);
+        }
+
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999); // Include entire end day
+            logsToDelete = logsToDelete.filter(l => new Date(l.testDateTime) <= end);
+        }
+
+        const passed = logsToDelete.filter(l => l.overallPassed).length;
+        const failed = logsToDelete.length - passed;
+
+        const statsHtml = `
+            <div><strong>Total Logs:</strong> ${logsToDelete.length}</div>
+            <div><strong>Passed:</strong> ${passed}</div>
+            <div><strong>Failed:</strong> ${failed}</div>
+            ${startDate ? `<div><strong>Date Range:</strong> ${startDate} to ${endDate || 'Now'}</div>` : ''}
+        `;
+
+        $('#deletePreviewStats').html(statsHtml);
+        $('#deleteLogsPreview').show();
+    }
+
+    function confirmDeleteLogs() {
+        const assessmentCode = $('#deleteLogsAssessment').val();
+        const startDate = $('#deleteLogsStartDate').val();
+        const endDate = $('#deleteLogsEndDate').val();
+
+        if (!assessmentCode) {
+            showAlert('Please select an assessment type', 'warning');
+            return;
+        }
+
+        let message = `Are you sure you want to delete all speed test logs for assessment "${assessmentCode}"?`;
+        if (startDate || endDate) {
+            message += ` from ${startDate || 'the beginning'} to ${endDate || 'now'}?`;
+        } else {
+            message += '? This action cannot be undone.';
+        }
+
+        if (!confirm(message)) {
+            return;
+        }
+
+        showLoader();
+        const request = {
+            assessmentCode: assessmentCode,
+            startDate: startDate || null,
+            endDate: endDate || null
+        };
+
+        $.ajax({
+            url: buildApiUrl('/Admin/BulkDeleteSpeedTestLogs'),
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(request),
+            dataType: 'json',
+            success: function (res) {
+                hideLoader();
+                if (res && res.success) {
+                    showAlert(`Successfully deleted speed test logs: ${res.message}`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteLogsModal')).hide();
+                    
+                    // Refresh if we have assessment loaded
+                    const currentAssessment = $('#assessmentFilter').val();
+                    if (currentAssessment === assessmentCode) {
+                        loadLogs();
+                    }
+                } else {
+                    showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
+                }
+            },
+            error: function (xhr, status, error) {
+                hideLoader();
+                console.error('Error deleting logs:', error);
+                showAlert('Error deleting speed test logs. Please try again.', 'danger');
+            }
+        });
+    }
+
+    /* ═══════════════════════════════════════
+       Excel Download
+    ═══════════════════════════════════════ */
+    function downloadExcel() {
+        const assessmentCode = $('#assessmentFilter').val();
+        const startDate      = $('#startDate').val();
+        const endDate        = $('#endDate').val();
+
+        let url = buildApiUrl('/Admin/DownloadSpeedTestLogsExcel?');
+        if (assessmentCode) url += `assessmentCode=${encodeURIComponent(assessmentCode)}&`;
+        if (startDate)      url += `startDate=${encodeURIComponent(startDate)}&`;
+        if (endDate)        url += `endDate=${encodeURIComponent(endDate)}`;
+
+        showLoader();
+        window.location.href = url;
+        setTimeout(() => { hideLoader(); showAlert('Excel download started', 'success'); }, 1200);
+    }
+</script>
+}

@@ -1,0 +1,795 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "User Responses";
+}
+
+@section Styles {
+    <style>
+        .results-card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .filter-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .stats-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .stats-box h3 { margin: 0; font-size: 2.5rem; }
+        .stats-box p { margin: 5px 0 0 0; opacity: 0.9; }
+        .answer-item { padding: 10px; margin-bottom: 8px; background: white; border-left: 3px solid #667eea; border-radius: 4px; }
+        .question-label { font-weight: 600; color: #495057; margin-bottom: 5px; }
+        .answer-text { color: #667eea; font-weight: 500; }
+        .img-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #dee2e6; }
+        .rating-badge-minus3 { background: #dc3545; }
+        .rating-badge-minus2 { background: #fd7e14; }
+        .rating-badge-minus1 { background: #ffc107; color: #000; }
+        .rating-badge-0 { background: #6c757d; }
+        .rating-badge-plus1 { background: #84cc16; }
+        .rating-badge-plus2 { background: #22c55e; }
+        .rating-badge-plus3 { background: #06b6d4; }
+        .nav-tabs .nav-link.active { border-bottom: 3px solid #667eea; color: #667eea; font-weight: 600; }
+        .exif-pre { font-size: 0.75rem; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+        .btn-excel { background-color: #1D6F42; color: white; border: none; }
+        .btn-excel:hover { background-color: #155230; color: white; }
+        .btn-excel:disabled { background-color: #6c757d; }
+        .btn-delete-qa { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none; }
+        .btn-delete-qa:hover { background: linear-gradient(135deg, #f093fb, #f5576c); opacity: 0.9; color: white; }
+        .btn-delete-qa:disabled { background-color: #6c757d; }
+        .group-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; background: #e7f3ff; color: #0066cc; font-size: 0.85rem; font-weight: 500; }
+
+        /* ✅ FIX #3: Make tables responsive and full width */
+        .results-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto; /* Allow horizontal scrolling if needed */
+        }
+
+        .results-card table {
+            width: 100%;
+            margin-bottom: 0;
+            table-layout: auto; /* Allow columns to size naturally */
+        }
+
+        /* Prevent DataTable wrapper from constraining width */
+        .dataTables_wrapper {
+            width: 100%;
+        }
+
+        .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate {
+            margin-top: 1rem;
+        }
+
+        /* Optimize column widths */
+        #irTable th:nth-child(2), /* Group Name */
+        #irTable td:nth-child(2) {
+            min-width: 120px;
+            word-break: break-word;
+        }
+
+        /* ✅ NEW: Timing Badge Styles */
+        .timing-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .timing-fast {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .timing-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .timing-slow {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-clipboard-check"></i> User Responses</h2>
+</div>
+
+<!-- Stats -->
+<div class="row" id="statsSection">
+    <div class="col-md-3">
+        <div class="stats-box"><h3 id="totalQA">0</h3><p>Question Submissions</p></div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box"><h3 id="completedQA">0</h3><p>Completed (Q&A)</p></div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box"><h3 id="totalIR">0</h3><p>Image Ratings</p></div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box"><h3 id="uniqueSessions">0</h3><p>Unique Sessions</p></div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="filter-section">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Assessment</label>
+            <select class="form-select no-select2" id="assessmentFilter">
+                <option value="">Select Assessment…</option>    
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Image Group</label>
+            <select class="form-select no-select2" id="groupFilter" disabled>
+                <option value="">Select Group…</option>    
+            </select>
+            <small class="text-muted d-block mt-1 d-none">Select assessment first</small>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Status (Q&amp;A)</label>
+            <select class="form-select" id="statusFilter" onchange="applyQAStatusFilter()">
+                <option value="">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="IN_PROGRESS">In Progress</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="loadAll()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-excel w-100" id="btnDownloadExcel" onclick="downloadFilteredExcel()" disabled
+                    title="Select an assessment to enable download">
+                <i class="fas fa-file-excel"></i> Download Excel
+            </button>
+            <small class="text-muted d-block mt-1 d-none" id="downloadHint">Select assessment</small>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-delete-qa w-100" id="btnDeleteQA" onclick="openDeleteQAModal()" disabled
+                    title="Delete question answers by assessment and level">
+                <i class="fas fa-trash"></i> Delete Q&A
+            </button>
+            <small class="text-muted d-block mt-1 d-none" id="deleteHint">Select assessment</small>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="responseTabs">
+    <li class="nav-item">
+        <a class="nav-link active" id="tab-qa" href="#" onclick="switchTab('qa'); return false;">
+            <i class="fas fa-question-circle"></i> Question Answers
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-ir" href="#" onclick="switchTab('ir'); return false;">
+            <i class="fas fa-images"></i> Image Ratings
+        </a>
+    </li>
+</ul>
+
+<!-- Q&A Table -->
+<div class="results-card" id="panel-qa">
+    <table id="qaTable" class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>Assessment</th>
+                <th>IP Address</th>
+                <th>Start Time</th>
+                <th>Submit Time</th>
+                <th>Status</th>
+                <th>Questions</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Image Ratings Table -->
+<div class="results-card d-none" id="panel-ir">
+    <table id="irTable" class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>Image Group</th>
+                <th>Assessment</th>
+                <th>IP Address</th>
+                <th>Rated At</th>
+                <th>Ref Image</th>
+                <th>Ref Resolution</th>
+                <th>Ref DPI</th>
+                <th>Rated Image</th>
+                <th>Rated Resolution</th>
+                <th>Rated DPI</th>
+                <th>Quality Level</th>
+                <th>Rating</th>
+                <!-- ✅ NEW TIMING COLUMNS -->
+                <th>Time Taken (ms)</th>
+@*                 <th>Time Taken (sec)</th>
+                <th>Display Duration (ms)</th>
+                <th>Rating Timestamp</th> *@
+                <th>Session Total Time (ms)</th>
+                <!-- END NEW TIMING COLUMNS -->
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Q&A Detail Modal -->
+<div class="modal fade" id="qaDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-list-alt"></i> Question Answer Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Session ID:</strong> <span id="detailSessionId"></span></div>
+                    <div class="col-md-6"><strong>IP Address:</strong> <span id="detailIpAddress"></span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Submit Time:</strong> <span id="detailSubmitTime"></span></div>
+                    <div class="col-md-6"><strong>Status:</strong> <span id="detailStatus"></span></div>
+                </div>
+                <hr>
+                <h6><i class="fas fa-question-circle"></i> Answers</h6>
+                <div id="answersContainer"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Rating Detail Modal -->
+<div class="modal fade" id="irDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-images"></i> Image Rating Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="irDetailBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Q&A Modal -->
+<div class="modal fade" id="deleteQAModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border: none;">
+                <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Delete Question Answers</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-filter"></i> Assessment Type</label>
+                    <select class="form-select" id="deleteQAAssessment">
+                        <option value="">-- Select Assessment Type --</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-layer-group"></i> Set Level / Image Group (Optional)</label>
+                    <select class="form-select" id="deleteQAGroup">
+                        <option value="">-- All Set Levels --</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">Leave empty to delete all Q&A for the assessment</small>
+                </div>
+                <div id="deleteQAPreview" style="display: none;">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle"></i> Preview:</strong>
+                        <div id="deletePreviewStats" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteQA()">
+                    <i class="fas fa-trash"></i> Delete Answers
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let qaTable, irTable;
+        let allQA = [];
+        let currentTab = 'qa';
+        let assessmentGroups = {};
+        let currentAssessmentCode = '';
+        let currentGroupCode = '';
+
+        const ratingLabels = {
+            '-3': '-3:Much Worse',
+            '-2': '-2:Worse',
+            '-1': '-1:Slightly Worse',
+            '0': '0:Same',
+            '1': '+1:Slightly Better',
+            '2': '+2:Better',
+            '3': '+3:Much Better'
+        };
+
+        function convertDbRatingToScale(dbValue) {
+            const mapping = { '-3': -3, '-2': -2, '-1': -1, '0': 0, '1': 1, '2': 2, '3': 3 };
+            return mapping[dbValue] ?? dbValue;
+        }
+
+        function getRatingLabel(dbValue) {
+            const scaleValue = convertDbRatingToScale(dbValue);
+            return ratingLabels[String(scaleValue)] ?? 'N/A';
+        }
+
+        function getRatingBadgeClass(dbValue) {
+            const scaleValue = convertDbRatingToScale(dbValue);
+            const classMap = {
+                '-3': 'minus3', '-2': 'minus2', '-1': 'minus1',
+                '0': '0', '1': 'plus1', '2': 'plus2', '3': 'plus3'
+            };
+            return 'rating-badge-' + (classMap[String(scaleValue)] ?? '0');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('panel-qa').classList.toggle('d-none', tab !== 'qa');
+            document.getElementById('panel-ir').classList.toggle('d-none', tab !== 'ir');
+            document.getElementById('tab-qa').classList.toggle('active', tab === 'qa');
+            document.getElementById('tab-ir').classList.toggle('active', tab === 'ir');
+
+            if (tab === 'qa') {
+                qaTable.columns.adjust().draw(false);
+            } else {
+                if (currentAssessmentCode) {
+                    irTable.draw();
+                }
+            }
+        }
+
+        function getBootstrapModal(elementId) {
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap JS is not loaded.');
+                showAlert('UI library failed to load. Please refresh the page.', 'danger');
+                return null;
+            }
+            return new bootstrap.Modal(document.getElementById(elementId));
+        }
+
+        $(document).ready(function () {
+            // ✅ Q&A TABLE - Client-Side (Smaller Dataset)
+            qaTable = $('#qaTable').DataTable({
+                columns: [
+                    { data: 'sessionId', render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                    { data: 'assessmentName' },
+                    { data: 'ipAddress' },
+                    { data: 'startTime', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: 'submitTime', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: 'status', render: d => d === 'COMPLETED'
+                        ? '<span class="badge bg-success">Completed</span>'
+                        : '<span class="badge bg-warning text-dark">In Progress</span>' },
+                    { data: 'answeredQuestions' },
+                    { data: null, orderable: false, render: (d, type, row, meta) =>
+                        `<button class="btn btn-sm btn-info" onclick="viewQADetails(${meta.row})" title="View"><i class="fas fa-eye"></i></button>` }
+                ],
+                order: [[4, 'desc']],
+                processing: false
+            });
+
+            // ✅ IMAGE RATINGS TABLE - SERVER-SIDE PAGINATION
+            irTable = $('#irTable').DataTable({
+                serverSide: true,
+                processing: true,
+                pageLength: 25,
+                ajax: {
+                    url: buildApiUrl('/Admin/GetImageRatingsServerSide'),
+                    type: 'GET',
+                    data: function (d) {
+                        d.assessmentCode = currentAssessmentCode;
+                        d.groupCode = currentGroupCode;
+                    },
+                    error: function (xhr, error, thrown) {
+                        console.error('Server-side error:', error);
+                        showAlert('Error loading image ratings: ' + (xhr.responseJSON?.error || error), 'danger');
+                    }
+                },
+                columns: [
+                    { data: 'sessionId', render: d => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.substring(0, 16))}…</span>` : 'N/A' },
+                    { data: 'groupName', render: d => d ? `<span class="group-badge">${escapeHtml(d)}</span>` : '<span class="text-muted">N/A</span>' },
+                    { data: 'assessmentCode' },
+                    { data: 'ipAddress' },
+                    { data: 'ratedAt', render: d => d ? new Date(d).toLocaleString() : 'N/A' },
+                    { data: null, render: d => d.masterImageUrl
+                        ? `<a href="${escapeHtml(d.masterImageUrl)}" target="_blank"><img src="${escapeHtml(d.masterImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.masterImageName ?? '')}"></a>`
+                        : escapeHtml(d.masterImageName ?? '') },
+                    { data: null, render: d => (d.masterWidth && d.masterHeight) ? `${d.masterWidth} × ${d.masterHeight}` : 'N/A' },
+                    { data: null, render: d => (d.masterDpiX && d.masterDpiY) ? `${Math.round(d.masterDpiX)} × ${Math.round(d.masterDpiY)}` : 'N/A' },
+                    { data: null, render: d => d.linkedImageUrl
+                        ? `<a href="${escapeHtml(d.linkedImageUrl)}" target="_blank"><img src="${escapeHtml(d.linkedImageUrl)}" class="img-thumb" onerror="this.src=''" alt="${escapeHtml(d.linkedImageName ?? '')}"></a>`
+                        : escapeHtml(d.linkedImageName ?? '') },
+                    { data: null, render: d => (d.linkedWidth && d.linkedHeight) ? `${d.linkedWidth} × ${d.linkedHeight}` : 'N/A' },
+                    { data: null, render: d => (d.linkedDpiX && d.linkedDpiY) ? `${Math.round(d.linkedDpiX)} × ${Math.round(d.linkedDpiY)}` : 'N/A' },
+                    { data: null, render: d => {
+                        const lvl = escapeHtml(d.linkedQualityLevel ?? '');
+                        const typ = escapeHtml(d.linkedQualityType ?? '');
+                        return lvl ? `${lvl} <small class="text-muted">(${typ})</small>` : 'N/A';
+                    }},
+                    { data: 'qualityRating', render: d => {
+                        const label = getRatingLabel(d);
+                        const badgeClass = getRatingBadgeClass(d);
+                        return `<span class="badge ${badgeClass}">${label}</span>`;
+                    }},
+                    // ✅ TIMING COLUMNS - Now from server
+                    { data: 'timeTakenMilliseconds', render: d => {
+                        const ms = d || 0;
+                        const badge = ms < 2000 ? 'timing-fast' : ms < 5000 ? 'timing-medium' : 'timing-slow';
+                        return `<span class="timing-badge ${badge}">${ms}ms</span>`;
+                    }},
+                    // { data: 'timeTakenMilliseconds', render: d => {
+                    //     const ms = d || 0;
+                    //     return `<strong>${(ms / 1000).toFixed(2)}</strong>s`;
+                    // }},
+                    // { data: 'displayDurationMilliseconds', render: d => d ? `${d}ms` : 'N/A' },
+                    // { data: 'ratingTimestamp', render: d => d ? new Date(d).toLocaleTimeString() : 'N/A' },
+                    { data: 'sessionTotalTimeMs', render: d => {
+                        const ms = d || 0;
+                        const minutes = Math.floor(ms / 60000);
+                        const seconds = ((ms % 60000) / 1000).toFixed(0);
+                        return `<small>${minutes}m ${seconds}s</small>`;
+                    }},
+                    { data: null, orderable: false, render: (d, type, row, meta) =>
+                        `<button class="btn btn-sm btn-info" onclick="viewIRDetails('${escapeHtml(d.sessionId)}')" title="Details"><i class="fas fa-eye"></i></button>` }
+                ],
+                order: [[4, 'desc']],
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>'
+            });
+
+            loadAssessmentList();
+        });
+
+        async function loadAll() {
+            const ac = $('#assessmentFilter').val();
+            if (!ac) return;
+
+            currentAssessmentCode = ac;
+            currentGroupCode = $('#groupFilter').val() || '';
+
+            showLoader();
+
+            // Load Q&A data
+            const qaUrl = buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(ac)}`);
+            const qaRes = await fetch(qaUrl);
+            const qaJson = await qaRes.json();
+
+            allQA = qaJson.success ? (qaJson.data || []) : [];
+            qaTable.clear().rows.add(allQA).draw();
+
+            // Reload server-side IR table with new filters
+            irTable.draw();
+
+            hideLoader();
+            updateStats();
+        }
+
+        function applyAssessmentFilter() {
+            const ac = $('#assessmentFilter').val();
+            const btn = document.getElementById('btnDownloadExcel');
+            const hint = document.getElementById('downloadHint');
+            const delBtn = document.getElementById('btnDeleteQA');
+            const delHint = document.getElementById('deleteHint');
+            const $groupFilter = $('#groupFilter');
+
+            if (ac) {
+                btn.disabled = false;
+                btn.title = 'Download consolidated Excel for selected assessment';
+                hint.textContent = '';
+                delBtn.disabled = false;
+                delBtn.title = 'Delete question answers for selected assessment';
+                delHint.textContent = '';
+
+                loadGroupsForAssessment(ac);
+                loadDeleteQAAssessmentAndGroups();
+            } else {
+                btn.disabled = true;
+                btn.title = 'Select an assessment to enable download';
+                hint.textContent = 'Select assessment';
+                delBtn.disabled = true;
+                delBtn.title = 'Select an assessment to enable deletion';
+                delHint.textContent = 'Select assessment';
+
+                qaTable.clear().draw();
+                irTable.draw();
+                allQA = [];
+                updateStats();
+
+                $groupFilter.empty().append(new Option('Select Group…', '')).prop('disabled', true);
+                $groupFilter.closest('.col-md-2').find('small').text('Select assessment first');
+            }
+        }
+
+        async function loadGroupsForAssessment(assessmentCode) {
+            try {
+                const res = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
+                const json = await res.json();
+
+                if (json.success && json.data) {
+                    assessmentGroups[assessmentCode] = json.data;
+
+                    const $groupFilter = $('#groupFilter');
+                    $groupFilter.empty().append(new Option('Select Group…', ''));
+
+                    json.data.forEach(g => {
+                        const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
+                        $groupFilter.append(new Option(g.igName + status, g.igName));
+                    });
+
+                    $groupFilter.prop('disabled', false);
+                    $groupFilter.closest('.col-md-2').find('small').text('');
+
+                    $groupFilter.off('change').on('change', function () {
+                        loadAll();
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
+
+        function applyQAStatusFilter() {
+            const status = document.getElementById('statusFilter').value;
+            const filtered = status ? allQA.filter(r => r.status === status) : allQA;
+            qaTable.clear().rows.add(filtered).draw();
+        }
+
+        function updateStats() {
+            document.getElementById('totalQA').textContent = allQA.length;
+            document.getElementById('completedQA').textContent = allQA.filter(r => r.status === 'COMPLETED').length;
+            // For IR stats, we'll update after server-side data loads
+            document.getElementById('totalIR').textContent = 'Loading...';
+            document.getElementById('uniqueSessions').textContent = 'Loading...';
+        }
+
+        async function loadAssessmentList() {
+            const res = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+            const json = await res.json();
+            if (!json.success) return;
+
+            const $sel = $('#assessmentFilter');
+            json.data.forEach(a => {
+                $sel.append(new Option(a.atmName, a.atmCode));
+            });
+
+            $sel.select2({
+                theme: 'material',
+                width: '100%',
+                allowClear: true,
+                placeholder: 'Select Assessment…',
+                dropdownParent: $(document.body)
+            });
+
+            $sel.on('select2:select select2:clear', function () {
+                applyAssessmentFilter();
+            });
+        }
+
+        function downloadFilteredExcel() {
+            const code = $('#assessmentFilter').val();
+            if (!code) { showAlert('Please select an assessment first.', 'warning'); return; }
+            const btn = document.getElementById('btnDownloadExcel');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+            window.location.href = buildApiUrl(`/Admin/DownloadQuestionAnswersExcel?assessmentCode=${encodeURIComponent(code)}`);
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel';
+            }, 3000);
+        }
+
+        // ... (Keep existing delete, view details functions)
+        function openDeleteQAModal() {
+            const modal = new bootstrap.Modal(document.getElementById('deleteQAModal'));
+            modal.show();
+        }
+
+        async function loadDeleteQAAssessmentAndGroups() {
+            try {
+                const aRes = await fetch(buildApiUrl('/Admin/GetAllAssessmentTypes'));
+                const aJson = await aRes.json();
+
+                if (aJson.success && aJson.data) {
+                    const sel = $('#deleteQAAssessment');
+                    sel.find('option').not(':first').remove();
+                    aJson.data.forEach(a => {
+                        sel.append($('<option></option>').attr('value', a.atmCode).text(a.atmName));
+                    });
+                }
+
+                const gRes = await fetch(buildApiUrl('/Admin/GetAllImageGroups'));
+                const gJson = await gRes.json();
+
+                if (gJson.success && gJson.data) {
+                    const sel = $('#deleteQAGroup');
+                    sel.find('option').not(':first').remove();
+                    gJson.data.forEach(g => {
+                        const status = g.igActive === 'N' ? ' [INACTIVE]' : '';
+                        sel.append($('<option></option>').attr('value', g.igCode).text(g.igName + status));
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading delete options:', error);
+            }
+        }
+
+        function getDeleteQAPreview() {
+            const assessmentCode = $('#deleteQAAssessment').val();
+            if (!assessmentCode) { $('#deleteQAPreview').hide(); return; }
+
+            let qaCount = allQA.length;
+            $('#deletePreviewStats').html(`
+                <div><strong>Question Answer Records:</strong> ${qaCount}</div>
+                <div><strong>Note:</strong> Image ratings will be loaded from server</div>
+            `);
+            $('#deleteQAPreview').show();
+        }
+
+        $('#deleteQAAssessment').on('change', getDeleteQAPreview);
+        $('#deleteQAGroup').on('change', getDeleteQAPreview);
+
+        function confirmDeleteQA() {
+            const assessmentCode = $('#deleteQAAssessment').val();
+            if (!assessmentCode) { showAlert('Please select an assessment type', 'warning'); return; }
+
+            const message = `Are you sure you want to delete all question answers for assessment "${assessmentCode}"? This action cannot be undone.`;
+
+            if (!confirm(message)) return;
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/BulkDeleteQuestionAnswers'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ assessmentCode, setLevel: null }),
+                dataType: 'json',
+                success: function (res) {
+                    hideLoader();
+                    if (res && res.success) {
+                        showAlert(`Successfully deleted question answers: ${res.message}`, 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('deleteQAModal')).hide();
+                        if ($('#assessmentFilter').val() === assessmentCode) {
+                            loadAll();
+                        }
+                    } else {
+                        showAlert('Error: ' + (res?.message || 'Unknown error'), 'danger');
+                    }
+                },
+                error: function () {
+                    hideLoader();
+                    showAlert('Error deleting question answers', 'danger');
+                }
+            });
+        }
+
+        async function viewQADetails(rowIdx) {
+            const data = qaTable.row(rowIdx).data();
+            if (!data) { showAlert('Could not find record', 'danger'); return; }
+
+            showLoader();
+            const res = await fetch(buildApiUrl(`/Admin/GetQuestionAnswersByCode?assessmentCode=${encodeURIComponent(data.assessmentCode)}`));
+            const json = await res.json();
+            hideLoader();
+
+            if (!json.success || !json.data?.length) { showAlert('Error loading details', 'danger'); return; }
+
+            const detail = json.data.find(r => r.sessionId === data.sessionId) || json.data[0];
+
+            document.getElementById('detailSessionId').textContent = detail.sessionId ?? 'N/A';
+            document.getElementById('detailIpAddress').textContent = detail.ipAddress ?? 'N/A';
+            document.getElementById('detailSubmitTime').textContent = detail.submitTime ? new Date(detail.submitTime).toLocaleString() : 'N/A';
+            document.getElementById('detailStatus').innerHTML = detail.status === 'COMPLETED'
+                ? '<span class="badge bg-success">Completed</span>'
+                : '<span class="badge bg-warning text-dark">In Progress</span>';
+
+            const container = document.getElementById('answersContainer');
+            container.innerHTML = detail.answers?.length
+                ? detail.answers.map(a => `
+                    <div class="answer-item">
+                        <div class="question-label">${escapeHtml(a.questionCode ?? '')}: ${escapeHtml(a.questionText ?? '')}</div>
+                        <div class="answer-text"><i class="fas fa-check-circle"></i> ${escapeHtml(a.selectedOptionsText || 'No answer')}</div>
+                    </div>`).join('')
+                : '<p class="text-muted">No answers recorded</p>';
+
+            const modal = getBootstrapModal('qaDetailModal');
+            if (modal) modal.show();
+        }
+
+        function viewIRDetails(sessionId) {
+            // This will be called with sessionId from server-side paginated data
+            const $table = $('#irTable');
+            const data = $table.DataTable().rows().data().toArray().find(r => r.sessionId === sessionId);
+
+            if (!data) { showAlert('Could not find record', 'danger'); return; }
+
+            let exifHtml = '';
+            try {
+                const ex = JSON.parse(data.linkedExifData || '{}');
+                exifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
+            } catch { exifHtml = ''; }
+
+            let masterExifHtml = '';
+            try {
+                const ex = JSON.parse(data.masterExifData || '{}');
+                masterExifHtml = Object.entries(ex).map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(String(v))}</td></tr>`).join('');
+            } catch { masterExifHtml = ''; }
+
+            const groupBadge = data.groupName ? `<span class="group-badge">${escapeHtml(data.groupName)}</span>` : '<span class="text-muted">N/A</span>';
+            const ratingLabel = getRatingLabel(data.qualityRating);
+            const badgeClass = getRatingBadgeClass(data.qualityRating);
+
+            // ✅ NEW: Timing info display
+            const timeTakenMs = data.timeTakenMilliseconds || 0;
+            const displayDurationMs = data.displayDurationMilliseconds || 0;
+            const sessionTotalMs = data.sessionTotalTimeMs || 0;
+            const sessionMinutes = Math.floor(sessionTotalMs / 60000);
+            const sessionSeconds = ((sessionTotalMs % 60000) / 1000).toFixed(0);
+
+            document.getElementById('irDetailBody').innerHTML = `
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Session:</strong> ${escapeHtml(data.sessionId ?? '')}</div>
+                    <div class="col-md-4"><strong>Image Group:</strong> ${groupBadge}</div>
+                    <div class="col-md-4"><strong>IP:</strong> ${escapeHtml(data.ipAddress ?? '')}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Assessment:</strong> ${escapeHtml(data.assessmentCode ?? '')}</div>
+                    <div class="col-md-4"><strong>Rated At:</strong> ${data.ratedAt ? new Date(data.ratedAt).toLocaleString() : 'N/A'}</div>
+                    <div class="col-md-4"><strong>Quality Rating:</strong> <span class="badge ${badgeClass}">${ratingLabel}</span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12"><strong>Quality Level:</strong> ${escapeHtml(data.linkedQualityLevel ?? 'N/A')} (${escapeHtml(data.linkedQualityType ?? '')})</div>
+                </div>
+                <div class="row mb-3" style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div class="col-md-3"><strong>⏱️ Time Taken:</strong><div>${timeTakenMs}ms (${(timeTakenMs / 1000).toFixed(2)}s)</div></div>
+                    <div class="col-md-3"><strong>👁️ Display Duration:</strong><div>${displayDurationMs}ms</div></div>
+                    <div class="col-md-3"><strong>⏳ Session Total:</strong><div>${sessionMinutes}m ${sessionSeconds}s</div></div>
+                    <div class="col-md-3"><strong>🕐 Rating Time:</strong><div>${data.ratingTimestamp ? new Date(data.ratingTimestamp).toLocaleTimeString() : 'N/A'}</div></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-image"></i> Reference Image</h6>
+                        ${data.masterImageUrl ? `<a href="${escapeHtml(data.masterImageUrl)}" target="_blank">
+                            <img src="${escapeHtml(data.masterImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                        </a>` : ''}
+                        <p class="mt-2 mb-1"><strong>Name:</strong> ${escapeHtml(data.masterImageName ?? 'N/A')}</p>
+                        <p class="mb-1"><strong>Resolution:</strong> ${data.masterWidth ?? '?'} × ${data.masterHeight ?? '?'} px</p>
+                        <p class="mb-1"><strong>DPI:</strong> ${data.masterDpiX ? Math.round(data.masterDpiX) : '?'} × ${data.masterDpiY ? Math.round(data.masterDpiY) : '?'}</p>
+                        ${masterExifHtml ? `<details><summary style="cursor:pointer; color: #0066cc;"><strong>EXIF Data</strong></summary>
+                            <table class="table table-sm mt-2">${masterExifHtml}</table></details>` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-star"></i> Rated Image</h6>
+                        ${data.linkedImageUrl ? `<a href="${escapeHtml(data.linkedImageUrl)}" target="_blank">
+                            <img src="${escapeHtml(data.linkedImageUrl)}" style="max-width:100%;max-height:200px;border-radius:6px;" onerror="this.style.display='none'">
+                        </a>` : ''}
+                        <p class="mt-2 mb-1"><strong>Name:</strong> ${escapeHtml(data.linkedImageName ?? 'N/A')}</p>
+                        <p class="mb-1"><strong>Resolution:</strong> ${data.linkedWidth ?? '?'} × ${data.linkedHeight ?? '?'} px</p>
+                        <p class="mb-1"><strong>DPI:</strong> ${data.linkedDpiX ? Math.round(data.linkedDpiX) : '?'} × ${data.linkedDpiY ? Math.round(data.linkedDpiY) : '?'}</p>
+                        ${exifHtml ? `<details><summary style="cursor:pointer; color: #0066cc;"><strong>EXIF Data</strong></summary>
+                            <table class="table table-sm mt-2">${exifHtml}</table></details>` : ''}
+                    </div>
+                </div>`;
+
+            const modal = getBootstrapModal('irDetailModal');
+            if (modal) modal.show();
+        }
+    </script>
+}

@@ -2,198 +2,118 @@
     var currentPage = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
 }
 
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - IQA Admin</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Global App Configuration - MUST be loaded FIRST -->
+    @await Html.PartialAsync("_AppConfigScript")
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
             overflow-x: hidden;
         }
 
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: 250px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.3s;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .sidebar.collapsed {
-            width: 70px;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            color: white;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .sidebar-header h4 {
-            margin: 0;
-            font-size: 1.2rem;
-            transition: all 0.3s;
-        }
-
-        .sidebar.collapsed .sidebar-header h4,
-        .sidebar.collapsed .menu-text {
-            display: none;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-        }
-
-        .menu-item {
-            margin: 5px 0;
-        }
-
-        .menu-link {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .menu-link:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .menu-link.active {
-            background: rgba(255,255,255,0.2);
-            border-left: 4px solid white;
-        }
-
-        .menu-icon {
-            min-width: 30px;
-            font-size: 1.2rem;
-            text-align: center;
-        }
-
-        .menu-text {
-            margin-left: 15px;
-        }
-
-        .main-content {
-            margin-left: 250px;
-            transition: all 0.3s;
-            min-height: 100vh;
-            background: #f8f9fa;
-        }
-
-        .main-content.expanded {
-            margin-left: 70px;
-        }
-
-        .top-navbar {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .toggle-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #667eea;
-            cursor: pointer;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .content-area {
-            padding: 30px;
-        }
-
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .logout-btn:hover {
-            background: #c82333;
-        }
-
+        /* Loader Overlay */
         .loader-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
         }
-
-        .loader-overlay.show {
-            display: flex;
-        }
-
+        .loader-overlay.show { display: flex; }
         .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            border: 5px solid #f3f3f3; border-top: 5px solid #667eea;
+            border-radius: 50%; width: 60px; height: 60px;
             animation: spin 1s linear infinite;
         }
+        @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { color: white; margin-top: 15px; font-size: 1.1rem; }
 
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Alert Container */
+        .alert-container { position: fixed; top: 20px; right: 20px; z-index: 9998; max-width: 400px; }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed; left: 0; top: 0; height: 100vh; width: 260px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0; transition: all 0.3s ease; z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto;
+        }
+        .sidebar.collapsed { width: 80px; }
+        .sidebar-header { padding: 0 20px; margin-bottom: 30px; color: white; display: flex; align-items: center; justify-content: center; }
+        .sidebar-header h4 { font-size: 1.5rem; font-weight: 600; white-space: nowrap; overflow: hidden; }
+        .sidebar.collapsed .sidebar-header h4 span { display: none; }
+        .sidebar-menu { list-style: none; padding: 0; }
+        .menu-item { margin-bottom: 5px; }
+        .menu-divider { border-top: 1px solid rgba(255,255,255,0.15); margin: 8px 20px; }
+        .sidebar.collapsed .menu-divider { margin: 8px 10px; }
+        .menu-link {
+            display: flex; align-items: center; padding: 15px 20px;
+            color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; position: relative;
+        }
+        .menu-link:hover, .menu-link.active { background: rgba(255,255,255,0.1); color: white; }
+        .menu-icon { font-size: 1.2rem; width: 30px; margin-right: 15px; }
+        .sidebar.collapsed .menu-text { display: none; }
+
+        /* Main Content */
+        .main-content { margin-left: 260px; min-height: 100vh; transition: all 0.3s ease; }
+        .main-content.expanded { margin-left: 80px; }
+
+        /* Top Navbar */
+        .top-navbar {
+            background: white; padding: 15px 30px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 999;
+        }
+        .toggle-btn { background: none; border: none; font-size: 1.5rem; color: #667eea; cursor: pointer; transition: all 0.3s; }
+        .toggle-btn:hover { color: #764ba2; }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .user-info span { font-weight: 500; color: #333; }
+        .logout-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 8px 20px;
+            border-radius: 5px; cursor: pointer; transition: all 0.3s;
+        }
+        .logout-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* Content Area */
+        .content-area { padding: 30px; min-height: calc(100vh - 70px); }
+
+        @@media (max-width: 768px) {
+            .sidebar { width: 80px; }
+            .sidebar .menu-text { display: none; }
+            .main-content { margin-left: 80px; }
+            .sidebar-header h4 span { display: none; }
         }
 
-        .loader-text {
-            color: white;
-            margin-top: 15px;
-            font-size: 1.1rem;
+        .content-area{
+            zoom:0.76 !important;
         }
 
-        .alert-container {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 9998;
-            max-width: 400px;
+        .sidebar-menu{
+            zoom: 0.85 !important;
         }
-
-        @RenderSection("Styles", required: false)
     </style>
+    
+    @await RenderSectionAsync("Styles", required: false)
+
+    <script type="text/javascript">
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () { window.history.pushState(null, "", window.location.href); };
+    </script>
 </head>
 <body>
     <!-- Loader Overlay -->
@@ -214,33 +134,84 @@
         </div>
         <ul class="sidebar-menu">
             <li class="menu-item">
-                <a href="/IQA/Admin/Dashboard" class="menu-link @(currentPage == "Dashboard" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/Dashboard"
+                   class="menu-link @(currentPage == "Dashboard" ? "active" : "")">
                     <i class="fas fa-home menu-icon"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="/IQA/Admin/ContentMaster" class="menu-link @(currentPage == "ContentMaster" ? "active" : "")">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ContentMaster"
+                   class="menu-link @(currentPage == "ContentMaster" ? "active" : "")">
                     <i class="fas fa-file-alt menu-icon"></i>
                     <span class="menu-text">Content Master</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-users menu-icon"></i>
-                    <span class="menu-text">User Management</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentTypeMaster"
+                   class="menu-link @(currentPage == "AssessmentTypeMaster" ? "active" : "")">
+                    <i class="fas fa-clipboard-list menu-icon"></i>
+                    <span class="menu-text">Assessment Types</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-chart-bar menu-icon"></i>
-                    <span class="menu-text">Reports</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionMaster"
+                   class="menu-link @(currentPage == "QuestionMaster" ? "active" : "")">
+                    <i class="fas fa-question-circle menu-icon"></i>
+                    <span class="menu-text">Question Master</span>
+                </a>
+            </li>
+            <li><div class="menu-divider"></div></li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ImagesMaster"
+                   class="menu-link @(currentPage == "ImagesMaster" ? "active" : "")">
+                    <i class="fas fa-images menu-icon"></i>
+                    <span class="menu-text">Images Upload</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="fas fa-cog menu-icon"></i>
-                    <span class="menu-text">Settings</span>
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/ImageGroups"
+                   class="menu-link @(currentPage == "ImageGroups" ? "active" : "")">
+                    <i class="fas fa-layer-group menu-icon"></i>
+                    <span class="menu-text">Image Groups</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/AssessmentImages"
+                   class="menu-link @(currentPage == "AssessmentImages" ? "active" : "")">
+                    <i class="fas fa-folder-open menu-icon"></i>
+                    <span class="menu-text">Assessment Images</span>
+                </a>
+            </li>
+            <li><div class="menu-divider"></div></li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/QuestionAnswers"
+                   class="menu-link @(currentPage == "QuestionAnswers" ? "active" : "")">
+                    <i class="fas fa-clipboard-check menu-icon"></i>
+                    <span class="menu-text">Question Answers</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/SpeedTestLogs"
+                   class="menu-link @(currentPage == "SpeedTestLogs" ? "active" : "")">
+                    <i class="fas fa-tachometer-alt menu-icon"></i>
+                    <span class="menu-text">Speed Test Logs</span>
+                </a>
+            </li>
+            <li><div class="menu-divider"></div></li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/SystemCheckParams"
+                   class="menu-link @(currentPage == "SystemCheckParams" ? "active" : "")">
+                    <i class="fas fa-sliders-h menu-icon"></i>
+                    <span class="menu-text">System Check Params</span>
+                </a>
+            </li>
+            <li><div class="menu-divider"></div></li>
+            <li class="menu-item">
+                <a href="@IQA_SOURCE.Constants.SubApplicationPathJS/Admin/BulkOperations"
+                   class="menu-link @(currentPage == "BulkOperations" ? "active" : "")">
+                    <i class="fas fa-trash-alt menu-icon"></i>
+                    <span class="menu-text">Bulk Operations</span>
                 </a>
             </li>
         </ul>
@@ -248,11 +219,8 @@
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <!-- Top Navbar -->
         <nav class="top-navbar">
-            <button class="toggle-btn" id="toggleBtn">
-                <i class="fas fa-bars"></i>
-            </button>
+            <button class="toggle-btn" id="toggleBtn"><i class="fas fa-bars"></i></button>
             <div class="user-info">
                 <span><i class="fas fa-user-circle"></i> <span id="userName">Admin User</span></span>
                 <button class="logout-btn" onclick="showLogoutConfirmation()">
@@ -260,8 +228,6 @@
                 </button>
             </div>
         </nav>
-
-        <!-- Content Area -->
         <div class="content-area">
             @RenderBody()
         </div>
@@ -275,9 +241,7 @@
                     <h5 class="modal-title" id="confirmationModalTitle">Confirm Action</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="confirmationModalBody">
-                    Are you sure you want to proceed?
-                </div>
+                <div class="modal-body" id="confirmationModalBody">Are you sure you want to proceed?</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirm</button>
@@ -288,105 +252,101 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
-        // Loader functions
-        function showLoader() {
-            document.getElementById('loaderOverlay').classList.add('show');
+        // ── Global Select2 initialiser — runs after page scripts so dynamic selects are caught ──
+        function initSelect2(context) {
+            var scope = context || document;
+            $(scope).find('select').not('.no-select2').not('.select2-hidden-accessible').each(function () {
+                var $el       = $(this);
+                var inModal   = $el.closest('.modal').length > 0;
+                var opts = {
+                    theme:            'material',
+                    width:            '100%',
+                    allowClear:       $el.find('option[value=""]').length > 0,
+                    placeholder:      $el.find('option[value=""]').text() || 'Select...',
+                    dropdownParent:   inModal ? $el.closest('.modal') : $(document.body)
+                };
+                $el.select2(opts);
+            });
         }
 
-        function hideLoader() {
-            document.getElementById('loaderOverlay').classList.remove('show');
-        }
+        // Re-init inside a modal when it opens (handles dynamically populated selects)
+        $(document).on('shown.bs.modal', function (e) {
+            initSelect2(e.target);
+        });
 
-        // Alert functions
+        // ── Loader ───────────────────────────────────────────────────────────────
+        function showLoader() { document.getElementById('loaderOverlay').classList.add('show'); }
+        function hideLoader() { document.getElementById('loaderOverlay').classList.remove('show'); }
+
+        // ── Alerts ───────────────────────────────────────────────────────────────
         function showAlert(message, type = 'info') {
             const alertContainer = document.getElementById('alertContainer');
             const alertId = 'alert-' + Date.now();
-
-            const alertHtml = `
+            const icon = type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            alertContainer.insertAdjacentHTML('beforeend', `
                 <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                    ${message}
+                    <i class="fas fa-${icon}"></i> ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-
-            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
-
+                </div>`);
             setTimeout(() => {
-                const alertElement = document.getElementById(alertId);
-                if (alertElement) {
-                    const bsAlert = new bootstrap.Alert(alertElement);
-                    bsAlert.close();
-                }
+                const el = document.getElementById(alertId);
+                if (el) new bootstrap.Alert(el).close();
             }, 5000);
         }
 
-        // Confirmation Modal
+        // ── Confirmation Modal ────────────────────────────────────────────────────
         function showConfirmationModal(title, message, onConfirm, confirmBtnText = 'Confirm', confirmBtnClass = 'btn-primary') {
             const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
             document.getElementById('confirmationModalTitle').textContent = title;
-            document.getElementById('confirmationModalBody').textContent = message;
-
+            document.getElementById('confirmationModalBody').textContent  = message;
             const confirmBtn = document.getElementById('confirmationModalConfirm');
-            confirmBtn.textContent = confirmBtnText;
-            confirmBtn.className = 'btn ' + confirmBtnClass;
-
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-
-            newConfirmBtn.addEventListener('click', function() {
-                modal.hide();
-                onConfirm();
-            });
-
+            confirmBtn.textContent  = confirmBtnText;
+            confirmBtn.className    = 'btn ' + confirmBtnClass;
+            const newBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+            newBtn.addEventListener('click', function () { modal.hide(); onConfirm(); });
             modal.show();
         }
 
-        // Utility function to escape HTML
         function escapeHtml(text) {
-            if (!text) return '';
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Sidebar Toggle
-        $('#toggleBtn').on('click', function() {
+        // ── Sidebar Toggle ────────────────────────────────────────────────────────
+        $('#toggleBtn').on('click', function () {
             $('#sidebar').toggleClass('collapsed');
             $('#mainContent').toggleClass('expanded');
         });
 
-        // Show Logout Confirmation
         function showLogoutConfirmation() {
-            showConfirmationModal(
-                'Confirm Logout',
-                'Are you sure you want to logout?',
-                logout,
-                'Logout',
-                'btn-danger'
-            );
+            showConfirmationModal('Confirm Logout', 'Are you sure you want to logout?', logout, 'Logout', 'btn-danger');
         }
 
-        // Logout
         function logout() {
             showLoader();
-            $.post('/IQA/Admin/Logout', function() {
-                window.location.href = '/IQA/Admin/Login';
-            }).fail(function() {
-                hideLoader();
-                showAlert('Error during logout', 'danger');
+            $.ajax({
+                url: buildApiUrl('/Admin/Logout'), type: 'POST',
+                success: function () { window.location.href = buildApiUrl('/Admin/Login'); },
+                error:   function () { hideLoader(); showAlert('Error during logout', 'danger'); }
             });
         }
-    </script>
 
-    @RenderSection("Scripts", required: false)
+        // ── Boot Select2 after all page scripts have run ─────────────────────────
+        $(document).ready(function () { initSelect2(); });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Re-run Select2 after page-level scripts (e.g. scripts that add options dynamically)
+        $(document).ready(function () { initSelect2(); });
+    </script>
 </body>
 </html>

@@ -20,6 +20,38 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/AdminMenus.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWRtaW5NZW51cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/AdminUsers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWRtaW5Vc2Vycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/AssessmentImages.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQXNzZXNzbWVudEltYWdlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/AssessmentTypeMaster.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQXNzZXNzbWVudFR5cGVNYXN0ZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/BulkDataDelete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQnVsa0RhdGFEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/BulkOperations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQnVsa09wZXJhdGlvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ColorblindnessImages.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ29sb3JibGluZG5lc3NJbWFnZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ColorblindnessResults.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ29sb3JibGluZG5lc3NSZXN1bHRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ContentMaster.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ29udGVudE1hc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -28,20 +60,68 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cRGFzaGJvYXJkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ImageGroups.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW1hZ2VHcm91cHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/ImagesMaster.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW1hZ2VzTWFzdGVyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cTG9naW4uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Home/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/QuestionAnswers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cUXVlc3Rpb25BbnN3ZXJzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Home/Privacy.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/QuestionMaster.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cUXVlc3Rpb25NYXN0ZXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Home/SpeedTest.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTcGVlZFRlc3QuY3NodG1s
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/SpeedTestLogs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cU3BlZWRUZXN0TG9ncy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Admin/SystemCheckParams.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cU3lzdGVtQ2hlY2tQYXJhbXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/AssessmentNotFound.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxBc3Nlc3NtZW50Tm90Rm91bmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/ColorblindnessTest.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxDb2xvcmJsaW5kbmVzc1Rlc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/ColorblindnessTestResults.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxDb2xvcmJsaW5kbmVzc1Rlc3RSZXN1bHRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/ImageAssessment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxJbWFnZUFzc2Vzc21lbnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/Questions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxRdWVzdGlvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/SortAssessment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxTb3J0QXNzZXNzbWVudC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Assessment/SpeedTest.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXNzbWVudFxTcGVlZFRlc3QuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/Error.cshtml]
@@ -50,6 +130,26 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AdminLayout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AdminLayoutDynamic.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pbkxheW91dER5bmFtaWMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AdminSidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pblNpZGViYXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AppConfig.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BcHBDb25maWcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AppConfigScript.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BcHBDb25maWdTY3JpcHQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_AssessmentLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Bc3Nlc3NtZW50TGF5b3V0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/student/Downloads/DD/7/IQA_SOURCE/Views/Shared/_ValidationScriptsPartial.cshtml]

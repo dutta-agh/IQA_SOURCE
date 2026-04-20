@@ -1,0 +1,505 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Speed Test Logs";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --danger-gradient:  linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            --border-radius: 12px;
+        }
+
+        /* ── Stats bar ── */
+        .stats-summary { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+        .stat-item { padding: 15px; text-align: center; border-right: 1px solid #e9ecef; }
+        .stat-item:last-child { border-right: none; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #667eea; }
+        .stat-label { color: #666; font-size: 0.9rem; margin-top: 5px; }
+
+        /* ── Filter card ── */
+        .filter-card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+
+        /* ── Table card ── */
+        .logs-table-card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--card-shadow); }
+        .table-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-bottom: 15px; }
+
+        /* ── Badges ── */
+        .badge-passed { background: var(--success-gradient); color: white; }
+        .badge-failed  { background: var(--danger-gradient);  color: white; }
+
+        /* ── Failure indicators inside popup ── */
+        .check-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .check-row:last-child { border-bottom: none; }
+        .check-label { font-weight: 500; color: #495057; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
+        .check-val   { font-size: 0.88rem; font-weight: 600; }
+        .check-val.pass  { color: #28a745; }
+        .check-val.fail  { color: #dc3545; }
+        .check-val.info  { color: #0d6efd; }
+        .check-val.warn  { color: #ffc107; }
+
+        .detail-section-title {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #adb5bd;
+            margin: 18px 0 10px;
+        }
+        .detail-section-title:first-child { margin-top: 0; }
+
+        /* Failure summary banner */
+        .fail-banner {
+            border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem;
+        }
+        .fail-banner.overall-fail { background: #fef2f2; color: #dc3545; border: 1px solid #fecaca; }
+        .fail-banner.overall-pass { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+        /* Pill list of failure reasons */
+        .fail-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+        .fail-pill {
+            background: #fef2f2; color: #dc3545; border: 1px solid #fecaca;
+            border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; font-weight: 600;
+        }
+        .pass-pill {
+            background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+            border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; font-weight: 600;
+        }
+
+        /* Metric grid */
+        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .metric-box {
+            background: #f8f9fa; border-radius: 8px; padding: 12px;
+            text-align: center; border: 1px solid #e9ecef;
+        }
+        .metric-box .m-val { font-size: 1.4rem; font-weight: 700; }
+        .metric-box .m-lbl { font-size: 0.72rem; color: #6c757d; margin-top: 3px; }
+        .metric-box.m-pass .m-val { color: #16a34a; }
+        .metric-box.m-fail .m-val { color: #dc3545; }
+        .metric-box.m-info .m-val { color: #0d6efd; }
+
+        /* Filter pills */
+        .filter-pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-pill {
+            padding: 6px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; border: 2px solid transparent; transition: all 0.18s;
+            user-select: none;
+        }
+        .filter-pill.all    { background: #e9ecef; color: #495057; border-color: #dee2e6; }
+        .filter-pill.passed { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .filter-pill.failed { background: #fef2f2; color: #dc3545; border-color: #fecaca; }
+        .filter-pill.active.all    { background: #667eea; color: white; border-color: #667eea; }
+        .filter-pill.active.passed { background: #16a34a; color: white; border-color: #16a34a; }
+        .filter-pill.active.failed { background: #dc3545; color: white; border-color: #dc3545; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt"></i> Speed Test Logs</h2>
+    <button class="btn btn-success" onclick="downloadExcel()">
+        <i class="fas fa-file-excel"></i> Download Excel
+    </button>
+</div>
+
+<!-- Statistics Summary -->
+<div class="stats-summary">
+    <div class="row">
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value" id="totalLogs">0</div>
+            <div class="stat-label"><i class="fas fa-list"></i> Total Tests</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-success" id="passedLogs">0</div>
+            <div class="stat-label"><i class="fas fa-check-circle"></i> Passed</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-danger" id="failedLogs">0</div>
+            <div class="stat-label"><i class="fas fa-times-circle"></i> Failed</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+            <div class="stat-value text-info" id="privateModeCount">0</div>
+            <div class="stat-label"><i class="fas fa-user-secret"></i> Private Mode</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-card">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fw-semibold"><i class="fas fa-clipboard-list"></i> Assessment</label>
+            <select class="form-select" id="assessmentFilter">
+                <option value="">All Assessments</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold"><i class="fas fa-calendar-alt"></i> Start Date</label>
+            <input type="date" class="form-control" id="startDate">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold"><i class="fas fa-calendar-alt"></i> End Date</label>
+            <input type="date" class="form-control" id="endDate">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold"><i class="fas fa-filter"></i> Pass / Fail</label>
+            <div class="filter-pill-group" id="statusFilterGroup">
+                <span class="filter-pill all active"    data-status="all"    onclick="setStatusFilter(this)">All</span>
+                <span class="filter-pill passed"         data-status="passed" onclick="setStatusFilter(this)">✓ Passed</span>
+                <span class="filter-pill failed"         data-status="failed" onclick="setStatusFilter(this)">✗ Failed</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="loadLogs()">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Table -->
+<div class="logs-table-card">
+    <div class="table-actions">
+        <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle" id="logsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Session</th>
+                    <th>Assessment</th>
+                    <th>Date / Time</th>
+                    <th>IP Address</th>
+                    <th>Device</th>
+                    <th>Resolution</th>
+                    <th>Download</th>
+                    <th>Upload</th>
+                    <th>Latency</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <tr>
+                    <td colspan="12" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 mb-0">Loading logs…</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     DETAIL POPUP MODAL
+═══════════════════════════════════════ -->
+<div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailModalLabel">
+                    <i class="fas fa-clipboard-list"></i> Speed Test Detail
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="logDetailBody">
+                <!-- filled by JS -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentLogs  = [];
+    let statusFilter = 'all'; // 'all' | 'passed' | 'failed'
+    let dtInstance   = null;
+
+    /* ═══════════════════════════════════════
+       Init
+    ═══════════════════════════════════════ */
+    $(document).ready(function () {
+        loadAssessmentTypes();
+        loadLogs();
+    });
+
+    /* ═══════════════════════════════════════
+       Status pill filter
+    ═══════════════════════════════════════ */
+    function setStatusFilter(el) {
+        statusFilter = el.dataset.status;
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        applyStatusFilter();
+    }
+
+    function applyStatusFilter() {
+        let filtered = currentLogs;
+        if (statusFilter === 'passed') filtered = currentLogs.filter(l => l.overallPassed);
+        if (statusFilter === 'failed')  filtered = currentLogs.filter(l => !l.overallPassed);
+        renderTable(filtered);
+    }
+
+    /* ═══════════════════════════════════════
+       API
+    ═══════════════════════════════════════ */
+    function loadAssessmentTypes() {
+        $.ajax({
+            url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+            type: 'GET',
+            success: function (res) {
+                if (res.success && res.data) {
+                    const sel = $('#assessmentFilter');
+                    res.data.forEach(a => sel.append(`<option value="${escapeHtml(a.atmCode)}">${escapeHtml(a.atmName)}</option>`));
+                }
+            }
+        });
+    }
+
+    function loadLogs() {
+        showLoader();
+        const assessmentCode = $('#assessmentFilter').val();
+        const url = assessmentCode
+            ? buildApiUrl(`/Admin/GetSpeedTestLogsByAssessment?assessmentCode=${encodeURIComponent(assessmentCode)}`)
+            : buildApiUrl('/Admin/GetAllSpeedTestLogs');
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (res) {
+                hideLoader();
+                if (res.success && res.data) {
+                    currentLogs = res.data;
+                    updateStatistics(currentLogs);
+                    applyStatusFilter();
+                } else {
+                    showAlert('Failed to load logs: ' + (res.message || 'Unknown error'), 'danger');
+                }
+            },
+            error: function () {
+                hideLoader();
+                showAlert('Error loading logs. Please try again.', 'danger');
+            }
+        });
+    }
+
+    function refreshLogs() { loadLogs(); }
+
+    /* ═══════════════════════════════════════
+       Statistics
+    ═══════════════════════════════════════ */
+    function updateStatistics(logs) {
+        const passed      = logs.filter(l => l.overallPassed).length;
+        const privateMode = logs.filter(l => l.privateModeDetected).length;
+        $('#totalLogs').text(logs.length);
+        $('#passedLogs').text(passed);
+        $('#failedLogs').text(logs.length - passed);
+        $('#privateModeCount').text(privateMode);
+    }
+
+    /* ═══════════════════════════════════════
+       Table Rendering
+    ═══════════════════════════════════════ */
+    function renderTable(logs) {
+        // Destroy existing DataTable instance
+        if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
+
+        const tbody = $('#logsTableBody');
+        tbody.empty();
+
+        if (!logs.length) {
+            tbody.append(`<tr><td colspan="12" class="text-center py-4">
+                <div class="alert alert-info mb-0"><i class="fas fa-info-circle"></i> No logs found</div>
+            </td></tr>`);
+            return;
+        }
+
+        logs.forEach(function (log, idx) {
+            const resolution  = (log.screenWidth && log.screenHeight) ? `${log.screenWidth}×${log.screenHeight}` : '—';
+            const download    = log.downloadSpeedMbps != null ? `${(+log.downloadSpeedMbps).toFixed(2)} Mbps` : '—';
+            const upload      = log.uploadSpeedMbps   != null ? `${(+log.uploadSpeedMbps).toFixed(2)} Mbps`   : '—';
+            const latency     = log.latency            != null ? `${log.latency} ms`                           : '—';
+            const sessionShrt = log.sessionId ? log.sessionId.substring(0, 8) + '…' : '—';
+            const dateStr     = log.testDateTime ? new Date(log.testDateTime).toLocaleString() : '—';
+
+            const statusBadge = log.overallPassed
+                ? '<span class="badge badge-passed px-3 py-1">✓ Passed</span>'
+                : '<span class="badge badge-failed  px-3 py-1">✗ Failed</span>';
+
+            // Store full log in data attribute as JSON index
+            tbody.append(`<tr>
+                <td>${log.id}</td>
+                <td><small class="text-muted font-monospace" title="${escapeHtml(log.sessionId||'')}">${sessionShrt}</small></td>
+                <td><strong>${escapeHtml(log.assessmentCode||'—')}</strong></td>
+                <td>${dateStr}</td>
+                <td><code>${escapeHtml(log.ipAddress||'—')}</code></td>
+                <td>${escapeHtml(log.deviceType||'—')}</td>
+                <td>${resolution}</td>
+                <td class="${log.speedPassed ? 'text-success' : 'text-danger'} fw-semibold">${download}</td>
+                <td>${upload}</td>
+                <td>${latency}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetail(${idx})" title="View Details">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>`);
+        });
+
+        dtInstance = $('#logsTable').DataTable({
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true,
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+            columnDefs: [{ orderable: false, targets: 11 }]
+        });
+    }
+
+    /* ═══════════════════════════════════════
+       Detail Modal
+    ═══════════════════════════════════════ */
+    function viewDetail(idx) {
+        // idx is position in the currently rendered filtered array —
+        // we track it via the closure over the filtered logs array.
+        // To keep it simple we re-filter here to match renderTable ordering.
+        let filtered = currentLogs;
+        if (statusFilter === 'passed') filtered = currentLogs.filter(l => l.overallPassed);
+        if (statusFilter === 'failed')  filtered = currentLogs.filter(l => !l.overallPassed);
+
+        const log = filtered[idx];
+        if (!log) return;
+
+        const body = buildDetailHtml(log);
+        document.getElementById('logDetailBody').innerHTML = body;
+
+        const title = log.overallPassed
+            ? `<i class="fas fa-check-circle text-success"></i> Speed Test Passed — #${log.id}`
+            : `<i class="fas fa-times-circle text-danger"></i>  Speed Test Failed — #${log.id}`;
+        document.getElementById('logDetailModalLabel').innerHTML = title;
+
+        new bootstrap.Modal(document.getElementById('logDetailModal')).show();
+    }
+
+    function buildDetailHtml(log) {
+        /* ── Determine what failed ── */
+        const failures = [];
+        if (!log.overallPassed) {
+            if (!log.speedPassed)           failures.push('Speed (Download/Upload/Latency)');
+            if (!(log.resolutionPassed > 0))failures.push('Screen Resolution');
+            if (log.privateModeDetected)    failures.push('Private / Incognito Mode');
+        }
+
+        /* ── Overall banner ── */
+        const banner = log.overallPassed
+            ? `<div class="fail-banner overall-pass"><i class="fas fa-check-circle fa-lg"></i> This session passed all checks.</div>`
+            : `<div class="fail-banner overall-fail"><i class="fas fa-times-circle fa-lg"></i> This session FAILED. Reason(s): ${failures.map(f => `<span class="fail-pill">${escapeHtml(f)}</span>`).join('')}</div>`;
+
+        /* ── Check summary pills ── */
+        const pills = [
+            { label: 'Speed',       pass: log.speedPassed },
+            { label: 'Resolution',  pass: log.resolutionPassed > 0 },
+            { label: 'Overall',     pass: log.overallPassed },
+            { label: 'No Private Mode', pass: !log.privateModeDetected },
+        ].map(c => `<span class="${c.pass ? 'pass-pill' : 'fail-pill'}">${c.pass ? '✓' : '✗'} ${c.label}</span>`).join('');
+
+        /* ── Speed metrics ── */
+        const dl   = log.downloadSpeedMbps != null ? (+log.downloadSpeedMbps).toFixed(2) + ' Mbps' : '—';
+        const ul   = log.uploadSpeedMbps   != null ? (+log.uploadSpeedMbps).toFixed(2)   + ' Mbps' : '—';
+        const lat  = log.latency           != null ? log.latency + ' ms'                            : '—';
+
+        const metricGrid = `
+            <div class="metric-grid">
+                <div class="metric-box ${log.downloadSpeedMbps != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${dl}</div>
+                    <div class="m-lbl"><i class="fas fa-arrow-down"></i> Download</div>
+                </div>
+                <div class="metric-box ${log.uploadSpeedMbps != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${ul}</div>
+                    <div class="m-lbl"><i class="fas fa-arrow-up"></i> Upload</div>
+                </div>
+                <div class="metric-box ${log.latency != null ? (log.speedPassed ? 'm-pass' : 'm-fail') : 'm-info'}">
+                    <div class="m-val">${lat}</div>
+                    <div class="m-lbl"><i class="fas fa-clock"></i> Latency</div>
+                </div>
+                <div class="metric-box ${log.resolutionPassed > 0 ? 'm-pass' : 'm-fail'}">
+                    <div class="m-val">${log.screenWidth || '—'}×${log.screenHeight || '—'}</div>
+                    <div class="m-lbl"><i class="fas fa-desktop"></i> Resolution</div>
+                </div>
+            </div>`;
+
+        /* ── Check rows helper ── */
+        const chk = (icon, label, pass, detail) => `
+            <div class="check-row">
+                <span class="check-label"><i class="fas ${icon}"></i> ${label}</span>
+                <span class="check-val ${pass ? 'pass' : 'fail'}">${pass ? '✓ Pass' : '✗ Fail'}${detail ? ` <small class="text-muted fw-normal">(${escapeHtml(detail)})</small>` : ''}</span>
+            </div>`;
+
+        const infoRow = (icon, label, val) => `
+            <div class="check-row">
+                <span class="check-label"><i class="fas ${icon}"></i> ${label}</span>
+                <span class="check-val info">${escapeHtml(String(val ?? '—'))}</span>
+            </div>`;
+
+        return `
+            ${banner}
+            <div class="fail-reasons">${pills}</div>
+
+            <!-- Speed Metrics -->
+            <div class="detail-section-title">Speed Metrics</div>
+            ${metricGrid}
+
+            <!-- Check Results -->
+            <div class="detail-section-title">Check Results</div>
+            ${chk('bolt',       'Speed Check',      log.speedPassed,                `DL: ${dl} / UL: ${ul} / Lat: ${lat}`)}
+            ${chk('desktop',    'Resolution Check', log.resolutionPassed > 0,       `${log.screenWidth||'—'}×${log.screenHeight||'—'} px`)}
+            ${chk('user-secret','Private Mode',     !log.privateModeDetected,        log.privateModeDetected ? `Detected via ${log.privateModeBrowser||'unknown'}` : 'Not detected')}
+            ${chk('check-circle','Overall Result',  log.overallPassed,              '')}
+
+            <!-- Session Info -->
+            <div class="detail-section-title">Session Information</div>
+            ${infoRow('hashtag',       'Test ID',          log.id)}
+            ${infoRow('id-badge',      'Session ID',       log.sessionId)}
+            ${infoRow('clipboard-list','Assessment Code',  log.assessmentCode)}
+            ${infoRow('calendar-alt',  'Test Date / Time', log.testDateTime ? new Date(log.testDateTime).toLocaleString() : '—')}
+            ${infoRow('network-wired', 'IP Address',       log.ipAddress)}
+            ${infoRow('link',          'Referrer URL',     log.referrerUrl)}
+
+            <!-- Device & Browser -->
+            <div class="detail-section-title">Device &amp; Browser</div>
+            ${infoRow('mobile-alt',  'Device Type',        log.deviceType)}
+            ${infoRow('globe',       'Browser (Private)',   log.privateModeBrowser)}
+            ${infoRow('user-agent',  'User Agent',         log.userAgent)}
+        `;
+    }
+
+    /* ═══════════════════════════════════════
+       Excel Download
+    ═══════════════════════════════════════ */
+    function downloadExcel() {
+        const assessmentCode = $('#assessmentFilter').val();
+        const startDate      = $('#startDate').val();
+        const endDate        = $('#endDate').val();
+
+        let url = buildApiUrl('/Admin/DownloadSpeedTestLogsExcel?');
+        if (assessmentCode) url += `assessmentCode=${encodeURIComponent(assessmentCode)}&`;
+        if (startDate)      url += `startDate=${encodeURIComponent(startDate)}&`;
+        if (endDate)        url += `endDate=${encodeURIComponent(endDate)}`;
+
+        showLoader();
+        window.location.href = url;
+        setTimeout(() => { hideLoader(); showAlert('Excel download started', 'success'); }, 1200);
+    }
+</script>
+}

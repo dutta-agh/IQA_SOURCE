@@ -1,0 +1,392 @@
+﻿@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Bulk Operations";
+}
+
+@section Styles {
+    <style>
+        .bulk-ops-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .warning-card {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .data-count {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .data-count:last-child {
+            border-bottom: none;
+        }
+
+        .count-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .count-value {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .form-check {
+            margin-bottom: 10px;
+        }
+
+        .danger-zone {
+            border: 2px dashed #dc3545;
+            border-radius: 10px;
+            padding: 20px;
+            background: #fff5f5;
+            margin-top: 20px;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-trash-alt"></i> Bulk Operations</h2>
+    <button class="btn btn-secondary" onclick="window.location.href='@Url.Action("Dashboard")'">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </button>
+</div>
+
+<!-- Warning Card -->
+<div class="warning-card">
+    <h4><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
+    <p class="mb-0">
+        <strong>Warning:</strong> Bulk delete operations are permanent and cannot be undone. 
+        Please ensure you have proper backups before proceeding with any delete operations.
+    </p>
+</div>
+
+<!-- Assessment Selection -->
+<div class="bulk-ops-card">
+    <h5><i class="fas fa-search"></i> Select Assessment for Bulk Operations</h5>
+    <div class="row align-items-end">
+        <div class="col-md-8">
+            <label class="form-label">Assessment Code</label>
+            <select class="form-select" id="assessmentSelect">
+                <option value="">-- Select Assessment Code --</option>
+            </select>
+            <small class="text-muted">Only assessments with existing data are shown</small>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary" onclick="loadAssessmentSummary()" id="loadSummaryBtn">
+                <i class="fas fa-chart-bar"></i> Load Summary
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Assessment Data Summary -->
+<div class="bulk-ops-card" id="summaryCard" style="display: none;">
+    <h5><i class="fas fa-chart-pie"></i> Data Summary</h5>
+    <div class="summary-card" id="summaryContent">
+        <!-- Summary will be loaded here -->
+    </div>
+
+    <!-- Delete Options -->
+    <div class="checkbox-group">
+        <h6><i class="fas fa-check-square"></i> Select Data Types to Delete</h6>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="deleteQuestionAnswers" checked>
+            <label class="form-check-label" for="deleteQuestionAnswers">
+                <strong>Question Answers</strong> - All user responses to assessment questions
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="deleteImageRatings" checked>
+            <label class="form-check-label" for="deleteImageRatings">
+                <strong>Image Quality Ratings</strong> - All image assessment and sort ratings
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="deleteSpeedTestLogs" checked>
+            <label class="form-check-label" for="deleteSpeedTestLogs">
+                <strong>Speed Test Logs</strong> - All network speed test results
+            </label>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="danger-zone">
+        <h6><i class="fas fa-skull-crossbones"></i> Permanent Delete Operation</h6>
+        <p>
+            This operation will permanently delete all selected data for the assessment 
+            "<strong><span id="selectedAssessmentCode"></span></strong>".
+        </p>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="confirmDelete">
+            <label class="form-check-label" for="confirmDelete">
+                <strong>I understand this action cannot be undone</strong>
+            </label>
+        </div>
+        <button class="btn btn-danger btn-lg" onclick="showBulkDeleteConfirmation()" id="bulkDeleteBtn" disabled>
+            <i class="fas fa-trash-alt"></i> DELETE ALL SELECTED DATA
+        </button>
+    </div>
+</div>
+
+<!-- Results Card -->
+<div class="bulk-ops-card" id="resultsCard" style="display: none;">
+    <h5><i class="fas fa-check-circle text-success"></i> Operation Results</h5>
+    <div id="resultsContent">
+        <!-- Results will be shown here -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentAssessmentCode = '';
+        let currentSummary = null;
+
+        $(document).ready(function() {
+            loadAssessmentCodes();
+            setupEventHandlers();
+        });
+
+        function setupEventHandlers() {
+            // Enable/disable delete button based on confirmation checkbox
+            $('#confirmDelete').on('change', function() {
+                $('#bulkDeleteBtn').prop('disabled', !this.checked);
+            });
+
+            // Reset confirmation when assessment changes
+            $('#assessmentSelect').on('change', function() {
+                $('#confirmDelete').prop('checked', false);
+                $('#bulkDeleteBtn').prop('disabled', true);
+                $('#summaryCard').hide();
+                $('#resultsCard').hide();
+            });
+        }
+
+        function loadAssessmentCodes() {
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAssessmentCodesWithData'),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        const select = $('#assessmentSelect');
+                        select.empty().append('<option value="">-- Select Assessment Code --</option>');
+                        
+                        response.data.forEach(code => {
+                            select.append(`<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`);
+                        });
+                    } else {
+                        showAlert('Error loading assessment codes: ' + response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading assessment codes', 'danger');
+                }
+            });
+        }
+
+        function loadAssessmentSummary() {
+            const assessmentCode = $('#assessmentSelect').val();
+            if (!assessmentCode) {
+                showAlert('Please select an assessment code', 'warning');
+                return;
+            }
+
+            currentAssessmentCode = assessmentCode;
+            $('#selectedAssessmentCode').text(assessmentCode);
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAssessmentDataSummary'),
+                type: 'GET',
+                data: { assessmentCode: assessmentCode },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        currentSummary = response.data;
+                        displaySummary(response.data);
+                        $('#summaryCard').show();
+                        $('#resultsCard').hide();
+                    } else {
+                        showAlert('Error loading summary: ' + response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading assessment summary', 'danger');
+                }
+            });
+        }
+
+        function displaySummary(summary) {
+            const totalRecords = summary.questionAnswers + summary.imageRatings + summary.speedTestLogs;
+            
+            const content = `
+                <div class="data-count">
+                    <span class="count-label"><i class="fas fa-question-circle"></i> Question Answers:</span>
+                    <span class="count-value">${summary.questionAnswers.toLocaleString()}</span>
+                </div>
+                <div class="data-count">
+                    <span class="count-label"><i class="fas fa-images"></i> Image Quality Ratings:</span>
+                    <span class="count-value">${summary.imageRatings.toLocaleString()}</span>
+                </div>
+                <div class="data-count">
+                    <span class="count-label"><i class="fas fa-tachometer-alt"></i> Speed Test Logs:</span>
+                    <span class="count-value">${summary.speedTestLogs.toLocaleString()}</span>
+                </div>
+                <div class="data-count">
+                    <span class="count-label"><strong>Total Records:</strong></span>
+                    <span class="count-value"><strong>${totalRecords.toLocaleString()}</strong></span>
+                </div>
+            `;
+            
+            $('#summaryContent').html(content);
+        }
+
+        function showBulkDeleteConfirmation() {
+            if (!currentAssessmentCode) {
+                showAlert('Please select an assessment first', 'warning');
+                return;
+            }
+
+            const deleteQuestionAnswers = $('#deleteQuestionAnswers').is(':checked');
+            const deleteImageRatings = $('#deleteImageRatings').is(':checked');
+            const deleteSpeedTestLogs = $('#deleteSpeedTestLogs').is(':checked');
+
+            if (!deleteQuestionAnswers && !deleteImageRatings && !deleteSpeedTestLogs) {
+                showAlert('Please select at least one data type to delete', 'warning');
+                return;
+            }
+
+            const selectedTypes = [];
+            if (deleteQuestionAnswers) selectedTypes.push('Question Answers');
+            if (deleteImageRatings) selectedTypes.push('Image Ratings');
+            if (deleteSpeedTestLogs) selectedTypes.push('Speed Test Logs');
+
+            const message = `
+                Are you absolutely sure you want to permanently delete the following data for assessment "${currentAssessmentCode}"?
+
+                ${selectedTypes.join(', ')}
+
+                This action CANNOT be undone!
+            `;
+
+            showConfirmationModal(
+                'PERMANENT DELETE CONFIRMATION',
+                message,
+                () => performBulkDelete(),
+                'DELETE PERMANENTLY',
+                'btn-danger'
+            );
+        }
+
+        function performBulkDelete() {
+            const request = {
+                assessmentCode: currentAssessmentCode,
+                deleteQuestionAnswers: $('#deleteQuestionAnswers').is(':checked'),
+                deleteImageRatings: $('#deleteImageRatings').is(':checked'),
+                deleteSpeedTestLogs: $('#deleteSpeedTestLogs').is(':checked')
+            };
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/BulkDeleteAssessmentData'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        displayResults(response.data);
+                        $('#resultsCard').show();
+                        showAlert('Bulk delete completed successfully', 'success');
+                        
+                        // Reset form
+                        $('#confirmDelete').prop('checked', false);
+                        $('#bulkDeleteBtn').prop('disabled', true);
+                        
+                        // Reload summary to show updated counts
+                        setTimeout(() => loadAssessmentSummary(), 1000);
+                    } else {
+                        showAlert('Bulk delete failed: ' + response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error during bulk delete operation', 'danger');
+                }
+            });
+        }
+
+        function displayResults(result) {
+            let content = `
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check"></i> Operation Completed</h6>
+                    <p><strong>Assessment Code:</strong> ${escapeHtml(result.assessmentCode)}</p>
+                    <p><strong>Completed At:</strong> ${new Date(result.deletedAt).toLocaleString()}</p>
+                </div>
+                
+                <div class="summary-card">
+                    <h6>Deletion Summary</h6>
+                    <div class="data-count">
+                        <span class="count-label">Question Answers Deleted:</span>
+                        <span class="count-value">${result.deletedQuestionAnswers.toLocaleString()}</span>
+                    </div>
+                    <div class="data-count">
+                        <span class="count-label">Image Ratings Deleted:</span>
+                        <span class="count-value">${result.deletedImageRatings.toLocaleString()}</span>
+                    </div>
+                    <div class="data-count">
+                        <span class="count-label">Speed Test Logs Deleted:</span>
+                        <span class="count-value">${result.deletedSpeedTestLogs.toLocaleString()}</span>
+                    </div>
+                    <div class="data-count">
+                        <span class="count-label"><strong>Total Records Deleted:</strong></span>
+                        <span class="count-value"><strong>${result.totalRecordsDeleted.toLocaleString()}</strong></span>
+                    </div>
+                </div>
+            `;
+
+            if (result.errorMessages && result.errorMessages.length > 0) {
+                content += `
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Warnings/Errors</h6>
+                        <ul class="mb-0">
+                            ${result.errorMessages.map(msg => `<li>${escapeHtml(msg)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            $('#resultsContent').html(content);
+        }
+    </script>
+}

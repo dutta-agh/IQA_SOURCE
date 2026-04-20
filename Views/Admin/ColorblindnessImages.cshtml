@@ -1,0 +1,672 @@
+@{
+    Layout = "_AdminLayoutDynamic";
+    ViewData["Title"] = "Colorblindness Images";
+}
+
+@section Styles {
+    <style>
+        .images-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s; 
+            border: 2px solid #e0e0e0;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-image-preview {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .image-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #6c757d;
+            word-break: break-all;
+            text-align: right;
+            max-width: 50%;
+        }
+
+        .badge-answer {
+            padding: 8px 12px;
+            font-weight: 600;
+            border-radius: 20px;
+        }
+
+        .navbar-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .navbar-filters select {
+            min-width: 180px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .images-table-container {
+            overflow-x: auto;
+        }
+
+        .image-preview-error {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-size: 0.8rem;
+            color: #999;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-images"></i> Colorblindness Images</h2>
+    <button class="btn btn-primary" onclick="openAddModal()">
+        <i class="fas fa-plus"></i> Add New Image
+    </button>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="navbar-filters">
+        <label class="form-label mb-0">
+            <i class="fas fa-filter"></i> Assessment Type:
+        </label>
+        <select id="assessmentTypeFilter" class="form-select" onchange="onAssessmentTypeChange()">
+            <option value="">-- Select Assessment Type --</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadImages()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Empty State / Table -->
+<div class="images-card">
+    <div id="emptyState" class="empty-state d-none">
+        <i class="fas fa-folder-open"></i>
+        <h5>Select an Assessment Type</h5>
+        <p>Please select an assessment type from the filter above to view colorblindness images.</p>
+    </div>
+
+    <div class="images-table-container d-none" id="tableContainer">
+        <table id="imagesTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th width="18%">Preview</th>
+                    <th width="12%">Assessment Type</th>
+                    <th width="18%">Image Path</th>
+                    <th width="12%">Correct Answer</th>
+                    <th width="12%">Created By</th>
+                    <th width="12%">Created Date</th>
+                    <th width="16%">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add Colorblindness Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageForm">
+                    <div class="mb-3">
+                        <label class="form-label">Assessment Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="assessmentType" required>
+                            <option value="">-- Select Assessment Type --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Image Path <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="imagePath" placeholder="e.g., /images/colorblindness/image_001.jpg" required>
+                        <small class="text-muted">Enter the relative image path (e.g., /images/colorblindness/image.jpg)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Image Preview</label>
+                        <div id="previewContainer" style="text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; border: 1px dashed #dee2e6;">
+                            <img id="previewImage" src="" alt="Preview" class="modal-image-preview d-none" style="max-height: 180px; border: none; margin-bottom: 0;">
+                            <span id="previewPlaceholder" class="text-muted"><i class="fas fa-image"></i> Preview will appear here</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-info mt-2" onclick="previewImage()">
+                            <i class="fas fa-eye"></i> Preview Image
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Correct Answer <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="correctAnswer" placeholder="e.g., 42, Red, etc." required>
+                        <small class="text-muted">The correct answer/number for this colorblindness test image</small>
+                    </div>
+                    <div class="alert alert-danger d-none" id="formError"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="showSaveConfirmation()">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Image Modal -->
+<div class="modal fade" id="viewImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye"></i> View Image Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <img id="viewImagePreview" src="" alt="Image Preview" class="modal-image-preview" style="max-height: 400px; border: none;">
+                </div>
+                <div class="image-details">
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-barcode"></i> Image ID:</span>
+                        <span class="detail-value" id="viewImageId"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-cube"></i> Assessment Type:</span>
+                        <span class="detail-value" id="viewAssessmentType"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-link"></i> Image Path:</span>
+                        <span class="detail-value" id="viewImagePath" style="font-family: monospace; text-align: left;"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-check-circle"></i> Correct Answer:</span>
+                        <span class="detail-value">
+                            <span class="badge badge-answer bg-success" id="viewCorrectAnswer"></span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-user"></i> Created By:</span>
+                        <span class="detail-value" id="viewCreatedBy"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-calendar"></i> Created Date:</span>
+                        <span class="detail-value" id="viewCreatedDate"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" class="btn btn-warning" onclick="editImageFromView()">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let imagesTable;
+        let isEditMode = false;
+        let currentImageId = 0;
+        let assessmentTypes = [];
+
+        $(document).ready(function() {
+            console.log('Initializing Colorblindness Images...');
+            
+            imagesTable = $('#imagesTable').DataTable({
+                data: [],
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            const imagePath = row.imageUrl || row.ImageUrl || '';
+                            if (!imagePath) return '<span class="badge bg-secondary">N/A</span>';
+                            return `<img src="${escapeHtml(imagePath)}" alt="Preview" class="image-preview" onclick="viewImage(${row.cbImageId || row.CbImageId})" onerror="this.replaceWith(document.createElement('div')).className='image-preview-error'; this.innerHTML='<i class=\"fas fa-image\"></i>'">`;
+                        }
+                    },
+                    {
+                        data: function(row) {
+                            return row.assessmentType || row.AssessmentType || '';
+                        }
+                    },
+                    {
+                        data: function(row) {
+                            return row.imageUrl || row.ImageUrl || '';
+                        },
+                        render: function(data) {
+                            if (!data) return '';
+                            return data.length > 40 ? data.substring(0, 40) + '...' : data;
+                        }
+                    },
+                    {
+                        data: function(row) {
+                            return row.correctAnswer || row.CorrectAnswer || '';
+                        },
+                        render: function(data) {
+                            return `<span class="badge bg-success">${escapeHtml(data)}</span>`;
+                        }
+                    },
+                    {
+                        data: function(row) {
+                            return row.createdBy || row.CreatedBy || 'N/A';
+                        }
+                    },
+                    {
+                        data: function(row) {
+                            return row.createdDate || row.CreatedDate || '';
+                        },
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleDateString() : '';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            const id = row.cbImageId || row.CbImageId || 0;
+                            if (!id) return '';
+                            return `
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="viewImage(${id})" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editImage(${id})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteConfirmation(${id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                order: [[5, 'desc']],
+                processing: true,
+                language: {
+                    emptyTable: "No colorblindness images found for selected assessment type",
+                    loadingRecords: "Loading...",
+                    processing: "Processing..."
+                }
+            });
+
+            loadAssessmentTypes();
+            showEmptyState();
+        });
+
+        function loadAssessmentTypes() {
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllAssessmentTypes'),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        assessmentTypes = response.data;
+                        populateAssessmentTypeSelects(response.data);
+                    }
+                },
+                error: function() {
+                    console.error('Error loading assessment types');
+                }
+            });
+        }
+
+        function populateAssessmentTypeSelects(types) {
+            const filterSelect = $('#assessmentTypeFilter');
+            const formSelect = $('#assessmentType');
+
+            filterSelect.find('option:not(:first)').remove();
+            formSelect.find('option:not(:first)').remove();
+
+            types.forEach(type => {
+                const atmCode = type.atmCode || type.AtmCode || '';
+                const atmName = type.atmName || type.AtmName || '';
+                filterSelect.append(`<option value="${atmCode}">${atmName}</option>`);
+                formSelect.append(`<option value="${atmCode}">${atmName}</option>`);
+            });
+        }
+
+        function onAssessmentTypeChange() {
+            const assessmentType = $('#assessmentTypeFilter').val();
+            if (assessmentType) {
+                loadImages();
+            } else {
+                showEmptyState();
+            }
+        }
+
+        function showEmptyState() {
+            $('#emptyState').removeClass('d-none');
+            $('#tableContainer').addClass('d-none');
+            imagesTable.clear().draw();
+        }
+
+        function showTableState() {
+            $('#emptyState').addClass('d-none');
+            $('#tableContainer').removeClass('d-none');
+        }
+
+        function loadImages() {
+            const assessmentType = $('#assessmentTypeFilter').val();
+            if (!assessmentType) {
+                showEmptyState();
+                return;
+            }
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/GetAllColorblindnessImages'),
+                type: 'GET',
+                data: { assessmentType: assessmentType },
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        imagesTable.clear();
+                        if (response.data && response.data.length > 0) {
+                            imagesTable.rows.add(response.data);
+                        }
+                        imagesTable.draw();
+                        showTableState();
+                    } else {
+                        showAlert('Error: ' + (response.message || 'Unable to load images'), 'danger');
+                        showTableState();
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading colorblindness images', 'danger');
+                    showTableState();
+                }
+            });
+        }
+
+        function openAddModal() {
+            const assessmentType = $('#assessmentTypeFilter').val();
+            if (!assessmentType) {
+                showAlert('Please select an assessment type first', 'warning');
+                return;
+            }
+
+            isEditMode = false;
+            $('#modalTitle').text('Add Colorblindness Image');
+            $('#imageForm')[0].reset();
+            $('#assessmentType').val(assessmentType).prop('disabled', false);
+            $('#previewImage').attr('src', '').addClass('d-none');
+            $('#previewPlaceholder').removeClass('d-none');
+            $('#formError').addClass('d-none');
+
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+
+        function previewImage() {
+            const imagePath = $('#imagePath').val().trim();
+            if (!imagePath) {
+                showAlert('Please enter an image path', 'warning');
+                return;
+            }
+
+            $('#previewImage').attr('src', imagePath).removeClass('d-none');
+            $('#previewPlaceholder').addClass('d-none');
+            
+            // Handle image load errors
+            $('#previewImage').on('error', function() {
+                showAlert('Unable to load image. Please check the path.', 'warning');
+            });
+        }
+
+        function viewImage(id) {
+            if (!id) {
+                showAlert('Invalid image ID', 'danger');
+                return;
+            }
+
+            showLoader();
+            const assessmentType = $('#assessmentTypeFilter').val();
+            $.ajax({
+                url: buildApiUrl(`/Admin/GetAllColorblindnessImages?assessmentType=${assessmentType}`),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        const image = response.data.find(img => (img.cbImageId || img.CbImageId) === id);
+                        if (image) {
+                            currentImageId = id;
+                            $('#viewImageId').text(image.cbImageId || image.CbImageId || 'N/A');
+                            $('#viewAssessmentType').text(image.assessmentType || image.AssessmentType || '');
+                            const imagePath = image.imageUrl || image.ImageUrl || '';
+                            $('#viewImagePath').text(imagePath);
+                            $('#viewImagePreview').attr('src', imagePath);
+                            $('#viewCorrectAnswer').text(image.correctAnswer || image.CorrectAnswer || '');
+                            $('#viewCreatedBy').text(image.createdBy || image.CreatedBy || 'N/A');
+                            const createdDate = image.createdDate || image.CreatedDate;
+                            $('#viewCreatedDate').text(createdDate ? new Date(createdDate).toLocaleString() : 'N/A');
+
+                            new bootstrap.Modal(document.getElementById('viewImageModal')).show();
+                        } else {
+                            showAlert('Image not found', 'danger');
+                        }
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading image details', 'danger');
+                }
+            });
+        }
+
+        function editImageFromView() {
+            bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
+            editImage(currentImageId);
+        }
+
+        function editImage(id) {
+            if (!id) {
+                showAlert('Invalid image ID', 'danger');
+                return;
+            }
+
+            showLoader();
+            const assessmentType = $('#assessmentTypeFilter').val();
+            $.ajax({
+                url: buildApiUrl(`/Admin/GetAllColorblindnessImages?assessmentType=${assessmentType}`),
+                type: 'GET',
+                success: function(response) {
+                    hideLoader();
+                    if (response.success && response.data) {
+                        const image = response.data.find(img => (img.cbImageId || img.CbImageId) === id);
+                        if (image) {
+                            isEditMode = true;
+                            currentImageId = id;
+                            $('#modalTitle').text('Edit Colorblindness Image');
+                            $('#assessmentType').val(image.assessmentType || image.AssessmentType).prop('disabled', true);
+                            $('#imagePath').val(image.imageUrl || image.ImageUrl);
+                            $('#correctAnswer').val(image.correctAnswer || image.CorrectAnswer);
+                            
+                            const imagePath = image.imageUrl || image.ImageUrl || '';
+                            $('#previewImage').attr('src', imagePath).removeClass('d-none');
+                            $('#previewPlaceholder').addClass('d-none');
+                            $('#formError').addClass('d-none');
+
+                            new bootstrap.Modal(document.getElementById('imageModal')).show();
+                        }
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('Error loading image for editing', 'danger');
+                }
+            });
+        }
+
+        function showSaveConfirmation() {
+            const data = {
+                assessmentType: $('#assessmentType').val().trim(),
+                imagePath: $('#imagePath').val().trim(),
+                correctAnswer: $('#correctAnswer').val().trim()
+            };
+
+            if (!data.assessmentType || !data.imagePath || !data.correctAnswer) {
+                $('#formError').removeClass('d-none').text('Please fill all required fields');
+                return;
+            }
+
+            const message = isEditMode
+                ? 'Are you sure you want to update this colorblindness image?'
+                : 'Are you sure you want to create a new colorblindness image?';
+
+            showConfirmationModal(
+                'Confirm Save',
+                message,
+                () => saveImage(),
+                'Save',
+                'btn-primary'
+            );
+        }
+
+        function saveImage() {
+            const data = {
+                cbImageId: isEditMode ? currentImageId : 0,
+                assessmentType: $('#assessmentType').val().trim(),
+                imageUrl: $('#imagePath').val().trim(),
+                correctAnswer: $('#correctAnswer').val().trim()
+            };
+
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/SaveColorblindnessImage'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('imageModal')).hide();
+                        loadImages();
+                        showAlert(response.message || 'Image saved successfully', 'success');
+                    } else {
+                        $('#formError').removeClass('d-none').text(response.message);
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    $('#formError').removeClass('d-none').text('An error occurred while saving');
+                }
+            });
+        }
+
+        function showDeleteConfirmation(id) {
+            if (!id) {
+                showAlert('Invalid image ID', 'danger');
+                return;
+            }
+
+            showConfirmationModal(
+                'Confirm Delete',
+                'Are you sure you want to delete this colorblindness image? This action cannot be undone.',
+                () => deleteImage(id),
+                'Delete',
+                'btn-danger'
+            );
+        }
+
+        function deleteImage(id) {
+            showLoader();
+            $.ajax({
+                url: buildApiUrl('/Admin/DeleteColorblindnessImage'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(id),
+                success: function(response) {
+                    hideLoader();
+                    if (response.success) {
+                        loadImages();
+                        showAlert(response.message || 'Image deleted successfully', 'success');
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    hideLoader();
+                    showAlert('An error occurred while deleting', 'danger');
+                }
+            });
+        }
+    </script>
+}

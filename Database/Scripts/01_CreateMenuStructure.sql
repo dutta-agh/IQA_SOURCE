@@ -1,0 +1,171 @@
+-- ========================================================================
+-- Menu Management System - Database Setup Script
+-- This script creates the necessary tables for dynamic menu management
+-- with role-based access control
+-- Column naming: am_* for admin_menus, mra_* for menu_role_access
+-- ========================================================================
+
+-- ========================================================================
+-- 1. DROP EXISTING TABLES (if they exist)
+-- ========================================================================
+DROP TABLE IF EXISTS menu_role_access;
+DROP TABLE IF EXISTS admin_menus;
+
+-- ========================================================================
+-- 2. CREATE ADMIN MENUS TABLE
+-- ========================================================================
+CREATE TABLE admin_menus (
+    am_id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Unique menu identifier',
+    am_code VARCHAR(100) NOT NULL UNIQUE COMMENT 'Menu code/key (e.g., dashboard, content_master)',
+    am_name VARCHAR(150) NOT NULL COMMENT 'Menu display name',
+    am_icon VARCHAR(100) COMMENT 'Font Awesome icon class (e.g., fas fa-home)',
+    am_controller VARCHAR(100) COMMENT 'Controller name',
+    am_action VARCHAR(100) COMMENT 'Action name',
+    am_order_no INT DEFAULT 0 COMMENT 'Display order in menu',
+    am_parent_id INT COMMENT 'Parent menu ID for hierarchical menus',
+    am_menu_type VARCHAR(20) DEFAULT 'page' COMMENT 'Menu type: page, divider, section, external',
+    am_active CHAR(1) DEFAULT 'Y' COMMENT 'Is menu active (Y/N)',
+    am_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation timestamp',
+    am_created_user VARCHAR(100) COMMENT 'User who created this menu',
+    am_modified_date TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last modification timestamp',
+    am_modified_user VARCHAR(100) COMMENT 'User who last modified this menu',
+    
+    UNIQUE KEY uk_am_code (am_code),
+    INDEX idx_am_order (am_order_no),
+    INDEX idx_am_parent (am_parent_id),
+    INDEX idx_am_active (am_active),
+    INDEX idx_am_menu_type (am_menu_type),
+    FOREIGN KEY fk_am_parent (am_parent_id) REFERENCES admin_menus(am_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Admin menu structure';
+
+-- ========================================================================
+-- 3. CREATE MENU ROLE ACCESS TABLE
+-- ========================================================================
+CREATE TABLE menu_role_access (
+    mra_id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Unique access rule identifier',
+    mra_menu_id INT NOT NULL COMMENT 'Menu ID (references admin_menus.am_id)',
+    mra_role VARCHAR(50) NOT NULL COMMENT 'Role code',
+    mra_can_read CHAR(1) DEFAULT 'N' COMMENT 'Can view/read (Y/N)',
+    mra_can_create CHAR(1) DEFAULT 'N' COMMENT 'Can create (Y/N)',
+    mra_can_edit CHAR(1) DEFAULT 'N' COMMENT 'Can edit (Y/N)',
+    mra_can_delete CHAR(1) DEFAULT 'N' COMMENT 'Can delete (Y/N)',
+    mra_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation timestamp',
+    
+    UNIQUE KEY uk_mra_menu_role (mra_menu_id, mra_role),
+    INDEX idx_mra_menu (mra_menu_id),
+    INDEX idx_mra_role (mra_role),
+    FOREIGN KEY fk_mra_menu (mra_menu_id) REFERENCES admin_menus(am_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Role-based menu access control';
+
+-- ========================================================================
+-- 4. INSERT ADMIN MENUS (based on _AdminLayout.cshtml hardcoded menus)
+-- ========================================================================
+
+-- Dashboard Section
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('dashboard', 'Dashboard', 'fas fa-home', 'Admin', 'Dashboard', 10, 'page', 'Y');
+
+-- Masters Section (Content, Assessment, Questions)
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('content_master', 'Content Master', 'fas fa-file-alt', 'Admin', 'ContentMaster', 20, 'page', 'Y'),
+('assessment_type_master', 'Assessment Types', 'fas fa-clipboard-list', 'Admin', 'AssessmentTypeMaster', 30, 'page', 'Y'),
+('question_master', 'Question Master', 'fas fa-question-circle', 'Admin', 'QuestionMaster', 40, 'page', 'Y');
+
+-- Divider 1
+INSERT INTO admin_menus (am_code, am_name, am_order_no, am_menu_type, am_active) VALUES
+('divider_1', 'divider_1', 45, 'divider', 'Y');
+
+-- Images Section
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('images_master', 'Images Upload', 'fas fa-images', 'Admin', 'ImagesMaster', 50, 'page', 'Y'),
+('image_groups', 'Image Groups', 'fas fa-layer-group', 'Admin', 'ImageGroups', 60, 'page', 'Y'),
+('assessment_images', 'Assessment Images', 'fas fa-folder-open', 'Admin', 'AssessmentImages', 70, 'page', 'Y');
+
+-- Divider 2
+INSERT INTO admin_menus (am_code, am_name, am_order_no, am_menu_type, am_active) VALUES
+('divider_2', 'divider_2', 75, 'divider', 'Y');
+
+-- Reports Section
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('question_answers', 'Question Answers', 'fas fa-clipboard-check', 'Admin', 'QuestionAnswers', 80, 'page', 'Y'),
+('speed_test_logs', 'Speed Test Logs', 'fas fa-tachometer-alt', 'Admin', 'SpeedTestLogs', 90, 'page', 'Y');
+
+-- Divider 3
+INSERT INTO admin_menus (am_code, am_name, am_order_no, am_menu_type, am_active) VALUES
+('divider_3', 'divider_3', 95, 'divider', 'Y');
+
+-- Settings Section
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('system_check_params', 'System Check Params', 'fas fa-sliders-h', 'Admin', 'SystemCheckParams', 100, 'page', 'Y');
+
+-- Divider 4
+INSERT INTO admin_menus (am_code, am_name, am_order_no, am_menu_type, am_active) VALUES
+('divider_4', 'divider_4', 105, 'divider', 'Y');
+
+-- Administration Section
+INSERT INTO admin_menus (am_code, am_name, am_icon, am_controller, am_action, am_order_no, am_menu_type, am_active) VALUES
+('bulk_operations', 'Bulk Operations', 'fas fa-trash-alt', 'Admin', 'BulkOperations', 110, 'page', 'Y'),
+('admin_users', 'Admin Users', 'fas fa-users', 'Admin', 'AdminUsers', 120, 'page', 'Y'),
+('admin_menus', 'Admin Menus', 'fas fa-bars', 'Admin', 'AdminMenus', 130, 'page', 'Y');
+
+-- ========================================================================
+-- 5. SET MENU ACCESS - ALL ROLES (Admin full access, Operator/Manager limited)
+-- ========================================================================
+
+-- Admin role: Full access to all menus
+INSERT INTO menu_role_access (mra_menu_id, mra_role, mra_can_read, mra_can_create, mra_can_edit, mra_can_delete)
+SELECT am_id, 'Admin', 'Y', 'Y', 'Y', 'Y'
+FROM admin_menus
+WHERE am_menu_type != 'divider';
+
+-- Manager role: Can access most menus except admin-level features
+INSERT INTO menu_role_access (mra_menu_id, mra_role, mra_can_read, mra_can_create, mra_can_edit, mra_can_delete)
+SELECT am_id, 'Manager', 'Y', 'Y', 'Y', 'Y'
+FROM admin_menus
+WHERE am_menu_type != 'divider'
+  AND am_code NOT IN ('admin_users', 'admin_menus', 'bulk_operations');
+
+-- Operator role: Can access data entry menus with limited permissions (no delete)
+INSERT INTO menu_role_access (mra_menu_id, mra_role, mra_can_read, mra_can_create, mra_can_edit, mra_can_delete)
+SELECT am_id, 'Operator', 'Y', 'Y', 'Y', 'N'
+FROM admin_menus
+WHERE am_menu_type != 'divider'
+  AND am_code IN (
+    'dashboard',
+    'images_master',
+    'image_groups',
+    'assessment_images',
+    'question_answers',
+    'speed_test_logs'
+  );
+
+-- ========================================================================
+-- SUMMARY OF ACCESS PERMISSIONS:
+-- ========================================================================
+-- Admin:    Full access to all menus (CRUD operations)
+-- Manager:  Can manage most content except admin-level features
+--           - CAN access: Dashboard, Content, Assessment, Questions, Images, Reports
+--           - CANNOT access: Admin Users, Admin Menus, Bulk Operations
+-- Operator: Limited to data entry with no delete permission
+--           - CAN READ & CREATE & EDIT: Dashboard, Images, Assessment Images, Q&A, Speed Tests
+--           - CANNOT DELETE: Any menu item
+-- ========================================================================
+
+-- Verify the setup
+SELECT '=== Admin Menus ===' AS section;
+SELECT am_id, am_code, am_name, am_icon, am_order_no, am_menu_type, am_active
+FROM admin_menus
+ORDER BY am_order_no;
+
+SELECT '' AS '';
+SELECT '=== Menu Role Access Summary ===' AS section;
+SELECT 
+    mra_role,
+    COUNT(DISTINCT mra_menu_id) AS accessible_menus,
+    SUM(IF(mra_can_read = 'Y', 1, 0)) AS can_read,
+    SUM(IF(mra_can_create = 'Y', 1, 0)) AS can_create,
+    SUM(IF(mra_can_edit = 'Y', 1, 0)) AS can_edit,
+    SUM(IF(mra_can_delete = 'Y', 1, 0)) AS can_delete
+FROM menu_role_access
+GROUP BY mra_role
+ORDER BY mra_role;

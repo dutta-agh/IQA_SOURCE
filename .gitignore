@@ -1,0 +1,5 @@
+*.vsidx
+*.db
+*.db-shm
+*.vsidx
+*.db-wal

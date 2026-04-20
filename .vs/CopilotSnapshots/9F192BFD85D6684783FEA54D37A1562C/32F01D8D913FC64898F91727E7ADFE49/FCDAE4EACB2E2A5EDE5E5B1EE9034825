@@ -1,0 +1,466 @@
+﻿using System.Data;
+using MySqlConnector;
+using IQA_SOURCE.Models.Admin;
+using YourApp.Data;
+
+namespace IQA_SOURCE.Data
+{
+    public class AdminMenuRepository : IAdminMenuRepository
+    {
+        private readonly IDbHelper _dbHelper;
+
+        public AdminMenuRepository(IDbHelper dbHelper)
+        {
+            _dbHelper = dbHelper;
+        }
+
+        public async Task<AdminMenuResponse> GetAllAdminMenus(string userId)
+        {
+            try
+            {
+                var query = @"
+                    SELECT 
+                        am_id, am_code, am_name, am_icon, am_action, am_controller,
+                        am_order_no, am_parent_id, am_active, am_menu_type,
+                        am_created_date, am_created_user, am_modified_date, am_modified_user
+                    FROM admin_menus
+                    WHERE am_active = 'Y'
+                    ORDER BY am_order_no ASC";
+
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, null));
+                var menus = new List<AdminMenu>();
+
+                foreach (DataRow row in result.Rows)
+                {
+                    menus.Add(MapToAdminMenu(row));
+                }
+
+                return new AdminMenuResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = $"Retrieved {menus.Count} menus successfully",
+                    Data = menus
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving menus: {ex.Message}",
+                    Data = new List<AdminMenu>()
+                };
+            }
+        }
+
+        public async Task<AdminMenuResponse> GetMenusByRole(string role, string userId)
+        {
+            try
+            {
+                var query = @"
+                    SELECT DISTINCT
+                        am.am_id, am.am_code, am.am_name, am.am_icon, am.am_action, am.am_controller,
+                        am.am_order_no, am.am_parent_id, am.am_active, am.am_menu_type,
+                        am.am_created_date, am.am_created_user, am.am_modified_date, am.am_modified_user
+                    FROM admin_menus am
+                    INNER JOIN menu_role_access mra ON am.am_id = mra.mra_menu_id
+                    WHERE am.am_active = 'Y' AND mra.mra_role = @role AND mra.mra_can_read = 'Y'
+                    ORDER BY am.am_order_no ASC";
+
+                var parameters = new[] { new MySqlParameter("@role", role) };
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var menus = new List<AdminMenu>();
+
+                foreach (DataRow row in result.Rows)
+                {
+                    menus.Add(MapToAdminMenu(row));
+                }
+
+                return new AdminMenuResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = $"Retrieved {menus.Count} accessible menus for role {role}",
+                    Data = menus
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving menus for role: {ex.Message}",
+                    Data = new List<AdminMenu>()
+                };
+            }
+        }
+
+        public async Task<AdminMenuDetailResponse> GetAdminMenuById(int amId, string userId)
+        {
+            try
+            {
+                var query = @"
+                    SELECT 
+                        am_id, am_code, am_name, am_icon, am_action, am_controller,
+                        am_order_no, am_parent_id, am_active, am_menu_type,
+                        am_created_date, am_created_user, am_modified_date, am_modified_user
+                    FROM admin_menus
+                    WHERE am_id = @amId
+                    LIMIT 1";
+
+                var parameters = new[] { new MySqlParameter("@amId", amId) };
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+
+                if (result.Rows.Count > 0)
+                {
+                    return new AdminMenuDetailResponse
+                    {
+                        OutputCode = 1,
+                        OutputMsg = "Menu retrieved successfully",
+                        Data = MapToAdminMenu(result.Rows[0])
+                    };
+                }
+
+                return new AdminMenuDetailResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = "Menu not found",
+                    Data = null
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuDetailResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving menu: {ex.Message}",
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<AdminMenuResponse> InsertAdminMenu(AdminMenu menu, string userId)
+        {
+            try
+            {
+                var query = @"
+                    INSERT INTO admin_menus (am_code, am_name, am_icon, am_action, am_controller,
+                        am_order_no, am_parent_id, am_active, am_menu_type, am_created_user, am_created_date)
+                    VALUES (@code, @name, @icon, @action, @controller,
+                        @orderNo, @parentId, @active, @menuType, @userId, UTC_TIMESTAMP())";
+
+                var parameters = new[]
+                {
+                    new MySqlParameter("@code", menu.AmCode),
+                    new MySqlParameter("@name", menu.AmName),
+                    new MySqlParameter("@icon", menu.AmIcon ?? ""),
+                    new MySqlParameter("@action", menu.AmAction ?? ""),
+                    new MySqlParameter("@controller", menu.AmController ?? ""),
+                    new MySqlParameter("@orderNo", menu.AmOrderNo),
+                    new MySqlParameter("@parentId", (object)menu.AmParentId ?? DBNull.Value),
+                    new MySqlParameter("@active", menu.AmActive ?? "Y"),
+                    new MySqlParameter("@menuType", menu.AmMenuType ?? "page"),
+                    new MySqlParameter("@userId", userId)
+                };
+
+                var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+
+                return new AdminMenuResponse
+                {
+                    OutputCode = rowsAffected > 0 ? 1 : 0,
+                    OutputMsg = rowsAffected > 0 ? "Menu created successfully" : "Failed to create menu",
+                    Data = new List<AdminMenu>()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error creating menu: {ex.Message}",
+                    Data = new List<AdminMenu>()
+                };
+            }
+        }
+
+        public async Task<AdminMenuResponse> UpdateAdminMenu(AdminMenu menu, string userId)
+        {
+            try
+            {
+                var query = @"
+                    UPDATE admin_menus
+                    SET am_name = @name, am_icon = @icon, am_action = @action, am_controller = @controller,
+                        am_order_no = @orderNo, am_parent_id = @parentId, am_active = @active, am_menu_type = @menuType,
+                        am_modified_user = @userId, am_modified_date = UTC_TIMESTAMP()
+                    WHERE am_id = @amId";
+
+                var parameters = new[]
+                {
+                    new MySqlParameter("@amId", menu.AmId),
+                    new MySqlParameter("@name", menu.AmName),
+                    new MySqlParameter("@icon", menu.AmIcon ?? ""),
+                    new MySqlParameter("@action", menu.AmAction ?? ""),
+                    new MySqlParameter("@controller", menu.AmController ?? ""),
+                    new MySqlParameter("@orderNo", menu.AmOrderNo),
+                    new MySqlParameter("@parentId", (object)menu.AmParentId ?? DBNull.Value),
+                    new MySqlParameter("@active", menu.AmActive ?? "Y"),
+                    new MySqlParameter("@menuType", menu.AmMenuType ?? "page"),
+                    new MySqlParameter("@userId", userId)
+                };
+
+                var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+
+                return new AdminMenuResponse
+                {
+                    OutputCode = rowsAffected > 0 ? 1 : 0,
+                    OutputMsg = rowsAffected > 0 ? "Menu updated successfully" : "Failed to update menu",
+                    Data = new List<AdminMenu>()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error updating menu: {ex.Message}",
+                    Data = new List<AdminMenu>()
+                };
+            }
+        }
+
+        public async Task<AdminMenuResponse> DeleteAdminMenu(int amId, string userId)
+        {
+            try
+            {
+                var query = @"
+                    UPDATE admin_menus
+                    SET am_active = 'N', am_modified_user = @userId, am_modified_date = UTC_TIMESTAMP()
+                    WHERE am_id = @amId";
+
+                var parameters = new[]
+                {
+                    new MySqlParameter("@amId", amId),
+                    new MySqlParameter("@userId", userId)
+                };
+
+                var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+
+                return new AdminMenuResponse
+                {
+                    OutputCode = rowsAffected > 0 ? 1 : 0,
+                    OutputMsg = rowsAffected > 0 ? "Menu deleted successfully" : "Failed to delete menu",
+                    Data = new List<AdminMenu>()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AdminMenuResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error deleting menu: {ex.Message}",
+                    Data = new List<AdminMenu>()
+                };
+            }
+        }
+
+        public async Task<MenuRoleAccessResponse> GetMenuRoleAccess(int menuId, string userId)
+        {
+            try
+            {
+                var query = @"
+                    SELECT 
+                        mra_id, mra_menu_id, mra_role, mra_can_read, mra_can_create, mra_can_edit, mra_can_delete,
+                        mra_created_date
+                    FROM menu_role_access
+                    WHERE mra_menu_id = @menuId
+                    ORDER BY mra_role ASC";
+
+                var parameters = new[] { new MySqlParameter("@menuId", menuId) };
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var roleAccess = new List<MenuRoleAccess>();
+
+                foreach (DataRow row in result.Rows)
+                {
+                    roleAccess.Add(MapToMenuRoleAccess(row));
+                }
+
+                return new MenuRoleAccessResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = $"Retrieved {roleAccess.Count} role access entries",
+                    Data = roleAccess
+                };
+            }
+            catch (Exception ex)
+            {
+                return new MenuRoleAccessResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error retrieving role access: {ex.Message}",
+                    Data = new List<MenuRoleAccess>()
+                };
+            }
+        }
+
+        public async Task<MenuRoleAccessResponse> SaveMenuRoleAccess(List<MenuRoleAccess> roleAccess, string userId)
+        {
+            try
+            {
+                if (roleAccess == null || roleAccess.Count == 0)
+                {
+                    return new MenuRoleAccessResponse
+                    {
+                        OutputCode = 0,
+                        OutputMsg = "No role access data provided",
+                        Data = new List<MenuRoleAccess>()
+                    };
+                }
+
+                int successCount = 0;
+
+                foreach (var access in roleAccess)
+                {
+                    var checkQuery = @"
+                        SELECT COUNT(*) as cnt FROM menu_role_access
+                        WHERE mra_menu_id = @menuId AND mra_role = @role";
+
+                    var checkParams = new[]
+                    {
+                        new MySqlParameter("@menuId", access.MraMenuId),
+                        new MySqlParameter("@role", access.MraRole)
+                    };
+
+                    var checkResult = await Task.Run(() => _dbHelper.ExecuteQuery(checkQuery, checkParams));
+                    var exists = checkResult.Rows.Count > 0 && Convert.ToInt32(checkResult.Rows[0]["cnt"]) > 0;
+
+                    string query;
+                    MySqlParameter[] parameters;
+
+                    if (exists)
+                    {
+                        query = @"
+                            UPDATE menu_role_access
+                            SET mra_can_read = @canRead, mra_can_create = @canCreate,
+                                mra_can_edit = @canEdit, mra_can_delete = @canDelete
+                            WHERE mra_menu_id = @menuId AND mra_role = @role";
+
+                        parameters = new[]
+                        {
+                            new MySqlParameter("@menuId", access.MraMenuId),
+                            new MySqlParameter("@role", access.MraRole),
+                            new MySqlParameter("@canRead", access.MraCanRead),
+                            new MySqlParameter("@canCreate", access.MraCanCreate),
+                            new MySqlParameter("@canEdit", access.MraCanEdit),
+                            new MySqlParameter("@canDelete", access.MraCanDelete)
+                        };
+                    }
+                    else
+                    {
+                        query = @"
+                            INSERT INTO menu_role_access (mra_menu_id, mra_role, mra_can_read, mra_can_create,
+                                mra_can_edit, mra_can_delete, mra_created_date)
+                            VALUES (@menuId, @role, @canRead, @canCreate, @canEdit, @canDelete, UTC_TIMESTAMP())";
+
+                        parameters = new[]
+                        {
+                            new MySqlParameter("@menuId", access.MraMenuId),
+                            new MySqlParameter("@role", access.MraRole),
+                            new MySqlParameter("@canRead", access.MraCanRead),
+                            new MySqlParameter("@canCreate", access.MraCanCreate),
+                            new MySqlParameter("@canEdit", access.MraCanEdit),
+                            new MySqlParameter("@canDelete", access.MraCanDelete)
+                        };
+                    }
+
+                    var rowsAffected = await Task.Run(() => _dbHelper.ExecuteNonQuery(query, parameters));
+                    if (rowsAffected > 0) successCount++;
+                }
+
+                return new MenuRoleAccessResponse
+                {
+                    OutputCode = 1,
+                    OutputMsg = $"Saved {successCount}/{roleAccess.Count} role access entries successfully",
+                    Data = roleAccess
+                };
+            }
+            catch (Exception ex)
+            {
+                return new MenuRoleAccessResponse
+                {
+                    OutputCode = 0,
+                    OutputMsg = $"Error saving role access: {ex.Message}",
+                    Data = new List<MenuRoleAccess>()
+                };
+            }
+        }
+
+        public async Task<List<AdminMenu>> GetMenusByUserRole(string userRole)
+        {
+            try
+            {
+                var query = @"
+                    SELECT DISTINCT
+                        am.am_id, am.am_code, am.am_name, am.am_icon, am.am_action, am.am_controller,
+                        am.am_order_no, am.am_parent_id, am.am_active, am.am_menu_type,
+                        am.am_created_date, am.am_created_user, am.am_modified_date, am.am_modified_user
+                    FROM admin_menus am
+                    INNER JOIN menu_role_access mra ON am.am_id = mra.mra_menu_id
+                    WHERE am.am_active = 'Y' 
+                      AND mra.mra_role = @roleCode 
+                      AND mra.mra_can_read = 'Y'
+                    ORDER BY am.am_order_no ASC";
+
+                var parameters = new[] { new MySqlParameter("@roleCode", userRole) };
+                var result = await Task.Run(() => _dbHelper.ExecuteQuery(query, parameters));
+                var menus = new List<AdminMenu>();
+
+                foreach (DataRow row in result.Rows)
+                {
+                    menus.Add(MapToAdminMenu(row));
+                }
+
+                return menus;
+            }
+            catch (Exception ex)
+            {
+                // Log error but return empty list instead of throwing
+                return new List<AdminMenu>();
+            }
+        }
+        
+        private AdminMenu MapToAdminMenu(DataRow row)
+        {
+            return new AdminMenu
+            {
+                AmId = row["am_id"] != DBNull.Value ? Convert.ToInt32(row["am_id"]) : 0,
+                AmCode = row["am_code"]?.ToString() ?? "",
+                AmName = row["am_name"]?.ToString() ?? "",
+                AmIcon = row["am_icon"]?.ToString() ?? "",
+                AmAction = row["am_action"]?.ToString() ?? "",
+                AmController = row["am_controller"]?.ToString() ?? "",
+                AmOrderNo = row["am_order_no"] != DBNull.Value ? Convert.ToInt32(row["am_order_no"]) : 0,
+                AmParentId = row["am_parent_id"] != DBNull.Value ? Convert.ToInt32(row["am_parent_id"]) : null,
+                AmActive = row["am_active"]?.ToString() ?? "Y",
+                AmMenuType = row["am_menu_type"]?.ToString() ?? "page",
+                AmCreatedDate = row["am_created_date"] != DBNull.Value ? (DateTime?)row["am_created_date"] : null,
+                AmCreatedUser = row["am_created_user"]?.ToString() ?? "",
+                AmModifiedDate = row["am_modified_date"] != DBNull.Value ? (DateTime?)row["am_modified_date"] : null,
+                AmModifiedUser = row["am_modified_user"]?.ToString() ?? ""
+            };
+        }
+
+        private MenuRoleAccess MapToMenuRoleAccess(DataRow row)
+        {
+            return new MenuRoleAccess
+            {
+                MraId = row["mra_id"] != DBNull.Value ? Convert.ToInt32(row["mra_id"]) : 0,
+                MraMenuId = row["mra_menu_id"] != DBNull.Value ? Convert.ToInt32(row["mra_menu_id"]) : 0,
+                MraRole = row["mra_role"]?.ToString() ?? "",
+                MraCanRead = row["mra_can_read"]?.ToString() ?? "N",
+                MraCanCreate = row["mra_can_create"]?.ToString() ?? "N",
+                MraCanEdit = row["mra_can_edit"]?.ToString() ?? "N",
+                MraCanDelete = row["mra_can_delete"]?.ToString() ?? "N",
+                MraCreatedDate = row["mra_created_date"] != DBNull.Value ? (DateTime?)row["mra_created_date"] : null
+            };
+        }
+    }
+}
