@@ -6,7 +6,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Project Overview](#project-overview)
 - [Technology Stack](#technology-stack)
@@ -26,7 +26,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## 🎯 Project Overview
+## Project Overview
 
 **IQA SOURCE** is an enterprise-grade assessment platform that enables:
 
@@ -44,7 +44,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 - **Framework**: ASP.NET Core 8.0
@@ -66,7 +66,7 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ┌─────────────────────────────────────────────────────────┐
 │                    CLIENT BROWSER                        │
@@ -108,13 +108,13 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
         ┌──────────────┴──────────────┐
         │                             │
    ┌────▼─────┐            ┌────────▼──────┐
-   │ SQL SERVER│            │ FILE STORAGE  │
+   │ MYSQL│            │ FILE STORAGE  │
    │ DATABASE  │            │ (Linux Path)  │
    └──────────┘            └───────────────┘
 
----
+   └───────────┘            └───────────────┘
 
-## 📁 Project Structure
+## Project Structure
 
 ### Root Directory
 IQA_SOURCE/
@@ -134,7 +134,7 @@ IQA_SOURCE/
 
 ---
 
-## 📂 File Directory Guide
+## File Directory Guide
 
 ### **Controllers/** - Request Handling
 Controllers/
@@ -293,7 +293,7 @@ wwwroot/
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - .NET 8 SDK or later
@@ -335,7 +335,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### appsettings.json Structure
 {
@@ -373,7 +373,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 ### 1. **Assessment Types**
 - **Image Quality Assessment**: Rate image quality on a 7-point scale
@@ -406,7 +406,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## 📊 Assessment Types
+## Assessment Types
 
 ### Image Quality Assessment (7-Point Likert Scale)
 | Score | Label | Meaning |
@@ -436,7 +436,7 @@ Access the application at: `http://localhost:5000/IQA`
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Assessment Endpoints
 POST   /Assessment/SubmitResponses              # Submit survey responses
@@ -466,7 +466,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Core Tables
 
@@ -502,7 +502,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Workflow
 1. Create feature branch: `git checkout -b feature/your-feature`
@@ -526,13 +526,13 @@ dotnet test /p:CollectCoverage=true
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-## 🔗 Additional Resources
+## Additional Resources
 
 - [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
 - [Razor Pages Guide](https://docs.microsoft.com/aspnet/core/razor-pages)
@@ -540,7 +540,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-## 👥 Support & Contact
+## Support & Contact
 
 For issues, questions, or contributions:
 - **GitHub Issues**: [Report a bug](https://github.com/dutta-agh/IQA_SOURCE/issues)
@@ -551,6 +551,4 @@ For issues, questions, or contributions:
 
 **Last Updated**: April 2026  
 **Current Version**: 1.0.0  
-**Status**: Active Development
-
-This revised README maintains the original structure while integrating the new content seamlessly, ensuring clarity and coherence throughout the document.
+**Status**: Active Development      
