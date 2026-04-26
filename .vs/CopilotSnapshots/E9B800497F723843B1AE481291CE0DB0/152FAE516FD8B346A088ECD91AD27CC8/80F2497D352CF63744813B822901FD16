@@ -25,7 +25,6 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 - [MySQL Database Structure](#mysql-database-structure)
 - [Contributing](#contributing)
 - [License](#license)
-- [Citation](#citation)
 - [Additional Resources](#additional-resources)
 - [Support & Contact](#support--contact)
 
@@ -653,28 +652,6 @@ dotnet test /p:CollectCoverage=true
 ## License
 
 This project is licensed under the MIT License - see LICENSE file for details.
-
----
-
-## Citation
-
-If you use **IQA SOURCE** in your research or project, please cite it as follows:
-
-```text
-Dutta, Avrajyoti. (2024). IQA SOURCE - Image Quality Assessment Platform [Software]. GitHub. https://github.com/dutta-agh/IQA_SOURCE
-```
-
-**BibTeX:**
-```bibtex
-@software{iqa_source,
-  author = {Dutta, Avrajyoti},
-  title = {IQA SOURCE - Image Quality Assessment Platform},
-  year = {2024},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/dutta-agh/IQA_SOURCE}}
-}
-```
 
 ---
 
