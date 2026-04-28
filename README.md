@@ -1,5 +1,6 @@
 ﻿Here's the improved `README.md` file, incorporating the new content while maintaining the existing structure and information:
-
+
+
 # IQA SOURCE - Image Quality Assessment Platform
 
 A comprehensive web-based assessment platform built with ASP.NET Core 8 for conducting image quality evaluations, speed tests, and specialized vision assessments. Designed for research and educational purposes.
@@ -80,7 +81,8 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 ---
 
 ## System Architecture
-
+
+
 ┌─────────────────────────────────────────────────────────┐
 │                    CLIENT BROWSER                        │
 │              (Razor Pages + JavaScript)                  │
@@ -123,7 +125,8 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
    ┌────▼─────┐            ┌────────▼──────┐
    │ MYSQL│            │ FILE STORAGE  │
    │ DATABASE  │            │ (Linux Path)  │
-   └──────────┘            └───────────────┘
+   └──────────┘            └───────────────┘
+
 
    └───────────┘            └───────────────┘
 
@@ -160,7 +163,8 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 
 ## Project Structure
 
-### Root Directory
+### Root Directory
+
 IQA_SOURCE/
 ├── Controllers/              # ASP.NET Core Controllers
 ├── Models/                   # Data Models & ViewModels
@@ -174,18 +178,21 @@ IQA_SOURCE/
 ├── wwwroot/                 # Static files (CSS, JS, fonts)
 ├── appsettings.json         # Application configuration
 ├── Program.cs               # Application startup
-└── README.md                # This file
+└── README.md                # This file
+
 
 ---
 
 ## File Directory Guide
 
-### **Controllers/** - Request Handling
+### **Controllers/** - Request Handling
+
 Controllers/
 ├── AssessmentController.cs      # Assessment endpoints (Image/Sort/Speed/Colorblindness)
 ├── AdminController.cs           # Admin dashboard & management
 ├── HomeController.cs            # Application home page
-└── [Other]Controller.cs
+└── [Other]Controller.cs
+
 
 | File | Purpose |
 |------|---------|
@@ -193,7 +200,8 @@ Controllers/
 | `AdminController.cs` | Admin authentication, dashboard, content/question/image management, reporting |
 | `HomeController.cs` | Home page and general navigation |
 
-### **Models/** - Data & View Models
+### **Models/** - Data & View Models
+
 Models/
 ├── Admin/
 │   ├── AssessmentSequence.cs    # Assessment progression state machine
@@ -204,7 +212,8 @@ Models/
 │   ├── SortAssessmentViewModel.cs
 │   ├── ImageAssessmentViewModel.cs
 │   └── [Others]
-└── [Domain Models]
+└── [Domain Models]
+
 
 | File | Purpose |
 |------|---------|
@@ -213,7 +222,8 @@ Models/
 | `SortAssessmentViewModel.cs` | ViewModel for sort assessment page with image lists |
 | `ImageAssessmentViewModel.cs` | ViewModel for image rating assessment |
 
-### **Services/** - Business Logic
+### **Services/** - Business Logic
+
 Services/
 ├── IAssessmentSequenceService.cs    # Interface for sequence management
 ├── AssessmentSequenceService.cs     # Sequence state management & validation
@@ -221,7 +231,8 @@ Services/
 ├── ImageMetadataService.cs          # Image format/size/EXIF extraction
 ├── ISessionService.cs               # Session management interface
 ├── SessionService.cs                # User session handling
-└── [Other Services]
+└── [Other Services]
+
 
 | File | Purpose |
 |------|---------|
@@ -229,7 +240,8 @@ Services/
 | `ImageMetadataService.cs` | Extracts image dimensions, format, EXIF data; validates image files |
 | `SessionService.cs` | Manages user sessions and authentication state |
 
-### **Data/** - Database Access Layer (Repositories)
+### **Data/** - Database Access Layer (Repositories)
+
 Data/
 ├── DbHelper.cs                      # Database connection management
 ├── IDbHelper.cs                     # DbHelper interface
@@ -245,7 +257,8 @@ Data/
 │   ├── AssessmentTypeRepository.cs  # Assessment type data access
 │   ├── IAdminRepository.cs          # Admin interface
 │   ├── AdminRepository.cs           # Admin functions
-│   └── [Other Repositories]
+│   └── [Other Repositories]
+
 
 | File | Purpose |
 |------|---------|
@@ -255,12 +268,14 @@ Data/
 | `ImageRepository.cs` | Image metadata storage and retrieval |
 | `AssessmentTypeRepository.cs` | Assessment configuration and definitions |
 
-### **Middleware/** - HTTP Pipeline
+### **Middleware/** - HTTP Pipeline
+
 Middleware/
 ├── GlobalExceptionHandlingMiddleware.cs   # Global error handling
 ├── ActionLoggingMiddleware.cs             # Request/response logging
 ├── AssessmentSequenceMiddleware.cs        # Assessment state validation
-└── [Other Middleware]
+└── [Other Middleware]
+
 
 | File | Purpose |
 |------|---------|
@@ -268,7 +283,8 @@ Middleware/
 | `ActionLoggingMiddleware.cs` | Logs all user actions for audit trail; captures timestamps, user IDs, endpoints |
 | `AssessmentSequenceMiddleware.cs` | Validates assessment sequence before accessing pages |
 
-### **Views/** - Razor Pages & Layouts
+### **Views/** - Razor Pages & Layouts
+
 Views/
 ├── Shared/
 │   ├── _Layout.cshtml               # Main application layout
@@ -293,7 +309,8 @@ Views/
 │   └── [Other admin views]
 └── Home/
     ├── Index.cshtml                 # Application home
-    └── Error.cshtml                 # Error page
+    └── Error.cshtml                 # Error page
+
 
 | File | Purpose |
 |------|---------|
@@ -303,7 +320,8 @@ Views/
 | `ContentMaster.cshtml` | Admin page for managing assessment instructions/content |
 | `QuestionMaster.cshtml` | Admin page for creating/editing survey questions |
 
-### **wwwroot/** - Static Assets
+### **wwwroot/** - Static Assets
+
 wwwroot/
 ├── css/
 │   ├── site.css                     # Global styles (admin + assessment)
@@ -317,18 +335,21 @@ wwwroot/
 │   ├── bootstrap/                   # Bootstrap 5.3
 │   ├── font-awesome/                # Font Awesome 6.4
 │   └── select2/                     # Select2 dropdown
-└── fonts/                           # Custom fonts
+└── fonts/                           # Custom fonts
+
 
 | File | Purpose |
 |------|---------|
 | `site.css` | Global theme, component styles, responsive design, admin sidebar, assessment layouts |
 | `site.js` | Global utilities: `buildApiUrl()`, `showLoader()`, `showAlert()`, modal helpers |
 
-### **Configuration Files**
+### **Configuration Files**
+
 ├── appsettings.json                 # Base configuration
 ├── appsettings.Development.json     # Development overrides
 ├── appsettings.Production.json      # Production overrides
-└── Program.cs                       # Application startup configuration
+└── Program.cs                       # Application startup configuration
+
 
 | File | Purpose |
 |------|---------|
@@ -378,14 +399,19 @@ wwwroot/
 - MySQL 8.0+ or compatible database
 - Visual Studio 2022 (recommended) or VS Code
 
-### Step 1: Clone Repository
+### Step 1: Clone Repository
+
 git clone https://github.com/dutta-agh/IQA_SOURCE.git
-cd IQA_SOURCE
+cd IQA_SOURCE
 
-### Step 2: Install Dependencies
-dotnet restore
 
-### Step 3: Configure appsettings.json
+### Step 2: Install Dependencies
+
+dotnet restore
+
+
+### Step 3: Configure appsettings.json
+
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=YOUR_SERVER;Database=IQA_DB;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=true;"
@@ -397,17 +423,22 @@ dotnet restore
     "BasePath": "/var/www/iqa_images",
     "WebBasePath": "/images"
   }
-}
+}
 
-### Step 4: Create Database
+
+### Step 4: Create Database
+
 # Using Entity Framework (if migrations exist)
 dotnet ef database update
 
-# Or run SQL scripts in Data/ folder manually
+# Or run SQL scripts in Data/ folder manually
 
-### Step 5: Build & Run
+
+### Step 5: Build & Run
+
 dotnet build
-dotnet run
+dotnet run
+
 
 Access the application at: `http://localhost:5000/IQA`
 
@@ -415,7 +446,8 @@ Access the application at: `http://localhost:5000/IQA`
 
 ## Configuration
 
-### appsettings.json Structure
+### appsettings.json Structure
+
 {
   "Logging": {
     "LogLevel": {
@@ -442,7 +474,8 @@ Access the application at: `http://localhost:5000/IQA`
   "Session": {
     "IdleTimeoutMinutes": 30
   }
-}
+}
+
 
 ### Environment-Specific Overrides
 - `appsettings.Development.json` - Local development
@@ -540,7 +573,8 @@ Access the application at: `http://localhost:5000/IQA`
 
 ## API Endpoints
 
-### Assessment Endpoints
+### Assessment Endpoints
+
 POST   /Assessment/SubmitResponses              # Submit survey responses
 POST   /Assessment/SubmitImageQualityRating     # Submit image rating
 POST   /Assessment/SubmitSortRatings           # Submit sort assessment
@@ -553,9 +587,11 @@ GET    /Assessment/{type}/SortAssessment        # Sort assessment page
 GET    /Assessment/{type}/ColorblindnessTest    # Vision test page
 GET    /Assessment/GetSessionInfo               # Get session state
 GET    /Assessment/GetImageAssessmentProgress   # Get progress
-GET    /Assessment/GetColorblindnessImagesForTest # Get test images
+GET    /Assessment/GetColorblindnessImagesForTest # Get test images
 
-### Admin Endpoints
+
+### Admin Endpoints
+
 POST   /Admin/Login                             # Admin authentication
 GET    /Admin/Dashboard                         # Dashboard
 POST   /Admin/SaveContent                       # Save assessment content
@@ -564,7 +600,8 @@ POST   /Admin/SaveQuestion                      # Save question
 POST   /Admin/DeleteQuestion                    # Delete question
 POST   /Admin/UploadImages                      # Upload images
 GET    /Admin/DownloadQuestionAnswersExcel      # Export responses
-GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
+GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
+
 
 ---
 
@@ -631,7 +668,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 The datasets associated with this platform, including source reference images, degraded variations, and relevant testing materials, are publicly available for research and educational use.
 
-? **[Access the IQA SOURCE Datasets (Google Drive)](https://drive.google.com/drive/folders/1K9e9KtS-rWTA2qTvcIFWYBKnN6kvvrto)**
+ **[Access the IQA SOURCE Datasets (Google Drive)](https://drive.google.com/drive/folders/1K9e9KtS-rWTA2qTvcIFWYBKnN6kvvrto)**
 
 ---
 
@@ -650,12 +687,14 @@ The datasets associated with this platform, including source reference images, d
 - **Async**: Use `async/await` for I/O operations
 - **Error Handling**: Try-catch with proper logging
 
-### Testing
+### Testing
+
 # Run unit tests
 dotnet test
 
 # Run with coverage
-dotnet test /p:CollectCoverage=true
+dotnet test /p:CollectCoverage=true
+
 
 ---
 
