@@ -23,7 +23,6 @@ A comprehensive web-based assessment platform built with ASP.NET Core 8 for cond
 - [Assessment Types](#assessment-types)
 - [API Endpoints](#api-endpoints)
 - [MySQL Database Structure](#mysql-database-structure)
-- [Datasets](#datasets)
 - [Contributing](#contributing)
 - [License](#license)
 - [Citation](#citation)
@@ -624,14 +623,6 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 - `Session` 1..* `ImageQuality`, `SortAssessmentRating`, `QuestionAnswer`, `SpeedTestLog`, `ColorblindnessResult`, `ActionLog`
 - `Question` 1..* `QuestionAnswer`
 - `Image` 1..* `ImageQuality` and `SortAssessmentRating`
-
----
-
-## Datasets
-
-The datasets associated with this platform, including source reference images, degraded variations, and relevant testing materials, are publicly available for research and educational use.
-
-? **[Access the IQA SOURCE Datasets (Google Drive)](https://drive.google.com/drive/folders/1K9e9KtS-rWTA2qTvcIFWYBKnN6kvvrto)**
 
 ---
 
