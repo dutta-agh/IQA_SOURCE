@@ -664,7 +664,7 @@ GET    /Admin/DownloadSpeedTestLogsExcel        # Export speed tests
 
 ---
 
-## Datasets & Results
+## Datasets
 
 The datasets & results associated with this platform, including source reference images, degraded variations, and relevant testing materials, are publicly available for research and educational use.
 
