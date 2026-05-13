@@ -709,7 +709,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 If you use **IQA SOURCE** in your research or project, please cite it as follows:
 
 ```text
-Dutta, Avrajyoti. (2024). IQA SOURCE - Image Quality Assessment Platform [Software]. GitHub. https://github.com/dutta-agh/IQA_SOURCE
+Dutta, Avrajyoti. (2026). IQA SOURCE - Image Quality Assessment Platform [Software]. GitHub. https://github.com/dutta-agh/IQA_SOURCE
 ```
 
 **BibTeX:**
@@ -717,7 +717,7 @@ Dutta, Avrajyoti. (2024). IQA SOURCE - Image Quality Assessment Platform [Softwa
 @software{iqa_source,
   author = {Dutta, Avrajyoti},
   title = {IQA SOURCE - Image Quality Assessment Platform},
-  year = {2024},
+  year = {2026},
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/dutta-agh/IQA_SOURCE}}
